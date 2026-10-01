@@ -53,6 +53,7 @@ export default function PredictiveInsightsPage({
         <article className="card_wrapper">
           <div className="card_border container_fluid">
             <h2 className="no_margin cardtitle_text">Aggregate Scores</h2>
+            <div className={styles.tabsSpacer} />
             <AggregateScoresChart configs={configs} screenTypes={screenTypes} />
           </div>
         </article>

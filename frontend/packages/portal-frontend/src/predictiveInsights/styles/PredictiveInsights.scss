@@ -9,6 +9,13 @@
   min-width: 360px;
 }
 
+// Matches the height of react-bootstrap's Tabs nav bar (used by the GeneTEA
+// tiles) so the Aggregate Scores chart — which has no tabs — still lines up
+// vertically with the charts in the tiles next to it.
+.tabsSpacer {
+  height: 42px;
+}
+
 .loading,
 .errorBanner {
   padding: 24px;
