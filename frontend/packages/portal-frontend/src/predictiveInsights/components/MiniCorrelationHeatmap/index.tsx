@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef, useState } from "react";
 import type { Config, Layout } from "plotly.js";
+import { usePlotlyLoader } from "@depmap/data-explorer-2";
 import { Spinner } from "@depmap/common-components";
 import { breadboxAPI } from "@depmap/api";
 import { correlationMatrix } from "@depmap/statistics";
 import { getCorrelationColor } from "@depmap/utils";
-import { usePlotlyLoader } from "../../contexts/PlotlyLoaderContext";
 import styles from "./MiniCorrelationHeatmap.scss";
 
 // Same diverging red/blue correlation color convention used by the Top

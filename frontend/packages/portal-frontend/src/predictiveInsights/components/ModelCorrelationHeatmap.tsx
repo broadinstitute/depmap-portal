@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { MiniCorrelationHeatmap } from "@depmap/data-explorer-2";
+import MiniCorrelationHeatmap from "./MiniCorrelationHeatmap";
 import { ModelFit } from "@depmap/types";
 import { useFeatureLabels } from "../hooks/useFeatureLabels";
 import { getFeatureLabel } from "../featureLabel";

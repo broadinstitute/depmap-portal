@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { Panel, PanelGroup } from "react-bootstrap";
-import { MiniScatterPlot } from "@depmap/data-explorer-2";
 import { ModelConfigOut } from "@depmap/types";
 import CorrelationMeter from "src/predictability/components/CorrelationMeter";
 import { ScreenTypeData } from "../hooks/usePredictiveInsightsData";
 import { getScreenTypeLabel } from "../screenTypeLabel";
 import FeatureTable from "./FeatureTable";
+import MiniScatterPlot from "./MiniScatterPlot";
 import ModelCorrelationHeatmap from "./ModelCorrelationHeatmap";
 import styles from "../styles/PredictiveInsights.scss";
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { MiniScatterPlot } from "@depmap/data-explorer-2";
+import MiniScatterPlot from "./MiniScatterPlot";
 import { PredictiveFeature } from "@depmap/types";
 import PlaceholderBox from "./PlaceholderBox";
 import styles from "../styles/PredictiveInsights.scss";
