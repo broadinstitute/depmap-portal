@@ -6,6 +6,7 @@ import type {
   PlotlyHTMLElement,
 } from "plotly.js";
 import type {
+  AnnotationTail,
   ExportLegendPosition,
   ImageFigure,
 } from "./components/plot/prototype/plotUtils";
@@ -67,6 +68,16 @@ type ExtendedPlotType = HTMLDivElement &
       secondaryXAxisLabel?: string;
       legendTitle?: string;
       legendItemLabels?: string[];
+      // Export-only tail position overrides for per-point annotations,
+      // keyed by plain point index (not the renderers' own
+      // `${xKey}-${yKey}-${pointIndex}` ref key — only one plot instance is
+      // ever in play inside the export modal, so there's no ambiguity to
+      // resolve). Set only by ExportImageModal's "Adjust label positions"
+      // toggle; never written back to the live plot's own `annotationTails`
+      // ref, and never persisted. Omitted, or a point absent from the map,
+      // the renderer keeps whatever ax/ay it already resolved from the live
+      // plot's own stored tail.
+      annotationTailOverrides?: Record<number, AnnotationTail>;
     }) => ImageFigure | null;
     downloadImage: (options: DownloadImgopts) => void;
     xValueMissing: (pointIndex: number) => boolean;
