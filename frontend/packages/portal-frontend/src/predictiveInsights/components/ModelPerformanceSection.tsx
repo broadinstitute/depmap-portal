@@ -1,11 +1,10 @@
 import React, { useState } from "react";
 import { Panel, PanelGroup } from "react-bootstrap";
-import { MiniDataExplorerPlot } from "@depmap/data-explorer-2";
+import { MiniScatterPlot } from "@depmap/data-explorer-2";
 import { ModelConfigOut } from "@depmap/types";
 import StyledMeter from "src/common/components/StyledMeter";
 import { ScreenTypeData } from "../hooks/usePredictiveInsightsData";
 import { getScreenTypeLabel } from "../screenTypeLabel";
-import { buildModelPredictionsPlotConfig } from "../dataExplorerPlotConfig";
 import FeatureTable from "./FeatureTable";
 import PlaceholderBox from "./PlaceholderBox";
 import styles from "../styles/PredictiveInsights.scss";
@@ -92,22 +91,23 @@ export default function ModelPerformanceSection({
                 <div>
                   <div className={styles.modelPlotsRow}>
                     <div className={styles.modelPlotColumn}>
-                      <MiniDataExplorerPlot
-                        plotConfig={buildModelPredictionsPlotConfig({
-                          dimType,
-                          actualsDatasetId:
-                            screenType.response.actuals_dataset.id,
-                          actualsFeatureGivenId:
+                      <MiniScatterPlot
+                        dimType={dimType}
+                        xAxis={{
+                          datasetId: screenType.response.actuals_dataset.id,
+                          featureGivenId:
                             screenType.response.actuals_feature_given_id,
-                          actualsFeatureLabel:
+                          featureLabel:
                             screenType.response.actuals_feature_label,
-                          predictionsDatasetId: fit.predictions_dataset.id,
-                          predictionsFeatureGivenId:
+                          axisLabel: "Actual",
+                        }}
+                        yAxis={{
+                          datasetId: fit.predictions_dataset.id,
+                          featureGivenId:
                             screenType.response.actuals_feature_given_id,
-                          predictionsFeatureLabel: fit.predictions_dataset.name,
-                        })}
-                        xAxisLabel="Actual"
-                        yAxisLabel="Prediction"
+                          featureLabel: fit.predictions_dataset.name,
+                          axisLabel: "Prediction",
+                        }}
                       />
                     </div>
                     <PlaceholderBox label="Top Feature Correlation Map heatmap — TODO" />

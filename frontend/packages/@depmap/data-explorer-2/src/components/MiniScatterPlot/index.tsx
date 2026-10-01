@@ -6,12 +6,19 @@ import { toPortalLink } from "@depmap/globals";
 import { breadboxAPI } from "@depmap/api";
 import { DataExplorerPlotConfig } from "@depmap/types";
 import { usePlotlyLoader } from "../../contexts/PlotlyLoaderContext";
-import styles from "./MiniDataExplorerPlot.scss";
+import styles from "./MiniScatterPlot.scss";
+
+export interface MiniScatterPlotAxis {
+  datasetId: string;
+  featureGivenId: string;
+  featureLabel: string;
+  axisLabel: string;
+}
 
 interface Props {
-  plotConfig: DataExplorerPlotConfig;
-  xAxisLabel?: string;
-  yAxisLabel?: string;
+  dimType: string;
+  xAxis: MiniScatterPlotAxis;
+  yAxis: MiniScatterPlotAxis;
 }
 
 interface AxisData {
@@ -20,28 +27,38 @@ interface AxisData {
   labels: string[];
 }
 
-// The only expression shape this component knows how to read: a single
-// feature pinned via `{"==": [{"var": "given_id"}, id]}` (see
-// DataExplorerPlotConfigDimension.context.expr). Anything else means the
-// config isn't the single-feature "raw_slice" shape this v1 supports.
-function getPinnedGivenId(
-  dimension: DataExplorerPlotConfig["dimensions"]["x"]
-): string | null {
-  const expr = dimension?.context?.expr;
+function buildPlotConfig(
+  dimType: string,
+  xAxis: MiniScatterPlotAxis,
+  yAxis: MiniScatterPlotAxis
+): DataExplorerPlotConfig {
+  const buildDimension = (axis: MiniScatterPlotAxis) => ({
+    axis_type: "raw_slice" as const,
+    slice_type: dimType,
+    dataset_id: axis.datasetId,
+    aggregation: "first" as const,
+    context: {
+      name: axis.featureLabel,
+      dimension_type: dimType,
+      expr: { "==": [{ var: "given_id" }, axis.featureGivenId] },
+      vars: {},
+    },
+  });
 
-  if (
-    expr &&
-    typeof expr === "object" &&
-    "==" in expr &&
-    Array.isArray((expr as any)["=="])
-  ) {
-    return String((expr as any)["=="][1]);
-  }
-
-  return null;
+  return {
+    plot_type: "scatter",
+    // index_type is the dimension each *point* represents (models/cell
+    // lines), not the pinned features' dimension type (dimType, e.g.
+    // "gene") — that's `slice_type` on each axis dimension below.
+    index_type: "depmap_model",
+    dimensions: {
+      x: buildDimension(xAxis),
+      y: buildDimension(yAxis),
+    },
+  };
 }
 
-function useAxisData(dimension: DataExplorerPlotConfig["dimensions"]["x"]) {
+function useAxisData(axis: MiniScatterPlotAxis) {
   const [values, setValues] = useState<{
     ids: string[];
     labels: string[];
@@ -49,23 +66,15 @@ function useAxisData(dimension: DataExplorerPlotConfig["dimensions"]["x"]) {
   } | null>(null);
   const [error, setError] = useState<unknown>(null);
 
-  const datasetId = dimension?.dataset_id;
-  const givenId = dimension ? getPinnedGivenId(dimension) : null;
-
   useEffect(() => {
     let cancelled = false;
     setValues(null);
     setError(null);
 
-    if (!datasetId || !givenId) {
-      setError(new Error("Unsupported plot config dimension"));
-      return undefined;
-    }
-
     breadboxAPI
       .getDimensionData({
-        dataset_id: datasetId,
-        identifier: givenId,
+        dataset_id: axis.datasetId,
+        identifier: axis.featureGivenId,
         identifier_type: "feature_id",
       })
       .then((result) => {
@@ -82,8 +91,7 @@ function useAxisData(dimension: DataExplorerPlotConfig["dimensions"]["x"]) {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [datasetId, givenId]);
+  }, [axis.datasetId, axis.featureGivenId]);
 
   return { values, error };
 }
@@ -118,15 +126,13 @@ function joinAxisData(
 
 function Chart({
   data,
-  hideIdentityLine,
-  xAxisLabel = undefined,
-  yAxisLabel = undefined,
+  xAxisLabel,
+  yAxisLabel,
   Plotly,
 }: {
   data: AxisData;
-  hideIdentityLine: boolean;
-  xAxisLabel?: string;
-  yAxisLabel?: string;
+  xAxisLabel: string;
+  yAxisLabel: string;
   Plotly: any;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -150,7 +156,7 @@ function Chart({
       },
     ];
 
-    if (!hideIdentityLine && data.x.length > 0) {
+    if (data.x.length > 0) {
       const allValues = [...data.x, ...data.y];
       const min = Math.min(...allValues);
       const max = Math.max(...allValues);
@@ -180,55 +186,23 @@ function Chart({
     };
 
     Plotly.react(ref.current, traces, layout, config);
-  }, [data, hideIdentityLine, xAxisLabel, yAxisLabel, Plotly]);
+  }, [data, xAxisLabel, yAxisLabel, Plotly]);
 
   return <div ref={ref} />;
 }
 
-export default function MiniDataExplorerPlot({
-  plotConfig,
-  xAxisLabel = undefined,
-  yAxisLabel = undefined,
-}: Props) {
+export default function MiniScatterPlot({ dimType, xAxis, yAxis }: Props) {
   const PlotlyLoader = usePlotlyLoader();
-
-  if (plotConfig.plot_type !== "scatter") {
-    return (
-      <div className={styles.message}>
-        Unsupported plot type &quot;{plotConfig.plot_type}&quot;.
-      </div>
-    );
-  }
-
-  return (
-    <MiniScatterPlot
-      plotConfig={plotConfig}
-      xAxisLabel={xAxisLabel}
-      yAxisLabel={yAxisLabel}
-      PlotlyLoader={PlotlyLoader}
-    />
-  );
-}
-
-function MiniScatterPlot({
-  plotConfig,
-  xAxisLabel = undefined,
-  yAxisLabel = undefined,
-  PlotlyLoader,
-}: {
-  plotConfig: DataExplorerPlotConfig;
-  xAxisLabel?: string;
-  yAxisLabel?: string;
-  PlotlyLoader: ReturnType<typeof usePlotlyLoader>;
-}) {
-  const xAxis = useAxisData(plotConfig.dimensions.x);
-  const yAxis = useAxisData(plotConfig.dimensions.y);
+  const xAxisData = useAxisData(xAxis);
+  const yAxisData = useAxisData(yAxis);
 
   const viewInDataExplorerUrl = toPortalLink(
-    `/data_explorer_2?plot=${btoa(JSON.stringify(plotConfig))}`
+    `/data_explorer_2?plot=${btoa(
+      JSON.stringify(buildPlotConfig(dimType, xAxis, yAxis))
+    )}`
   );
 
-  if (xAxis.error || yAxis.error) {
+  if (xAxisData.error || yAxisData.error) {
     return (
       <div className={styles.message}>
         Something went wrong loading this plot.
@@ -236,7 +210,7 @@ function MiniScatterPlot({
     );
   }
 
-  if (!xAxis.values || !yAxis.values) {
+  if (!xAxisData.values || !yAxisData.values) {
     return (
       <div className={styles.message}>
         <Spinner position="static" />
@@ -244,7 +218,7 @@ function MiniScatterPlot({
     );
   }
 
-  const data = joinAxisData(xAxis.values, yAxis.values);
+  const data = joinAxisData(xAxisData.values, yAxisData.values);
 
   return (
     <div>
@@ -252,9 +226,8 @@ function MiniScatterPlot({
         {(Plotly) => (
           <Chart
             data={data}
-            hideIdentityLine={Boolean(plotConfig.hide_identity_line)}
-            xAxisLabel={xAxisLabel}
-            yAxisLabel={yAxisLabel}
+            xAxisLabel={xAxis.axisLabel}
+            yAxisLabel={yAxis.axisLabel}
             Plotly={Plotly}
           />
         )}

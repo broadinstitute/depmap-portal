@@ -1,7 +1,6 @@
 import React from "react";
-import { MiniDataExplorerPlot } from "@depmap/data-explorer-2";
+import { MiniScatterPlot } from "@depmap/data-explorer-2";
 import { PredictiveFeature } from "@depmap/types";
-import { buildFeatureVsGeneEffectPlotConfig } from "../dataExplorerPlotConfig";
 import PlaceholderBox from "./PlaceholderBox";
 import styles from "../styles/PredictiveInsights.scss";
 
@@ -24,18 +23,20 @@ export default function FeatureDetailPlots({
 }: Props) {
   return (
     <div className={styles.featureDetailPlotsGrid}>
-      <MiniDataExplorerPlot
-        plotConfig={buildFeatureVsGeneEffectPlotConfig({
-          dimType,
-          featureDatasetId: feature.feature_dataset_id,
+      <MiniScatterPlot
+        dimType={dimType}
+        xAxis={{
+          datasetId: feature.feature_dataset_id,
           featureGivenId: feature.feature_given_id,
           featureLabel,
-          actualsDatasetId,
-          actualsFeatureGivenId,
-          actualsFeatureLabel,
-        })}
-        xAxisLabel={featureLabel}
-        yAxisLabel="Gene Effect"
+          axisLabel: featureLabel,
+        }}
+        yAxis={{
+          datasetId: actualsDatasetId,
+          featureGivenId: actualsFeatureGivenId,
+          featureLabel: actualsFeatureLabel,
+          axisLabel: "Gene Effect",
+        }}
       />
       <PlaceholderBox label="Dataset correlation: actual vs. feature — TODO" />
       <PlaceholderBox label="Feature rank plot — TODO" />
