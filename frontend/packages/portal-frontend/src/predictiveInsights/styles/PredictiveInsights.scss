@@ -139,6 +139,13 @@
   background: #f4f5f7;
 }
 
+.correlationValue {
+  display: inline-block;
+  margin-right: 8px;
+  min-width: 2.5em;
+  text-align: right;
+}
+
 .relationshipIcon {
   display: inline-flex;
   align-items: center;

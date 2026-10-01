@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { ModelFit } from "@depmap/types";
-import StyledMeter from "src/common/components/StyledMeter";
+import CorrelationMeter from "src/predictability/components/CorrelationMeter";
 import { useDatasetNames } from "../hooks/useDatasetNames";
 import { useFeatureLabels } from "../hooks/useFeatureLabels";
 import { getFeatureLabel } from "../featureLabel";
@@ -74,22 +74,24 @@ export default function FeatureTable({
                   {getFeatureLabel(feature, featureLabels)}
                 </td>
                 <td>
-                  <StyledMeter
-                    value={feature.importance}
-                    min={0}
-                    max={1}
-                    percentage
-                    showLabel
-                    toFixed={1}
+                  <span className={styles.correlationValue}>
+                    {(feature.importance * 100).toFixed(1)}%
+                  </span>
+                  <CorrelationMeter
+                    correlation={feature.importance}
+                    useGradedColorScheme
+                    showLabel={false}
+                    rightSideOnly
                   />
                 </td>
                 <td>
-                  <StyledMeter
-                    value={feature.correlation_with_actual}
-                    min={-1}
-                    max={1}
-                    showLabel
-                    toFixed={3}
+                  <span className={styles.correlationValue}>
+                    {feature.correlation_with_actual.toFixed(2)}
+                  </span>
+                  <CorrelationMeter
+                    correlation={feature.correlation_with_actual}
+                    useGradedColorScheme
+                    showLabel={false}
                   />
                 </td>
                 <td>

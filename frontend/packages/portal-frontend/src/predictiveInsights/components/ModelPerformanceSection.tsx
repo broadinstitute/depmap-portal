@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import { Panel, PanelGroup } from "react-bootstrap";
 import { MiniScatterPlot } from "@depmap/data-explorer-2";
 import { ModelConfigOut } from "@depmap/types";
-import StyledMeter from "src/common/components/StyledMeter";
+import CorrelationMeter from "src/predictability/components/CorrelationMeter";
 import { ScreenTypeData } from "../hooks/usePredictiveInsightsData";
 import { getScreenTypeLabel } from "../screenTypeLabel";
 import FeatureTable from "./FeatureTable";
-import PlaceholderBox from "./PlaceholderBox";
+import ModelCorrelationHeatmap from "./ModelCorrelationHeatmap";
 import styles from "../styles/PredictiveInsights.scss";
 
 interface Props {
@@ -71,13 +71,13 @@ export default function ModelPerformanceSection({
                     {config.model_config_name}
                   </span>
                   <span className={styles.modelHeaderGauge}>
-                    <StyledMeter
-                      value={fit.prediction_actual_correlation}
-                      min={-1}
-                      max={1}
-                      showLabel
-                      toFixed={3}
-                      style={{ barColor: screenType.color, width: "120px" }}
+                    <span className={styles.correlationValue}>
+                      {fit.prediction_actual_correlation.toFixed(2)}
+                    </span>
+                    <CorrelationMeter
+                      correlation={fit.prediction_actual_correlation}
+                      useGradedColorScheme
+                      showLabel={false}
                     />
                     <span className={styles.modelHeaderGaugeLabel}>
                       R between observed and predicted
@@ -110,7 +110,9 @@ export default function ModelPerformanceSection({
                         }}
                       />
                     </div>
-                    <PlaceholderBox label="Top Feature Correlation Map heatmap — TODO" />
+                    <div className={styles.modelPlotColumn}>
+                      <ModelCorrelationHeatmap fit={fit} dimType={dimType} />
+                    </div>
                   </div>
                   <FeatureTable
                     fit={fit}
