@@ -7,6 +7,7 @@ export interface TopFeatureBarDatum {
   label: string;
   importance: number;
   modelName: string;
+  datasetName: string;
   color: string;
 }
 
@@ -32,14 +33,14 @@ function Chart({ features, Plotly }: Props & { Plotly: any }) {
       x: ordered.map((f) => f.importance),
       y: ordered.map((f) => f.label),
       marker: { color: ordered.map((f) => f.color) },
-      text: ordered.map((f) => f.modelName),
+      customdata: ordered.map((f) => [f.modelName, f.datasetName]),
       hovertemplate:
-        "%{y}<br>Importance: %{x:.3f}<br>Model: %{text}<extra></extra>",
+        "%{y}<br>Importance: %{x:.3f}<br>Model: %{customdata[0]}<br>Dataset: %{customdata[1]}<extra></extra>",
     };
 
     const layout: Partial<Layout> = {
       height: 400,
-      margin: { l: 280, r: 20, t: 20, b: 40 },
+      margin: { r: 20, t: 20, b: 40 },
       xaxis: { title: "Relative importance" },
       yaxis: { automargin: true, tickfont: { size: 10 } },
     };

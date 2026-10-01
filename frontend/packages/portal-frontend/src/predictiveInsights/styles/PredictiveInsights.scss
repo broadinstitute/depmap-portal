@@ -9,6 +9,13 @@
   min-width: 360px;
 }
 
+// Matches the height of react-bootstrap's Tabs nav bar (used by the GeneTEA
+// tiles) so the Aggregate Scores chart — which has no tabs — still lines up
+// vertically with the charts in the tiles next to it.
+.tabsSpacer {
+  height: 42px;
+}
+
 .loading,
 .errorBanner {
   padding: 24px;
@@ -40,4 +47,122 @@
   padding: 4px 8px;
   text-align: left;
   font-size: 12px;
+}
+
+.sectionHeader {
+  margin-top: 32px;
+}
+
+.modelPerformanceSection {
+  margin-top: 16px;
+}
+
+.screenTypeHeader {
+  border-bottom: 2px solid;
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+}
+
+.modelHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: left;
+  gap: 16px;
+}
+
+.modelHeaderName {
+  font-weight: bold;
+  width: 200px;
+}
+
+.modelHeaderGauge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modelHeaderGaugeLabel {
+  font-size: 12px;
+  color: #5e6c84;
+}
+
+.expandIndicator {
+  display: inline-block;
+  width: 14px;
+  font-weight: bold;
+  text-align: center;
+  margin-right: 6px;
+}
+
+.placeholderBox {
+  flex: 1 1 360px;
+  min-width: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16px;
+  border: 1px dashed #c1c7d0;
+  border-radius: 4px;
+  color: #5e6c84;
+  background: #fafbfc;
+}
+
+.modelPlotsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.modelPlotColumn {
+  flex: 1 1 360px;
+  min-width: 280px;
+}
+
+.featureDetailPlotsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  padding: 16px 0;
+}
+
+.featureTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.featureTable th,
+.featureTable td {
+  border-bottom: 1px solid #dfe1e6;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.featureRow {
+  cursor: pointer;
+}
+
+.featureRow:hover {
+  background: #f4f5f7;
+}
+
+.correlationValue {
+  display: inline-block;
+  margin-right: 8px;
+  min-width: 2.5em;
+  text-align: right;
+}
+
+.relationshipIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #dfe1e6;
+  font-size: 11px;
+  font-weight: bold;
+  margin-right: 4px;
 }
