@@ -1,7 +1,8 @@
 import React from "react";
 import MiniScatterPlot from "./MiniScatterPlot";
+import DatasetCorrelationScatterPlot from "./DatasetCorrelationScatterPlot";
+import FeatureRankPlot from "./FeatureRankPlot";
 import { PredictiveFeature } from "@depmap/types";
-import PlaceholderBox from "./PlaceholderBox";
 import styles from "../styles/PredictiveInsights.scss";
 
 interface Props {
@@ -38,8 +39,20 @@ export default function FeatureDetailPlots({
           axisLabel: "Gene Effect",
         }}
       />
-      <PlaceholderBox label="Dataset correlation: actual vs. feature — TODO" />
-      <PlaceholderBox label="Feature rank plot — TODO" />
+      <DatasetCorrelationScatterPlot
+        featureDatasetId={feature.feature_dataset_id}
+        featureGivenId={feature.feature_given_id}
+        featureLabel={featureLabel}
+        actualsDatasetId={actualsDatasetId}
+        actualsFeatureGivenId={actualsFeatureGivenId}
+      />
+      <FeatureRankPlot
+        featureDatasetId={feature.feature_dataset_id}
+        featureGivenId={feature.feature_given_id}
+        featureLabel={featureLabel}
+        actualsDatasetId={actualsDatasetId}
+        actualsFeatureGivenId={actualsFeatureGivenId}
+      />
     </div>
   );
 }
