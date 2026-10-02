@@ -145,7 +145,7 @@ def make_file(
     satisfies_db_taiga_id = file.get("satisfies_db_taiga_id", None)
 
     # year, month, day
-    date_override: date = file.get("date_override", None)
+    date_override: Optional[date] = parse_date_field(file.get("date_override"))
     terms_override_str = file.get("terms_override", None)
     terms_override: Optional[ReleaseTerms] = None
     if terms_override_str is not None:
@@ -182,6 +182,19 @@ def make_file(
     )
 
 
+def parse_date_field(value: Union[date, str, None]) -> Optional[date]:
+    """
+    Yaml release_date/date_override values may be given as an unquoted yaml
+    date literal (parsed by PyYAML into a date object) or as a quoted
+    "YYYY-MM-DD" string.
+    """
+    if value is None or value == "":
+        return None
+    if isinstance(value, date):
+        return value
+    return date.fromisoformat(value)
+
+
 def get_citation_html(citation: List[dict]) -> str:
     citation_html = ""
     for item in citation:
@@ -201,7 +214,7 @@ def make_downloads_release_from_parsed_yaml(release: Dict[str, Any]) -> Download
 
     name = release.get("name", "")
     type = ReleaseType(release.get("type", ""))
-    release_date: date = release.get("release_date", "")
+    release_date: date = parse_date_field(release.get("release_date"))
     description = release.get("description", "")
     funding = release.get("funding")
     version_group = release.get("version_group", None)
