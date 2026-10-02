@@ -103,6 +103,10 @@ class FeatureFlags:
         return self.is_skyros()
 
     @property
+    def show_help_tab(self):
+        return self.is_skyros()
+
+    @property
     def heatmap_tab(self):
         return self.is_prerelease_env()
 
