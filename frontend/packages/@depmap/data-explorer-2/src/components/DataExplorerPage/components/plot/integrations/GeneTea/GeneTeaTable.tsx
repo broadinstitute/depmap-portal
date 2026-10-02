@@ -33,8 +33,10 @@ function GeneTeaTable({ data, onClickColorByContext, onClickTerm }: Props) {
 
   const checkScrollBar = useCallback(() => {
     if (ref.current) {
-      const stack = ref.current.closest("#section-stack") as Element;
-      setHasScrollBar(stack.scrollHeight > stack.clientHeight);
+      const stack = ref.current.closest("#section-stack");
+      if (stack) {
+        setHasScrollBar(stack.scrollHeight > stack.clientHeight);
+      }
     }
   }, []);
 
