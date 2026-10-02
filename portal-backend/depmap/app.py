@@ -442,6 +442,7 @@ def register_commands(app: Flask):
     app.cli.add_command(db_load_commands.reload_resources)
     app.cli.add_command(post_deploy_commands.check_data_issues)
     app.cli.add_command(post_deploy_commands.check_nonstandard_datasets)
+    app.cli.add_command(post_deploy_commands.turnstile_bypass_token)
     app.cli.add_command(spawn_commands.run_worker)
     app.cli.add_command(spawn_commands.run_dev_worker)
     app.cli.add_command(spawn_commands.webpack)
