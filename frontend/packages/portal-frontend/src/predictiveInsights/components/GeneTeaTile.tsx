@@ -16,7 +16,7 @@ interface Props {
   configs: ModelConfigOut[];
 }
 
-const MAX_TOP_FEATURES = 100;
+const MAX_TOP_FEATURES = 25;
 
 export default function GeneTeaTile({ title, screenType, configs }: Props) {
   const [showSearchTerms, setShowSearchTerms] = useState(false);
@@ -29,7 +29,32 @@ export default function GeneTeaTile({ title, screenType, configs }: Props) {
       }))
     );
 
-    all.sort((a, b) => b.feature.importance - a.feature.importance);
+    // The same feature can show up as a top feature for more than one
+    // model. Rank by each feature's *total* importance across all the
+    // models it appears in (not each row's own value), so the same feature
+    // doesn't get scattered across the list based on which model's score
+    // happened to be higher.
+    const featureKey = (f: typeof all[number]["feature"]) =>
+      `${f.feature_dataset_id}:${f.feature_given_id}`;
+
+    const totalImportanceByFeature = new Map<string, number>();
+    all.forEach(({ feature }) => {
+      const key = featureKey(feature);
+      totalImportanceByFeature.set(
+        key,
+        (totalImportanceByFeature.get(key) || 0) + feature.importance
+      );
+    });
+
+    all.sort((a, b) => {
+      const totalDiff =
+        totalImportanceByFeature.get(featureKey(b.feature))! -
+        totalImportanceByFeature.get(featureKey(a.feature))!;
+
+      return totalDiff !== 0
+        ? totalDiff
+        : b.feature.importance - a.feature.importance;
+    });
 
     return all.slice(0, MAX_TOP_FEATURES);
   }, [screenType]);
@@ -49,9 +74,12 @@ export default function GeneTeaTile({ title, screenType, configs }: Props) {
         label: getFeatureLabel(feature, featureLabels),
         importance: feature.importance,
         modelName: configName,
+        datasetName:
+          datasetNames[feature.feature_dataset_id] ||
+          feature.feature_dataset_id,
         color: getModelColor(configName, configs),
       })),
-    [topFeatures, configs, featureLabels]
+    [topFeatures, configs, featureLabels, datasetNames]
   );
 
   // Open question (see spec doc): mapping an arbitrary feature back to "the
@@ -89,6 +117,9 @@ export default function GeneTeaTile({ title, screenType, configs }: Props) {
               className={styles.toggleSearchTerms}
               onClick={() => setShowSearchTerms((prev) => !prev)}
             >
+              <span className={styles.expandIndicator}>
+                {showSearchTerms ? "−" : "+"}
+              </span>
               {showSearchTerms ? "Hide" : "Show"} search terms
             </button>
             {showSearchTerms && (

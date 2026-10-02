@@ -7,6 +7,23 @@ import { postJson } from "../client";
 import { getTabularDatasetData } from "./datasets";
 import { getDimensionTypeIdentifiers } from "./types";
 
+// Correlates every feature in `datasetId` against the profile named by
+// `sliceQuery` (which may live in a different dataset entirely). Distinct
+// from fetchAssociations: that one queries precomputed associations for a
+// slice; this one computes on the fly for an arbitrary reference profile.
+export async function computeAssociations(
+  datasetId: string,
+  sliceQuery: SliceQuery
+) {
+  return postJson<{ label: string[]; given_id: string[]; cor: number[] }>(
+    "/temp/associations/compute",
+    {
+      dataset_id: datasetId,
+      slice_query: sliceQuery,
+    }
+  );
+}
+
 export async function fetchAssociations(
   sliceQuery: SliceQuery,
   associatedDatasetIds?: string[]

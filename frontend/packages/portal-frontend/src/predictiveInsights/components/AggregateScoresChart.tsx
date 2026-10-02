@@ -63,10 +63,10 @@ function Chart({
 
     const layout: Partial<Layout> = {
       height: 400,
-      margin: { l: 60, r: 20, t: 20, b: 90 },
+      margin: { l: 60, r: 20, t: 20, b: 110 },
       xaxis: { tickangle: -30 },
       yaxis: { title: "R (observed vs. predicted)" },
-      legend: { orientation: "h" },
+      legend: { orientation: "h", y: -0.3, yanchor: "top" },
     };
 
     const plotlyConfig: Partial<Config> = {
