@@ -61,6 +61,7 @@ export {
 export { persistLegacyListAsContext } from "./src/utils/persistLegacyListAsContext";
 
 export { default as DensityPlot } from "./src/components/DataExplorerPage/components/plot/prototype/PrototypeDensity1D";
+export { default as GeneTea } from "./src/components/DataExplorerPage/components/plot/integrations/GeneTea";
 
 export {
   logInitialPlot,

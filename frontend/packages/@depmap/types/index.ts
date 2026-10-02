@@ -103,6 +103,15 @@ export type * from "./src/compute";
 export type { CmsPost, CmsPostSummary, CmsMenu } from "./src/cms";
 export type { UploadFileResponse } from "./src/UploadFileResponse";
 export type { SliceQuery } from "./src/SliceQuery";
+export type {
+  IDAndName,
+  ModelConfigOut,
+  PredictiveModelConfigOut,
+  PredictiveModelResultOut,
+  PredictiveFeature,
+  ModelFit,
+  PredictiveModelsResponse,
+} from "./src/PredictiveInsights";
 export type { ErrorDetail } from "./src/BreadboxErrorType";
 
 // predicates (these are functions, not types, but they help to narrow types)

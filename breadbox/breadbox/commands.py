@@ -494,6 +494,9 @@ def _get_active_data_issues() -> dict[str, data_issues.DataIssue]:
         else:
             associated_datasets = dataset_crud.get_datasets(db=db, user=db.user, sample_type=dimension_type.name)
 
+        # We're only interested in seeing issues relating to public datasets - filter results to that group
+        associated_datasets = [dataset for dataset in associated_datasets if dataset.group_id == PUBLIC_GROUP_ID]
+
         
         # Get all given IDs belonging to the metadata 
         metadata_given_ids = get_tabular_dataset_index_given_ids(db=db, dataset=dimension_type.dataset)

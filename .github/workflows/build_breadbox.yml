@@ -26,6 +26,7 @@ on:
       - "breadbox/**"
       - "breadbox-client/**"
       - ".github/workflows/build_breadbox.yml"
+      - "frontend/**"
 
 permissions:
   contents: write

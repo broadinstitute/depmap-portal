@@ -2,7 +2,7 @@ include "update_hgnc_gene_table.conseq"
 include "cngene_log_2_transformation.conseq"
 include "filter_portal_compounds.conseq"
 include "subtype_tree.conseq"
-#include "predictability.conseq"
+include "predictability.conseq"
 include "crispr.conseq"
 include "fusions.conseq"
 

@@ -3511,6 +3511,16 @@ export const getLegendTraces = (
 export interface ImageFigure {
   data: object[];
   layout: Partial<Layout>;
+  // A second figure to render separately and draw on top of this one, at the
+  // same width/height — for a plot type where two kinds of trace can't share
+  // one single-shot Plotly render (see PrototypeDensity1D's getImageFigure,
+  // the only current source of one, for why: Plotly fixes the relative paint
+  // order of an SVG trace and a WebGL one regardless of trace order, so a
+  // violin can't be made to sit over a scattergl trace by reordering `data`).
+  // ExportImageModal's renderPaddedImage renders and composites it; every
+  // other caller of a figure ignores an extra property it doesn't know about.
+  // Absent for every plot type that has no such conflict.
+  overlayFigure?: ImageFigure;
 }
 
 // Every nested object an export or a preview might write to, copied; every
@@ -3674,6 +3684,48 @@ export function resolveAnnotationTail(
     ax: distance * Math.cos(tail.angle),
     ay: distance * Math.sin(tail.angle),
   };
+}
+
+// Export-only (see ExportImageModal's "Adjust label positions" toggle, which
+// is the only source of `overrides`). Applies a per-point tail nudge, made
+// by dragging a label in the modal's own live preview, to an already-built
+// annotations array — pure and non-mutating: returns the very same array
+// reference when there's nothing to apply (no overrides, or every
+// annotation lacking a `pointIndex` — the paper-anchored "(N selected
+// points)" summary, and SmallMultiplesScatter's own shift-based axis-label
+// annotations, both have none), so this is a safe no-op by default. Called
+// last, after whatever other annotation post-processing a renderer's own
+// getImageFigure already does, so a dragged position always wins.
+export function applyAnnotationTailOverrides<
+  T extends { pointIndex?: number; ax?: number; ay?: number }
+>(
+  annotations: T[] | undefined,
+  overrides: Record<number, AnnotationTail> | undefined,
+  fontSize: number
+): T[] | undefined {
+  if (!annotations || !overrides || Object.keys(overrides).length === 0) {
+    return annotations;
+  }
+
+  return annotations.map((annotation) => {
+    if (typeof annotation.pointIndex !== "number") {
+      return annotation;
+    }
+
+    const override = overrides[annotation.pointIndex];
+
+    if (!override) {
+      return annotation;
+    }
+
+    const tail = resolveAnnotationTail(override, fontSize);
+
+    return {
+      ...annotation,
+      ax: tail?.ax ?? annotation.ax,
+      ay: tail?.ay ?? annotation.ay,
+    };
+  });
 }
 
 // DEFAULT_SETTINGS.plotStyles.annotationFontSize — duplicated as a literal

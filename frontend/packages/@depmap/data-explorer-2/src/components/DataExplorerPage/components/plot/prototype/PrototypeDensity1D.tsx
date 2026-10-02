@@ -13,6 +13,7 @@ import { MAX_POINTS_TO_ANNOTATE } from "../../../../../constants/plotConstants";
 import { usePlotlyLoader } from "../../../../../contexts/PlotlyLoaderContext";
 import {
   AnnotationTail,
+  applyAnnotationTailOverrides,
   calcAnnotationArrowWidth,
   calcAnnotationPositions,
   calcChromeAxisOverrides,
@@ -1278,94 +1279,201 @@ function PrototypeDensity1D({
           fillcolor: colorMap.get(legendKey),
         }));
 
-      // Overrides the two violin traces' curve widths in place — identified
-      // by reference against violinTraces/violinOutlineTraces, not by
-      // position: plotlyData (and so plot.data, which Plotly builds from it
-      // without cloning) is a `.filter().reverse()` of the concatenation
-      // those two arrays start, so an index-based split would grab the
-      // wrong traces entirely once any track is missing or all-null. At the
-      // default width this is a no-op copy: DEFAULT_VIOLIN_LINE_WIDTH is
+      // Split plot.data into a violin layer and a points layer, overriding the
+      // two violin traces' curve widths in place as they're sorted —
+      // identified by reference against violinTraces/violinOutlineTraces, not
+      // by position: plotlyData (and so plot.data, which Plotly builds from it
+      // without cloning) is a `.filter().reverse()` of the concatenation those
+      // two arrays start, so an index-based split would grab the wrong traces
+      // entirely once any track is missing or all-null. At the default width
+      // the violin override is a no-op copy: DEFAULT_VIOLIN_LINE_WIDTH is
       // `undefined` on templateViolin (Plotly's own default of 2) and
-      // calcViolinOutlineWidth(2) is 4, matching violinOutlineTraces'
-      // existing hardcoded literal exactly.
-      const exportData = plot.data.map((trace) => {
+      // calcViolinOutlineWidth(2) is 4, matching violinOutlineTraces' existing
+      // hardcoded literal exactly.
+      //
+      // The split itself exists because of the same limitation
+      // movePointsBehindViolinPlot (top of file) works around on screen:
+      // Plotly can't stack a violin (SVG) trace under a scattergl (WebGL
+      // canvas) one via trace order — the two always paint in a fixed relative
+      // order regardless of where they sit in `data`. That DOM hack only runs
+      // against this component's own mounted graph div; `Plotly.toImage`
+      // renders into its own disconnected, temporary one that our
+      // `plotly_afterplot` handler never sees, so a static export got the
+      // wrong order no matter what `data` said. Rendering each group as its
+      // own image and compositing them (see overlayFigure, and
+      // ExportImageModal's renderPaddedImage) reproduces the on-screen
+      // stacking without relying on a DOM that doesn't exist at export time.
+      const violinLayerData: object[] = [];
+      const pointsLayerData: object[] = [];
+
+      plot.data.forEach((trace) => {
         if (violinTraces.includes(trace as any)) {
-          return {
+          violinLayerData.push({
             ...trace,
             line: { ...(trace as any).line, width: violinLineWidth },
-          };
+          });
+          return;
         }
 
         if (violinOutlineTraces.includes(trace as any)) {
-          return {
+          violinLayerData.push({
             ...trace,
             line: {
               ...(trace as any).line,
               width: calcViolinOutlineWidth(violinLineWidth),
             },
-          };
+          });
+          return;
         }
 
-        return trace;
+        pointsLayerData.push(trace);
       });
 
-      return cloneFigureForExport(
-        // Under showBuiltinLegend the legend traces are already in plot.data;
-        // appending them again would double every legend entry. A hidden
-        // legend appends nothing — and when they're already in plot.data,
-        // `showlegend: false` from legendLayoutFor is what hides them.
+      // The "inner" half of edgePadding — see PrototypeScatterPlot's identical
+      // treatment. `automargin` stays on for this axis (used by the points
+      // layer below); it just measures a bigger need now that standoff asks
+      // for more.
+      const sharedXAxis = {
+        ...plot.layout.xaxis,
+        ...calcChromeAxisOverrides(chromeLineWidth),
+        title: {
+          ...(plot.layout.xaxis as any)?.title,
+          ...(xAxisLabelOverride !== undefined
+            ? { text: xAxisLabelOverride }
+            : {}),
+          standoff:
+            ((plot.layout.xaxis as any)?.title?.standoff ?? 8) + edgePadding,
+        },
+      };
+
+      const sharedYAxis = {
+        ...plot.layout.yaxis,
+        ...calcChromeAxisOverrides(chromeLineWidth),
+      };
+
+      // See exportMarginFloor: seeds the single-shot export render with the
+      // margin this instance already converged to, rather than the small
+      // requested floor that `plot.layout.margin` always holds. `b` matches
+      // the standoff growth above (see PrototypeScatterPlot) plus
+      // extraXAxisLinesMargin — deliberately NOT also added to standoff above:
+      // standoff is the fixed gap before the title anchor, which a native
+      // multi-line title already grows away from downward on its own (one
+      // lineHeight per extra line, the same quantity calcExtraLinesMargin
+      // computes) — adding it to standoff too pushed the anchor down by that
+      // same amount a second time, leaving the newly reserved room stranded
+      // above an unmoved (bottom-flush) label instead of under it. `l` isn't
+      // grown to match — there's no y-axis label standoff to seed room for
+      // here.
+      //
+      // Computed once and reused as a fixed value for *both* layers below (not
+      // just a floor for the violin layer's own axes, which have automargin
+      // turned off) — see overlayFigure's own comment on why that matters for
+      // the composite to land pixel-for-pixel.
+      const sharedMargin = exportMarginFloor(plot, {
+        b: edgePadding + extraXAxisLinesMargin,
+      });
+
+      const sharedLayout: Partial<Layout> = {
+        ...plot.layout,
+        xaxis: sharedXAxis,
+        yaxis: sharedYAxis,
+        margin: sharedMargin,
+        // See PrototypeScatterPlot's note: the font follows the axis font
+        // size so the legend scales with everything else in the figure.
+        ...legendLayoutFor(legendPosition, {
+          title: legendTitleOverride ?? legendTitle,
+          fontSize: xAxisFontSize,
+        }),
+      };
+
+      // Under showBuiltinLegend the legend traces are already in plot.data;
+      // appending them again would double every legend entry. A hidden legend
+      // appends nothing — and when they're already in plot.data, `showlegend:
+      // false` from legendLayoutFor is what hides them.
+      //
+      // Appended to *both* layers below, not just the one the legend visually
+      // belongs with: a "right"/"above" legend makes Plotly reserve margin for
+      // it via automargin, same as it does for axis ticks and titles — see
+      // sharedMargin's own comment on why the two layers' margins have to
+      // match, which now depends on the legend reservation matching too.
+      const legendTracesToAppend =
         showBuiltinLegend || !wantsLegendTraces(legendPosition)
-          ? exportData
-          : [...exportData, ...exportLegendTraces],
+          ? []
+          : exportLegendTraces;
+
+      const pointsLayerFigure = cloneFigureForExport(
+        [...pointsLayerData, ...legendTracesToAppend],
         {
-          ...plot.layout,
-          // The "inner" half of edgePadding — see PrototypeScatterPlot's
-          // identical treatment. `automargin` stays on; it just measures a
-          // bigger need now that standoff asks for more.
-          xaxis: {
-            ...plot.layout.xaxis,
-            ...calcChromeAxisOverrides(chromeLineWidth),
-            title: {
-              ...(plot.layout.xaxis as any)?.title,
-              ...(xAxisLabelOverride !== undefined
-                ? { text: xAxisLabelOverride }
-                : {}),
-              standoff:
-                ((plot.layout.xaxis as any)?.title?.standoff ?? 8) +
-                edgePadding,
-            },
-          },
-          yaxis: {
-            ...plot.layout.yaxis,
-            ...calcChromeAxisOverrides(chromeLineWidth),
-          },
-          // See exportMarginFloor: seeds the single-shot export render with
-          // the margin this instance already converged to, rather than the
-          // small requested floor that `plot.layout.margin` always holds.
-          // `b` matches the standoff growth above (see PrototypeScatterPlot)
-          // plus extraXAxisLinesMargin — deliberately NOT also added to
-          // standoff above: standoff is the fixed gap before the title
-          // anchor, which a native multi-line title already grows away
-          // from downward on its own (one lineHeight per extra line, the
-          // same quantity calcExtraLinesMargin computes) — adding it to
-          // standoff too pushed the anchor down by that same amount a
-          // second time, leaving the newly reserved room stranded above an
-          // unmoved (bottom-flush) label instead of under it. `l` isn't
-          // grown to match — there's no y-axis label standoff to seed room
-          // for here.
-          margin: exportMarginFloor(plot, {
-            b: edgePadding + extraXAxisLinesMargin,
-          }),
-          // See PrototypeScatterPlot's note: the font follows the axis font
-          // size so the legend scales with everything else in the figure.
-          ...legendLayoutFor(legendPosition, {
-            title: legendTitleOverride ?? legendTitle,
-            fontSize: xAxisFontSize,
-          }),
+          ...sharedLayout,
+          // Per-point callouts (and the "(N points selected)" summary)
+          // carry their own opaque bgcolor specifically so they stay
+          // legible over whatever's beneath them — that has to mean the
+          // violin layer too, so they move there below rather than
+          // drawing here, underneath it.
+          annotations: undefined,
         }
       );
+
+      // Rendered as a second image and composited on top of the points layer
+      // (see ExportImageModal's renderPaddedImage) — never merged into one
+      // figure, for the reason in the comment above the split. Axis
+      // *decoration* (ticks, title, gridlines, the plot's own background rect)
+      // is stripped so only the violin shapes themselves draw; the points
+      // layer already drew all of that once and a second, transparent copy
+      // would just retrace the same lines. `automargin` is explicitly off on
+      // both axes for the same reason — this layer has no tick/title text of
+      // its own to measure, so there's nothing for it to converge to *but* the
+      // shared floor, and leaving it on would risk Plotly settling on a
+      // different, silently misaligned size than the points layer, which still
+      // has real content of its own to measure. The legend, unlike axis
+      // decoration, is kept (inherited from sharedLayout, unmodified) — see
+      // legendTracesToAppend's comment for why dropping it here was the actual
+      // bug.
+      const violinLayerFigure = cloneFigureForExport(
+        [...violinLayerData, ...legendTracesToAppend],
+        {
+          ...sharedLayout,
+          paper_bgcolor: "transparent",
+          plot_bgcolor: "transparent",
+          xaxis: {
+            ...sharedXAxis,
+            automargin: false,
+            title: undefined,
+            showticklabels: false,
+            ticks: "" as const,
+            showgrid: false,
+            zeroline: false,
+          },
+          yaxis: {
+            ...sharedYAxis,
+            automargin: false,
+            showticklabels: false,
+            ticks: "" as const,
+            showgrid: false,
+            zeroline: false,
+          },
+        }
+      );
+
+      // A label dragged in ExportImageModal's own live "Adjust label
+      // positions" preview — applied here, not on pointsLayerFigure: per-point
+      // callouts live only on the violin/overlay layer (see annotations:
+      // undefined above), so this is the one place they actually are.
+      violinLayerFigure.layout.annotations = applyAnnotationTailOverrides(
+        violinLayerFigure.layout.annotations as any[] | undefined,
+        options?.annotationTailOverrides,
+        annotationFontSize
+      );
+
+      return { ...pointsLayerFigure, overlayFigure: violinLayerFigure };
     };
 
+    // Currently unreachable from the UI — PrototypePlotsControls routes every
+    // download through ExportImageModal instead, which composites
+    // getImageFigure's overlayFigure via renderPaddedImage. This does not:
+    // Plotly.downloadImage only knows `figure.data`/`figure.layout`, so it
+    // would silently drop the violin layer and save points alone. Fine as dead
+    // code; would need the same compositing if ever revived.
     plot.downloadImage = (options) => {
       const figure = plot.getImageFigure();
 
