@@ -214,7 +214,8 @@ def make_downloads_release_from_parsed_yaml(release: Dict[str, Any]) -> Download
 
     name = release.get("name", "")
     type = ReleaseType(release.get("type", ""))
-    release_date: date = parse_date_field(release.get("release_date"))
+    release_date: Optional[date] = parse_date_field(release.get("release_date"))
+    assert release_date is not None
     description = release.get("description", "")
     funding = release.get("funding")
     version_group = release.get("version_group", None)
