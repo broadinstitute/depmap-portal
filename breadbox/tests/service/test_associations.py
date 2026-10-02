@@ -181,4 +181,4 @@ def test_compute_associations_resolves_labels_via_feature_type_metadata(
     assert label_by_id["featureID2"] == "featureLabel2"
     assert label_by_id["featureID3"] == "featureLabel3"
     # featureID4 has no metadata row, so its label should be null.
-    assert pd.isna(label_by_id["featureID4"])
+    assert "featureID4" not in label_by_id

@@ -29,12 +29,16 @@ from breadbox.schemas.custom_http_exception import (
 from breadbox.schemas.dataset import MatrixDimensionsInfo
 from breadbox.service import slice as slice_service
 import logging
-from breadbox.crud.dimension_ids import get_dimension_type_labels_by_id, get_dataset_feature_by_given_id
+from breadbox.crud.dimension_ids import (
+    get_dimension_type_labels_by_id,
+    get_dataset_feature_by_given_id,
+)
 import breadbox.crud.dimension_types as dimension_types_crud
 
 import packed_cor_tables
 
 from breadbox.service.dataset import get_subsetted_matrix_dataset_df
+import time
 
 log = logging.getLogger(__name__)
 from breadbox.utils.profiling import profiled_region
@@ -185,9 +189,6 @@ def _corr_with(reference: Union[pd.Series, pd.DataFrame], other: pd.DataFrame):
     # return dupped_cols.corrwith(other)
 
 
-import time
-
-
 def compute_associations(
     db: SessionWithUser,
     filestore_location: str,
@@ -273,6 +274,8 @@ def compute_associations(
     with_ids = pd.merge(
         left, given_id_index_mapping, left_index=True, right_on="given_id", how="inner"
     )
-    mask = ~pd.isna(with_ids["cor"])  # boolean Series
+    mask = (~pd.isna(with_ids["cor"])) & (
+        ~pd.isna(with_ids["label"])
+    )  # only return results where we successfully computed a correlation and we sucessfully found metadata for the given_id
     filtered = with_ids.loc[mask]
     return filtered[["given_id", "label", "cor"]]
