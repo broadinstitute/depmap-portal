@@ -192,8 +192,8 @@ def _get_dataset_features_with_caching(bb_dataset_id: str, user: str):
     way to evict the cache, but for the moment will need to fall back on how the cache gets
     cleared on a restart of the portal. 
 
-    like get_dataset_feature_labels_by_id(dataset_id) but also takes user so that it becomes 
-    the cache key and we avoid the risk of leaking information between users
+    like get_dataset_feature_labels_by_id(dataset_id) but also takes user as a parameter so that it becomes 
+    part of the cache key and we avoid the risk of leaking information between users
     """
     features = extensions.breadbox.get_client_for_user(user).get_dataset_features(
         bb_dataset_id
