@@ -117,14 +117,26 @@ rule run_fit_models:
     # okay, run sparkles workflow -- but this command is run by check_daintree_cache.py. The script will first see if we already have
     # a computed result, and if so, it skip running the command. However, also check to see if either of our testing flags are in place. 
     # if either testing flag is set, skip the whole caching script
-    run """PYTHONUNBUFFERED=1 {% if inputs.is_test_run.run_all_configs == 'yes' and inputs.is_test_run.fit_all_actuals == 'yes' %}python3 {{ inputs.check_daintree_cache.filename }} \
-      --expected-output daintree-output.json \
-      --cache-root {{config.S3_STAGING_URL}}/daintree-cache -- \
-      {{ inputs.daintree_input_config.filename }} \
-        {% endif %}{{config.sparkles_path}} workflow run \
+    run "bash" with """
+    
+    export PYTHONUNBUFFERED=1 
+
+    {% if inputs.is_test_run.run_all_configs == 'yes' and inputs.is_test_run.fit_all_actuals == 'yes' %}
+      SPARKLES_WORKFLOW_RUN="python3 {{ inputs.check_daintree_cache.filename }} \
+        --expected-output daintree-output.json \
+        --cache-root {{config.S3_STAGING_URL}}/daintree-cache -- \
+        {{ inputs.daintree_input_config.filename }} \
+        {{ config.sparkles_path }} workflow run"
+    {% else %}
+      SPARKLES_WORKFLOW_RUN="{{ config.sparkles_path }} workflow run"
+    {% endif %}
+    
+    eval $SPARKLES_WORKFLOW_RUN \
         --nodes 300 \
         --retry \
         --add-hash-to-job-id \
+        -p model_name={{ inputs.daintree_input_config.model_name }} \
+        -p screen_name={{ inputs.daintree_input_config.screen_name }} \
         -i {{ config.daintree_docker_image }} \
       daintree-fit-v3 workflow.json"""
 

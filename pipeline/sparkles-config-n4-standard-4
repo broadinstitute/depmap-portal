@@ -9,3 +9,4 @@ default_image=us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/
 sparklesworker_image=us-central1-docker.pkg.dev/depmap-portal-pipeline/sparkles/sparklesworker:6.0.0
 mount_1_type=hyperdisk-balanced
 mount_1_size_in_gb=50
+sprinkles_url=http://localhost:8080
