@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Annotated, Callable, Iterator, Literal
+from typing import Annotated, Callable, Generator, Literal
 from logging import getLogger
 from fastapi import Body, Depends, Query
 
@@ -26,7 +26,7 @@ log = getLogger(__name__)
 @contextmanager
 def _warn_if_slow(
     request: str, msg_builder: Callable[[], str], max_duration_seconds: float = 5
-) -> Iterator[None]:
+) -> Generator[None]:
     start = time.perf_counter()
     try:
         yield
