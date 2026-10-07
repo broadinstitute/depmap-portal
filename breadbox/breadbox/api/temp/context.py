@@ -22,24 +22,7 @@ import time
 
 log = getLogger(__name__)
 
-from breadbox.utils.profiling import profiled_region
-
-
-@contextmanager
-def _warn_if_slow(
-    request: str, msg_builder: Callable[[], str], max_duration_seconds: float = 5
-) -> Generator[None]:
-    start = time.perf_counter()
-    try:
-        yield
-    finally:
-        duration = time.perf_counter() - start
-        if duration > max_duration_seconds:
-            try:
-                log.warning("%s took %.2fs: %s", request, duration, msg_builder())
-            except Exception:
-                # don't let a bad msg_builder cause request to fail. Just log and move on
-                log.exception("Got exception trying to generate msg for _warn_if_slow")
+from breadbox.utils.profiling import profiled_region, warn_if_slow
 
 
 def _evaluate(db: SessionWithUser, settings: Settings, context: Context):
@@ -93,7 +76,7 @@ def evaluate_context(
     Also get the total number of "candidate" records (all records with labels belonging to the dimension type).
     Requests must be in the version 2 context format.
     """
-    with _warn_if_slow("evaluate_context", lambda: f"context={context}"):
+    with warn_if_slow("evaluate_context", lambda: f"context={context}"):
         result = _evaluate(db, settings, context)
 
         return ContextMatchResponse(
@@ -147,7 +130,7 @@ def get_context_dataset_coverage(
     it can make -- hence a parameter rather than a server-side policy.
     """
     with profiled_region("get_context_dataset_coverage"):
-        with _warn_if_slow(
+        with warn_if_slow(
             "get_context_dataset_coverage", lambda: f"scope={scope} context={context}",
         ):
             with profiled_region("get_context_dataset_coverage: _evaluate"):
