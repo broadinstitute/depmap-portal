@@ -7,6 +7,7 @@ from opentelemetry import trace
 from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
 from opentelemetry.instrumentation.celery import CeleryInstrumentor
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
+from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
@@ -63,7 +64,7 @@ def _tracing_disabled(env_name: str) -> bool:
 
 def configure_tracing(app: Flask, service: str, env_name: str):
     """Sets up a global OpenTelemetry TracerProvider exporting to Google Cloud Trace for the web
-    process, and instruments Flask, requests, and Celery (the task-publishing side). Call this
+    process, and instruments Flask, requests, httpx, and Celery (the task-publishing side). Call this
     once from create_app, after the Flask app has been constructed.
 
     Does nothing when env_name is "dev" or "test", so this is safe to call locally and in tests
@@ -75,6 +76,8 @@ def configure_tracing(app: Flask, service: str, env_name: str):
     _set_up_provider(service, env_name)
     FlaskInstrumentor().instrument_app(app)
     RequestsInstrumentor().instrument()
+    # breadbox_client (used by breadbox_dao) is built on httpx
+    HTTPXClientInstrumentor().instrument()
     CeleryInstrumentor().instrument()
 
 
@@ -89,6 +92,8 @@ def configure_celery_worker_tracing(service: str, env_name: str):
 
     _set_up_provider(service, env_name)
     RequestsInstrumentor().instrument()
+    # breadbox_client (used by breadbox_dao) is built on httpx
+    HTTPXClientInstrumentor().instrument()
     CeleryInstrumentor().instrument()
 
 

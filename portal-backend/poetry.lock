@@ -3588,6 +3588,27 @@ packaging = ">=21.0"
 instruments = ["flask (>=1.0)"]
 
 [[package]]
+name = "opentelemetry-instrumentation-httpx"
+version = "0.48b0"
+description = "OpenTelemetry HTTPX Instrumentation"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "opentelemetry_instrumentation_httpx-0.48b0-py3-none-any.whl", hash = "sha256:d94f9d612c82d09fe22944d1904a30a464c19bea2ba76be656c99a28ad8be8e5"},
+    {file = "opentelemetry_instrumentation_httpx-0.48b0.tar.gz", hash = "sha256:ee977479e10398931921fb995ac27ccdeea2e14e392cb27ef012fc549089b60a"},
+]
+
+[package.dependencies]
+opentelemetry-api = ">=1.12,<2.0"
+opentelemetry-instrumentation = "0.48b0"
+opentelemetry-semantic-conventions = "0.48b0"
+opentelemetry-util-http = "0.48b0"
+
+[package.extras]
+instruments = ["httpx (>=0.18.0)"]
+
+[[package]]
 name = "opentelemetry-instrumentation-requests"
 version = "0.48b0"
 description = "OpenTelemetry requests instrumentation"
@@ -5877,4 +5898,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "a9aed0466ea98b70b48bf1c5d325b51844a120620a889bff9df65010a0c859de"
+content-hash = "18a796e79b5bf5963df56516463abb54b05354971d36634edca9c6a0df7471f9"
