@@ -14,7 +14,8 @@ _profile_stack: contextvars.ContextVar[Optional[List]] = contextvars.ContextVar(
     "profile_stack", default=None
 )
 
-PRINT_PROFILE = False
+# control with env variable
+PRINT_PROFILE = os.environ.get("PRINT_PROFILE", "") == "1"
 
 log = logging.getLogger(__name__)
 
