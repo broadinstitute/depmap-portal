@@ -101,6 +101,8 @@ from flask_hunter_profile.flask_blueprint import (
 from depmap.custom_analyses.views import blueprint as custom_analyses_blueprint
 from depmap.predictive_insights.views import blueprint as predictive_insights_blueprint
 
+from depmap.telemetry import configure_tracing, is_celery_worker_process
+
 log = logging.getLogger(__name__)
 
 
@@ -148,6 +150,11 @@ def create_app(config_object):
 
     app = Flask(__name__.split(".")[0])
     app.config.from_object(config_object)
+
+    # The celery worker process configures its own tracing (under a separate service name) after
+    # forking, see depmap/compute/celery.py
+    if not is_celery_worker_process():
+        configure_tracing(app, service="depmap", env_name=app.config["ENV"])
 
     @app.context_processor
     def inject_jinja_globals():
