@@ -182,7 +182,7 @@ def _format_data_availability_summary_dict(summary_df: pd.DataFrame):
     return summary
 
 
-@extensions.cache_without_user_permissions()
+@extensions.memoize_without_user_permissions()
 def _get_data_availability():
     all_data_df = _get_all_data_avail_df()
     formatted_df = _get_formatted_all_data_avail_df(all_data_df)
