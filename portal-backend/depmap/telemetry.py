@@ -62,6 +62,14 @@ def _tracing_disabled(env_name: str) -> bool:
     return env_name in ("dev", "test")
 
 
+def _instrument_clients():
+    """Instruments the libraries used for outgoing calls, and Celery task publishing/execution."""
+    RequestsInstrumentor().instrument()
+    # breadbox_client (used by breadbox_dao) is built on httpx
+    HTTPXClientInstrumentor().instrument()
+    CeleryInstrumentor().instrument()
+
+
 def configure_tracing(app: Flask, service: str, env_name: str):
     """Sets up a global OpenTelemetry TracerProvider exporting to Google Cloud Trace for the web
     process, and instruments Flask, requests, httpx, and Celery (the task-publishing side). Call this
@@ -75,10 +83,7 @@ def configure_tracing(app: Flask, service: str, env_name: str):
 
     _set_up_provider(service, env_name)
     FlaskInstrumentor().instrument_app(app)
-    RequestsInstrumentor().instrument()
-    # breadbox_client (used by breadbox_dao) is built on httpx
-    HTTPXClientInstrumentor().instrument()
-    CeleryInstrumentor().instrument()
+    _instrument_clients()
 
 
 def configure_celery_worker_tracing(service: str, env_name: str):
@@ -91,10 +96,7 @@ def configure_celery_worker_tracing(service: str, env_name: str):
         return
 
     _set_up_provider(service, env_name)
-    RequestsInstrumentor().instrument()
-    # breadbox_client (used by breadbox_dao) is built on httpx
-    HTTPXClientInstrumentor().instrument()
-    CeleryInstrumentor().instrument()
+    _instrument_clients()
 
 
 def flush_tracing():
