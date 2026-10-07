@@ -19,7 +19,11 @@ if t.TYPE_CHECKING:
 
 import logging
 
+from opentelemetry import trace
+from opentelemetry.propagate import inject
+
 log = logging.getLogger(__name__)
+tracer = trace.get_tracer(__name__)
 
 
 class ProxyMiddlewareWithLogging:
@@ -139,6 +143,20 @@ class ProxyMiddlewareWithLogging:
                 headers.append(("Transfer-Encoding", "chunked"))
                 chunked = True
 
+            # Replace any inbound trace context with a span of our own, so breadbox's spans show up as
+            # children of this request's trace. (Does nothing useful if tracing is not configured.)
+            span = tracer.start_span(
+                "proxy to breadbox",
+                kind=trace.SpanKind.CLIENT,
+                attributes={"http.method": environ["REQUEST_METHOD"], "http.target": path},
+            )
+            headers[:] = [
+                (k, v) for k, v in headers if k.lower() not in ("traceparent", "tracestate")
+            ]
+            trace_headers: dict[str, str] = {}
+            inject(trace_headers, context=trace.set_span_in_context(span))
+            headers.extend(trace_headers.items())
+
             try:
                 if target.scheme == "http":
                     con = client.HTTPConnection(
@@ -202,6 +220,8 @@ class ProxyMiddlewareWithLogging:
                 )
 
                 return BadGateway()(environ, start_response)
+            finally:
+                span.end()
 
             start_response(
                 f"{resp.status} {resp.reason}",
