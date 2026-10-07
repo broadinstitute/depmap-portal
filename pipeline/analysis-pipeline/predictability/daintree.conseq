@@ -4,7 +4,7 @@
 # 3. Combine the output config files
 
 let sparkles_path = "PYTHONUNBUFFERED=1 sparkles"
-let daintree_docker_image = "us-central1-docker.pkg.dev/cds-docker-containers/docker/daintree:0.7.0"
+let daintree_docker_image = "us-central1-docker.pkg.dev/cds-docker-containers/docker/daintree:0.9.2"
 
 # Change the artifact below to run on a small subset of the full config (useful just for testing). Set all to "yes" 
 # for normal operation, or "no" for doing a subset of the normal work.
@@ -13,9 +13,20 @@ let daintree_docker_image = "us-central1-docker.pkg.dev/cds-docker-containers/do
 add-if-missing {
     "type": "daintree-test-run-flags", 
     "run_all_configs": "yes",
-    "fit_all_actuals": "no",
+    "fit_all_actuals": "only-ref",
     "select_n_features": "30"
 }
+
+#When fit_all_actuals='only-ref' we want to only fit models for a small set of known compounds/genes whose
+#results will be interpretable. Add to this list if there's additional examples we can use in the future:
+# Compounds:
+#  DARAXONRASIB PRC-005235888-422-54 PRC-008717476-705-91
+#  IMATINIB would be good but there's too many samples 
+#  DEG-35 PRC-008138974-313-12 (should see P53)
+#  DEG-37 PRC-000699183-281-19
+#  Temozolomide PRC-008831813-672-71
+let reference_genes_for_testing="MCL1|WRN|PELO"
+let reference_compounds_for_testing="PRC-005235888|PRC-008717476|PRC-008138974|PRC-000699183|PRC-008831813"
 
 # creates artifacts for each run of daintree with the parameters daintree will need. Also emits a file containing the model config information that breadbox needs
 rule process_model_config:
@@ -57,8 +68,10 @@ rule process_model_config:
         json.dump(config_dict, f, indent=2)   
 
     """
+
+    run "cp {{ inputs.model_config.filename }} config.yaml"
     run """python3 {{ inputs.script.filename }} \
-    --model_config {{ inputs.model_config.filename }} \
+    --model_config config.yaml \
     --input_config 'daintree_input_config.json' {% if inputs.is_test_run.run_all_configs == 'no' %}--test-only-first-n 3{% endif %}"""
 
 # this is the heart of running daintree: For each daintree config, run the workflow and produce an artifact per run.
@@ -82,14 +95,24 @@ rule run_fit_models:
     run "mkdir -p extra_python_files"
     run "cp {{ inputs.daintree_preprocess_script.filename }} extra_python_files/daintree_preprocess.py"
 
-    run """python3 {{ inputs.create_workflow_script.filename }} \
-        --config {{ inputs.daintree_input_config.filename }} \
-        --out workflow.json \
-        --select-n-features {{inputs.is_test_run.select_n_features}} \
-        --ncpus 4 \
-        --nfolds 5 \
-        --models-per-task {{ inputs.daintree_input_config.models_per_task}} {% if inputs.is_test_run.fit_all_actuals == 'no' %}--test-first-n-tasks 10{% endif %} \
-        --extra-python-files extra_python_files"""
+    run "bash" with """
+        {% if inputs.is_test_run.fit_all_actuals == 'only-ref' %}
+        # fit_all_actuals was 'no' so only fit models for a small number of known examples
+        FILTER_CLAUSE="--filter '{{ config.reference_genes_for_testing }}|{{ config.reference_compounds_for_testing }}'"
+        {% else %}
+        FILTER_CLAUSE=""
+        {% endif %}
+
+
+        python3 {{ inputs.create_workflow_script.filename }} \
+            --config {{ inputs.daintree_input_config.filename }} \
+            --out workflow.json \
+            --select-n-features {{inputs.is_test_run.select_n_features}} \
+            --ncpus 4 \
+            --nfolds 5 \
+            --models-per-task {{ inputs.daintree_input_config.models_per_task }} $FILTER_CLAUSE \
+            --extra-python-files extra_python_files
+    """ 
 
     # okay, run sparkles workflow -- but this command is run by check_daintree_cache.py. The script will first see if we already have
     # a computed result, and if so, it skip running the command. However, also check to see if either of our testing flags are in place. 
@@ -103,7 +126,7 @@ rule run_fit_models:
         --retry \
         --add-hash-to-job-id \
         -i {{ config.daintree_docker_image }} \
-      daintree-fit-v1 workflow.json"""
+      daintree-fit-v3 workflow.json"""
 
     # reformat daintree-output into artifacts conseq will understand
     run "python3" with """
