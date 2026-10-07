@@ -16,7 +16,6 @@ app = Celery(
 )
 
 
-
 @signals.worker_process_init.connect(weak=False)
 def init_celery_tracing(*args, **kwargs):
     # DEPMAP_ENV is the same variable autoapp.py uses to pick the config (it may carry a legacy

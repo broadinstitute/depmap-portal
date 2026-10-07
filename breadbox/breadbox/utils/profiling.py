@@ -9,12 +9,14 @@ import sys
 import logging
 import os
 import pickle
+from typing import Callable, Generator
 
 _profile_stack: contextvars.ContextVar[Optional[List]] = contextvars.ContextVar(
     "profile_stack", default=None
 )
 
-PRINT_PROFILE = False
+# control with env variable
+PRINT_PROFILE = os.environ.get("PRINT_PROFILE", "") == "1"
 
 log = logging.getLogger(__name__)
 
@@ -46,7 +48,7 @@ def get_max_rss():
 
 
 @contextmanager
-def profiled_region(msg):
+def profiled_region(msg: str):
     if not PRINT_PROFILE:
         yield
         return
@@ -85,3 +87,23 @@ def dump_to_disk(dest_name, **vars):
     with open(full_dest_name, "wb") as f:
         pickle.dump(vars, f)
     log.warning("Done")
+
+
+@contextmanager
+def warn_if_slow(
+    request: str, msg_builder: Callable[[], str], max_duration_seconds: float = 5
+):
+    """
+    prints the message returned by `msg_builder` if the body of the `with` block takes more than `max_duration_seconds`
+    """
+    start = time.perf_counter()
+    try:
+        yield
+    finally:
+        duration = time.perf_counter() - start
+        if duration > max_duration_seconds:
+            try:
+                log.warning("%s took %.2fs: %s", request, duration, msg_builder())
+            except Exception:
+                # don't let a bad msg_builder cause request to fail. Just log and move on
+                log.exception("Got exception trying to generate msg for _warn_if_slow")

@@ -148,10 +148,15 @@ class ProxyMiddlewareWithLogging:
             span = tracer.start_span(
                 "proxy to breadbox",
                 kind=trace.SpanKind.CLIENT,
-                attributes={"http.method": environ["REQUEST_METHOD"], "http.target": path},
+                attributes={
+                    "http.method": environ["REQUEST_METHOD"],
+                    "http.target": path,
+                },
             )
             headers[:] = [
-                (k, v) for k, v in headers if k.lower() not in ("traceparent", "tracestate")
+                (k, v)
+                for k, v in headers
+                if k.lower() not in ("traceparent", "tracestate")
             ]
             trace_headers: dict[str, str] = {}
             inject(trace_headers, context=trace.set_span_in_context(span))

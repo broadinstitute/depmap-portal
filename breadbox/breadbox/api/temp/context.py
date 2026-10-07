@@ -1,4 +1,5 @@
-from typing import Annotated, Literal
+from contextlib import contextmanager
+from typing import Annotated, Callable, Generator, Literal
 from logging import getLogger
 from fastapi import Body, Depends, Query
 
@@ -16,10 +17,12 @@ from breadbox.schemas.context import (
 from breadbox.service import slice as slice_service
 
 from breadbox.depmap_compute_embed.context import ContextEvaluator
-
 from .router import router
+import time
 
 log = getLogger(__name__)
+
+from breadbox.utils.profiling import profiled_region, warn_if_slow
 
 
 def _evaluate(db: SessionWithUser, settings: Settings, context: Context):
@@ -31,25 +34,28 @@ def _evaluate(db: SessionWithUser, settings: Settings, context: Context):
     """
 
     def slice_loader(slice_query):
-        return slice_service.get_slice_data(
-            db, settings.filestore_location, slice_query
-        )
+        with profiled_region("slice_loader"):
+            return slice_service.get_slice_data(
+                db, settings.filestore_location, slice_query
+            )
 
     def label_loader(dimension_type):
-        return get_dimension_type_labels_by_id(db, dimension_type)
+        with profiled_region("label_loader"):
+            return get_dimension_type_labels_by_id(db, dimension_type)
 
-    try:
-        evaluator = ContextEvaluator(context.dict(), slice_loader, label_loader)
-        return evaluator.evaluate()
-    except LookupError as e:
-        raise UserError(f"Encountered lookup error: {e}") from e
-    except (ValueError, TypeError) as e:
-        log.error(
-            "Context evaluation failed: %s\nContext: %s",
-            e,
-            context.model_dump_json(indent=2),
-        )
-        raise UserError(f"Context evaluation error: {e}") from e
+    with profiled_region("evaluator.evaluate()"):
+        try:
+            evaluator = ContextEvaluator(context.dict(), slice_loader, label_loader)
+            return evaluator.evaluate()
+        except LookupError as e:
+            raise UserError(f"Encountered lookup error: {e}") from e
+        except (ValueError, TypeError) as e:
+            log.error(
+                "Context evaluation failed: %s\nContext: %s",
+                e,
+                context.model_dump_json(indent=2),
+            )
+            raise UserError(f"Context evaluation error: {e}") from e
 
 
 @router.post(
@@ -70,11 +76,12 @@ def evaluate_context(
     Also get the total number of "candidate" records (all records with labels belonging to the dimension type).
     Requests must be in the version 2 context format.
     """
-    result = _evaluate(db, settings, context)
+    with warn_if_slow("evaluate_context", lambda: f"context={context}"):
+        result = _evaluate(db, settings, context)
 
-    return ContextMatchResponse(
-        ids=result.ids, labels=result.labels, num_candidates=result.num_candidates,
-    )
+        return ContextMatchResponse(
+            ids=result.ids, labels=result.labels, num_candidates=result.num_candidates,
+        )
 
 
 @router.post(
@@ -122,14 +129,22 @@ def get_context_dataset_coverage(
     information about its private datasets to get that, which is a trade only
     it can make -- hence a parameter rather than a server-side policy.
     """
-    result = _evaluate(db, settings, context)
+    with profiled_region("get_context_dataset_coverage"):
+        with warn_if_slow(
+            "get_context_dataset_coverage", lambda: f"scope={scope} context={context}",
+        ):
+            with profiled_region("get_context_dataset_coverage: _evaluate"):
+                result = _evaluate(db, settings, context)
 
-    counts = dataset_crud.count_dataset_coverage(
-        db,
-        db.user,
-        context.dimension_type,
-        result.ids,
-        public_only=(scope == "public"),
-    )
+            with profiled_region(
+                "get_context_dataset_coverage: dataset_crud.count_dataset_coverage"
+            ):
+                counts = dataset_crud.count_dataset_coverage(
+                    db,
+                    db.user,
+                    context.dimension_type,
+                    result.ids,
+                    public_only=(scope == "public"),
+                )
 
-    return ContextDatasetCoverageResponse(counts=counts, total=len(result.ids))
+            return ContextDatasetCoverageResponse(counts=counts, total=len(result.ids))
