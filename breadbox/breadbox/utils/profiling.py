@@ -48,7 +48,7 @@ def get_max_rss():
 
 
 @contextmanager
-def profiled_region(msg):
+def profiled_region(msg: str):
     if not PRINT_PROFILE:
         yield
         return
@@ -92,7 +92,7 @@ def dump_to_disk(dest_name, **vars):
 @contextmanager
 def warn_if_slow(
     request: str, msg_builder: Callable[[], str], max_duration_seconds: float = 5
-) -> Generator[None]:
+):
     """
     prints the message returned by `msg_builder` if the body of the `with` block takes more than `max_duration_seconds`
     """
