@@ -76,6 +76,11 @@ interface Props {
   hideLabelColumn?: boolean;
   // Dataset IDs that should not appear in the "Add Column" menus.
   hiddenDatasets?: Set<string>;
+  // Whether a column of the table's own index type may offer "Create context".
+  // Turn this off where the table already lives inside a context builder: that
+  // item opens another builder, which hosts another table, and so on. Columns
+  // of a *different* type are unaffected, since they lead somewhere new.
+  allowSameTypeContextCreation?: boolean;
   // Columns the caller supplies itself, for values that aren't Breadbox slices.
   // Give an entry an `accessorFn` to make it sortable, searchable and
   // exportable; omit it for a column that only renders controls.
@@ -178,6 +183,7 @@ function SliceTable({
   hideIdColumn = false,
   hideLabelColumn = false,
   hiddenDatasets = undefined,
+  allowSameTypeContextCreation = true,
   customColumns = undefined,
   customColumnPlacement = "end",
   getColumnDisplayOptions = undefined,
@@ -263,6 +269,7 @@ function SliceTable({
     implicitFilter,
     rowIds,
     hiddenDatasets,
+    allowSameTypeContextCreation,
     retryToken,
   });
 
