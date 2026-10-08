@@ -148,6 +148,7 @@ function ContextBuilderTableView() {
         downloadFilename={name}
         index_type_name={dimension_type}
         onChangeSlices={handleChangeSlices}
+        allowSameTypeContextCreation={false}
         enableRowSelection
         enableMultiRowSelection
         onChangeRowSelection={handleChangeRowSelection}
