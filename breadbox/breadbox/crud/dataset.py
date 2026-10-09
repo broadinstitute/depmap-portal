@@ -41,6 +41,7 @@ from breadbox.models.dataset import (
 from breadbox.crud.group import (
     get_group,
     get_groups_with_visible_contents,
+    get_group_ids_with_visible_contents,
 )
 from breadbox.io.filestore_crud import delete_data_files
 import typing
@@ -71,6 +72,30 @@ def get_dataset_filter_clauses(db, user):
     return filter_clauses
 
 
+def get_datasets_etag(db: SessionWithUser, group_id: Optional[str]) -> str:
+    """
+    returns an etag for the result of get_datasets(*args)
+
+    That is to say, given:
+    
+    etag1 = get_datasets_etag()
+    datasets1 = get_datasets()
+    ... and then later ...
+    etag2 = get_dataset_etag()
+
+    if etag1 == etag2 
+    then datasets1 == get_datasets()
+    """
+    # The ways for get_datasets()'s result to change:
+    # Datasets have been mutated (the data is immutable, but the metadata is not. The name or other such fields can change)
+    # Datasets have been added/removed
+    # User has lost/gained access to see a dataset.
+    # We want this calc to be as fast as possible, so rather than hash all of the things which can change, we're storing
+    # a uuid which acts as a etag for the entire state of a table, and we'll hash those all together
+    mutation_ids = get_last_mutation_ids([Dataset.__tablename__, ...])
+    return stable_json_hash(mutation_ids)
+
+
 def get_datasets(
     db: SessionWithUser,
     user: str,
@@ -80,6 +105,7 @@ def get_datasets(
     sample_type: Optional[str] = None,
     value_type: Optional[ValueType] = None,
     data_type: Optional[str] = None,
+    group_id: Optional[str] = None,
 ) -> list[Dataset]:
     assert (
         db.user == user
@@ -93,8 +119,13 @@ def get_datasets(
             raise UserError("If sample_id is specified, sample_type must be provided")
 
     # Get all datasets that should be discoverable by the user
-    groups = get_groups_with_visible_contents(db, user)
-    group_ids = [group.id for group in groups]
+    group_ids = get_group_ids_with_visible_contents(db, user)
+    if group_id is not None:
+        if group_id not in group_ids:
+            raise UserError("User does not have access to the queried group")
+        else:
+            # limit our search to just the one group requested
+            group_ids = [group_id]
 
     # Include columns for MatrixDataset, TabularDataset
     dataset_poly = with_polymorphic(Dataset, [MatrixDataset, TabularDataset])

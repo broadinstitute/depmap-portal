@@ -62,6 +62,19 @@ def get_groups_with_visible_contents(db: SessionWithUser, user: str) -> list[Gro
     ]
 
 
+def get_group_ids_with_visible_contents(db: SessionWithUser, user: str) -> list[str]:
+    """
+    A trivial helper wrapping get_groups_with_visible_contents so that we only return a list of IDs
+    if that's all that the caller needs. This is trivial, but I put it into it's own function
+    to make the contract explict that the caller only cares about the IDs. (We could likely make 
+    the implementation more efficient by introducing some caching, and this function would
+    be the place to do so.)
+    """
+    groups = get_groups_with_visible_contents(db, user)
+    group_ids = [group.id for group in groups]
+    return group_ids
+
+
 def get_group_by_name(
     db: SessionWithUser, user: str, group_name: str, write_access: bool = False
 ):

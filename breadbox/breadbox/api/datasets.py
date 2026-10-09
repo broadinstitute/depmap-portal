@@ -21,7 +21,7 @@ from fastapi import (
 
 from breadbox.db.session import SessionWithUser
 from breadbox.celery_task import utils
-
+from breadbox.api.utils import RenderIfNew, get_render_if_new
 from breadbox.compute.dataset_tasks import (
     get_file_dict,
     run_upload_dataset,
@@ -98,28 +98,45 @@ def _get_root_query(sq: SliceQuery) -> SliceQuery:
     response_model_exclude_none=False,
 )
 def get_datasets(
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+    user: Annotated[str, Depends(get_user)],
+    render_if_new: Annotated[RenderIfNew, Depends(get_render_if_new)],
     feature_id: Optional[str] = None,
     feature_type: Optional[str] = None,
     sample_id: Optional[str] = None,
     sample_type: Optional[str] = None,
     value_type: Optional[ValueType] = None,
-    db: SessionWithUser = Depends(get_db_with_user),
-    user: str = Depends(get_user),
+    group_id: Optional[str] = None,
 ):
     """
     Get metadata for all datasets available to current user.
 
     If `feature_id` and `feature_type` are specified, we return only the datasets that contain that feature.
 
+    If `group_id` is specified, we return only the datasets owned with that group
+
     If `feature_type` is specified without `feature_id`, then we return the datasets
     that have that `feature_type`.
 
     Similar for `sample_id` and `sample_type`.
     """
-    datasets = dataset_crud.get_datasets(
-        db, user, feature_id, feature_type, sample_id, sample_type, value_type
-    )
-    return [dataset for dataset in datasets]
+
+    etag = dataset_crud.get_datasets_etag(db, group_id)
+
+    def _get_datasets():
+        datasets = dataset_crud.get_datasets(
+            db,
+            user,
+            feature_id,
+            feature_type,
+            sample_id,
+            sample_type,
+            value_type,
+            group_id,
+        )
+        return [dataset for dataset in datasets]
+
+    return render_if_new(etag, _get_datasets)
 
 
 def _get_required_dataset(db: SessionWithUser, dataset_id: str):
