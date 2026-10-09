@@ -21,8 +21,8 @@ from fastapi import (
 from breadbox.db.session import SessionWithUser
 from breadbox.celery_task import utils
 from breadbox.api.utils import (
-    RenderIfNew,
-    get_render_if_new,
+    RenderIfChanged,
+    get_render_if_changed,
     create_etag_from_mutation_counts,
 )
 from breadbox.compute.dataset_tasks import (
@@ -104,41 +104,6 @@ DATASET_TABLES = [
 ACCESS_CONTROL_TABLES = [Group.__tablename__, GroupEntry.__tablename__]
 
 
-def get_datasets_etag(db: SessionWithUser, group_id: Optional[str]) -> str:
-    """
-    returns an etag for the result of get_datasets(*args)
-
-    That is to say, given:
-
-    etag1 = get_datasets_etag()
-    datasets1 = get_datasets()
-    ... and then later ...
-    etag2 = get_dataset_etag()
-
-    if etag1 == etag2
-    then datasets1 == get_datasets()
-    """
-    # The ways for get_datasets()'s result to change:
-    # Datasets have been mutated (the data is immutable, but the metadata is not. The name or other such fields can change)
-    # Datasets have been added/removed
-    # User has lost/gained access to see a dataset.
-    # The other query parameters (feature_id, sample_id, etc.) don't need to be part of the etag because clients
-    # only compare etags for requests with identical URLs.
-
-    tables_to_check = list(DATASET_TABLES)
-    if group_id == PUBLIC_GROUP_ID:
-        # Everyone can see everything in the public group, so if we've requested that, the result doesn't depend on
-        # the user or on changes to groups/group entries.
-        user = None
-    else:
-        # Otherwise, the result depends on who is asking and on which groups they belong to, so the user and the
-        # access control tables need to be part of the etag.
-        user = db.user
-        tables_to_check.extend(ACCESS_CONTROL_TABLES)
-
-    return create_etag_from_mutation_counts(db, tables_to_check, {"user": user})
-
-
 @router.get(
     "/",
     operation_id="get_datasets",
@@ -149,7 +114,7 @@ def get_datasets_etag(db: SessionWithUser, group_id: Optional[str]) -> str:
 def get_datasets(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
     user: Annotated[str, Depends(get_user)],
-    render_if_new: Annotated[RenderIfNew, Depends(get_render_if_new)],
+    render_if_changed: Annotated[RenderIfChanged, Depends(get_render_if_changed)],
     feature_id: Optional[str] = None,
     feature_type: Optional[str] = None,
     sample_id: Optional[str] = None,
@@ -170,7 +135,17 @@ def get_datasets(
     Similar for `sample_id` and `sample_type`.
     """
 
-    etag = get_datasets_etag(db, group_id)
+    tables_to_check = list(DATASET_TABLES)
+    if group_id == PUBLIC_GROUP_ID:
+        # Special case which we handle as an optimization: Everyone can see everything in the public group, so if we've requested that, the result doesn't depend on
+        # the user or on changes to groups/group entries.
+        ignore_user_in_etag = True
+    else:
+        # Otherwise, the result depends on who is asking and on which groups they belong to, so the user and the
+        # access control tables need to be part of the etag. Caching happens by url + etag, but user is sent via header
+        # so we need to add it to the etag
+        ignore_user_in_etag = False
+        tables_to_check.extend(ACCESS_CONTROL_TABLES)
 
     def _get_datasets():
         datasets = dataset_crud.get_datasets(
@@ -185,7 +160,13 @@ def get_datasets(
         )
         return datasets
 
-    return render_if_new(etag, _get_datasets, response_model=List[DatasetResponse])
+    return render_if_changed(
+        db,
+        tables_to_check,
+        _get_datasets,
+        response_model=List[DatasetResponse],
+        ignore_user=ignore_user_in_etag,
+    )
 
 
 def _get_required_dataset(db: SessionWithUser, dataset_id: str):

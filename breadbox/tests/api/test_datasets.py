@@ -2045,46 +2045,61 @@ def test_get_datasets_returns_304_when_unchanged(
     assert third.status_code == 200
     assert third.headers["ETag"] != etag
 
+    # and make sure it's stable
+    etag = third.headers["ETag"]
+    fourth = client.get("/datasets/", headers={**headers, "If-None-Match": etag})
+    assert fourth.status_code == 304
 
-def test_get_datasets_etag(minimal_db, settings):
+    # inserting a dataset invalidates the etag
+    num_datasets = len(third.json())
+    minimal_db.reset_user(settings.admin_users[0])
+    new_dataset = factories.matrix_dataset(minimal_db, settings)
+    minimal_db.commit()
+    fifth = client.get("/datasets/", headers={**headers, "If-None-Match": etag})
+    assert fifth.status_code == 200
+    assert fifth.headers["ETag"] != etag
+    assert len(fifth.json()) == num_datasets + 1
+
+    # and so does deleting one
+    etag = fifth.headers["ETag"]
+    minimal_db.execute(
+        text("DELETE FROM dataset WHERE id = :id"), {"id": new_dataset.id}
+    )
+    minimal_db.commit()
+    sixth = client.get("/datasets/", headers={**headers, "If-None-Match": etag})
+    assert sixth.status_code == 200
+    assert sixth.headers["ETag"] != etag
+    assert len(sixth.json()) == num_datasets
+
+
+def test_get_datasets_etag_varies_by_user_except_for_public_group(
+    client: TestClient, minimal_db: SessionWithUser, settings
+):
     from breadbox.crud.access_control import PUBLIC_GROUP_ID
-    from breadbox.api.datasets import get_datasets_etag
-    from breadbox.crud.group import add_group
-    from breadbox.schemas.group import GroupIn
 
-    db = minimal_db
-    user = db.user
-    etag = get_datasets_etag(db, None)
-    public_etag = get_datasets_etag(db, PUBLIC_GROUP_ID)
+    factories.matrix_dataset(minimal_db, settings)
+    minimal_db.commit()
 
-    # reading doesn't change the etag
-    assert get_datasets_etag(db, None) == etag
-    assert get_datasets_etag(db, PUBLIC_GROUP_ID) == public_etag
+    user_a = {"X-Forwarded-User": "user-a@sample.com"}
+    user_b = {"X-Forwarded-User": "user-b@sample.com"}
+    public_url = f"/datasets/?group_id={PUBLIC_GROUP_ID}"
 
-    # adding a dataset changes both
-    dataset = factories.matrix_dataset(db, settings)
-    db.flush()
-    etag_after_add = get_datasets_etag(db, None)
-    public_etag_after_add = get_datasets_etag(db, PUBLIC_GROUP_ID)
-    assert etag_after_add != etag
-    assert public_etag_after_add != public_etag
+    def get_etag(url, headers):
+        response = client.get(url, headers=headers)
+        assert_status_ok(response)
+        return response.headers["ETag"]
 
-    # as does editing one
-    dataset.name = "renamed"
-    db.flush()
-    etag_after_update = get_datasets_etag(db, None)
-    public_etag_after_update = get_datasets_etag(db, PUBLIC_GROUP_ID)
-    assert etag_after_update != etag_after_add
-    assert public_etag_after_update != public_etag_after_add
+    # Different users can see different datasets, so they get different etags...
+    etag_a = get_etag("/datasets/", user_a)
+    assert get_etag("/datasets/", user_a) == etag_a
+    assert get_etag("/datasets/", user_b) != etag_a
 
-    # adding a group changes what a user might see, but not the contents of the public group
-    add_group(db, user, GroupIn(name="another group"))
-    db.flush()
-    assert get_datasets_etag(db, None) != etag_after_update
-    assert get_datasets_etag(db, PUBLIC_GROUP_ID) == public_etag_after_update
+    # ... but everyone sees the same thing in the public group
+    public_etag_a = get_etag(public_url, user_a)
+    assert get_etag(public_url, user_b) == public_etag_a
 
-    # the etag is user specific, unless we're looking at just the public group
-    etag_for_user = get_datasets_etag(db, None)
-    db.reset_user("someone-else")
-    assert get_datasets_etag(db, None) != etag_for_user
-    assert get_datasets_etag(db, PUBLIC_GROUP_ID) == public_etag_after_update
+    # A user's etag is also invalidated by changes to groups, but the public group's isn't
+    minimal_db.execute(text("""INSERT INTO "group" (id, name) VALUES ('g1', 'new')"""))
+    minimal_db.commit()
+    assert get_etag("/datasets/", user_a) != etag_a
+    assert get_etag(public_url, user_a) == public_etag_a
