@@ -21,7 +21,11 @@ from fastapi import (
 
 from breadbox.db.session import SessionWithUser
 from breadbox.celery_task import utils
-from breadbox.api.utils import RenderIfNew, get_render_if_new, hash_mutation_counts
+from breadbox.api.utils import (
+    RenderIfNew,
+    get_render_if_new,
+    create_etag_from_mutation_counts,
+)
 from breadbox.compute.dataset_tasks import (
     get_file_dict,
     run_upload_dataset,
@@ -133,7 +137,7 @@ def get_datasets_etag(db: SessionWithUser, group_id: Optional[str]) -> str:
         user = db.user
         tables_to_check.extend(ACCESS_CONTROL_TABLES)
 
-    return hash_mutation_counts(db, tables_to_check, user)
+    return create_etag_from_mutation_counts(db, tables_to_check, {"user": user})
 
 
 @router.get(

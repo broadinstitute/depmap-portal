@@ -44,7 +44,7 @@ from breadbox.schemas.types import (
 )
 from breadbox.api.utils import (
     get_response_with_etag,
-    hash_mutation_counts,
+    create_etag_from_mutation_counts,
     RenderIfNew,
     get_render_if_new,
 )
@@ -646,10 +646,10 @@ def get_dimension_type_identifiers(
     # The response is determined by the dimension type, the datasets (and their metadata) the user can see
     # and the contents of the datasets. Datasets are immutable, so changes to their contents always come
     # along with the dataset being added/removed.
-    etag = hash_mutation_counts(
+    etag = create_etag_from_mutation_counts(
         db,
         DATASET_TABLES + ACCESS_CONTROL_TABLES + [DimensionTypeModel.__tablename__],
-        db.user,
+        {"user": db.user},
     )
 
     def _get_response_content() -> list[DimensionIdentifiers]:
