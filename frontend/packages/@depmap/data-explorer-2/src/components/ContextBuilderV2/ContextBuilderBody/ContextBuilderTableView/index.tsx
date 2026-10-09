@@ -83,6 +83,10 @@ function ContextBuilderTableView() {
   );
 
   const shouldConfirmRowSelection = useRef(false);
+  // The user's latest selection. Needed because `matchingIds` lags behind it:
+  // it still holds the rule-based matches until useMatches resolves for the
+  // new simple-list expression.
+  const manualSelection = useRef<string[] | null>(null);
 
   const handleChangeRowSelection = useCallback(
     (nextRowSelection: Record<string, boolean>) => {
@@ -90,19 +94,23 @@ function ContextBuilderTableView() {
         .filter(([, included]) => included)
         .map(([id]) => id);
 
+      manualSelection.current = selectedIds;
       replaceExprWithSimpleList(selectedIds);
       shouldConfirmRowSelection.current = true;
     },
     [replaceExprWithSimpleList]
   );
 
-  const sliceTableRef = useRef<{ forceInitialize: () => void }>(null);
+  const sliceTableRef = useRef<{
+    forceInitialize: (options?: { preserveSortOrder?: boolean }) => void;
+  }>(null);
   const shouldInitTable = useRef(false);
 
   useEffect(() => {
     if (isManualSelectMode && shouldConfirmRowSelection.current) {
       shouldConfirmRowSelection.current = false;
-      sliceTableRef.current?.forceInitialize();
+      // Keep rows where they are, so a row you just deselected doesn't jump.
+      sliceTableRef.current?.forceInitialize({ preserveSortOrder: true });
 
       confirmManualSelectMode().then((confirmed) => {
         if (!confirmed) {
@@ -141,7 +149,10 @@ function ContextBuilderTableView() {
             initialSlices: [...uniqueVariableSlices, ...tableOnlySlices],
             viewOnlySlices: new Set(uniqueVariableSlices),
             initialRowSelection: Object.fromEntries(
-              matchingIds.map((id) => [id, true])
+              (isManualSelectMode && manualSelection.current
+                ? manualSelection.current
+                : matchingIds
+              ).map((id) => [id, true])
             ),
           };
         }}
