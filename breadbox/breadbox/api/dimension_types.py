@@ -684,7 +684,6 @@ def get_dimension_type_identifiers(
         db,
         DATASET_TABLES + ACCESS_CONTROL_TABLES + [DimensionTypeModel.__tablename__],
         _get_response_content,
-        extra={"user": db.user},
     )
 
 
