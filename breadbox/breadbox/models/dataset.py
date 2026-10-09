@@ -145,7 +145,7 @@ class Dataset(Base, UUIDMixin, GroupMixin):
     __mapper_args__ = {"polymorphic_on": format, "polymorphic_identity": "dataset"}
 
 
-# Bump table_mutation.count for "dataset" on every insert/update/delete
+# Bump table_mutation.count on every insert/update/delete (used to compute etags)
 register_mutation_triggers(Dataset.__table__)
 
 
@@ -178,6 +178,9 @@ class TabularDataset(Dataset):
                 references=dimension.references_dimension_type_name,
             )
         return columns
+
+
+register_mutation_triggers(TabularDataset.__table__)
 
 
 class MatrixDataset(Dataset):
@@ -222,6 +225,9 @@ class MatrixDataset(Dataset):
     )  # jsonfied string of a list_strings
 
     __mapper_args__ = {"polymorphic_identity": "matrix_dataset"}
+
+
+register_mutation_triggers(MatrixDataset.__table__)
 
 
 class Dimension(Base, UUIDMixin, GroupMixin):

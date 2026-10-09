@@ -3,6 +3,7 @@ import json
 import uuid
 import numpy as np
 import pandas as pd
+from sqlalchemy import text
 
 from breadbox.crud.dataset import get_dataset
 from breadbox.crud.dimension_types import get_dimension_type
@@ -2022,3 +2023,68 @@ def test_get_feature_data(minimal_db, settings, client: TestClient):
         "units": dataset.units,
         "dataset_label": dataset.name,
     }
+
+
+def test_get_datasets_returns_304_when_unchanged(
+    client: TestClient, minimal_db: SessionWithUser, settings
+):
+    headers = {"X-Forwarded-User": settings.default_user}
+    factories.matrix_dataset(minimal_db, settings)
+
+    first = client.get("/datasets/", headers=headers)
+    assert_status_ok(first)
+    etag = first.headers["ETag"]
+
+    second = client.get("/datasets/", headers={**headers, "If-None-Match": etag})
+    assert second.status_code == 304
+
+    # a change invalidates the etag
+    minimal_db.execute(text("UPDATE dataset SET name = 'renamed'"))
+    minimal_db.commit()
+    third = client.get("/datasets/", headers={**headers, "If-None-Match": etag})
+    assert third.status_code == 200
+    assert third.headers["ETag"] != etag
+
+
+def test_get_datasets_etag(minimal_db, settings):
+    from breadbox.crud.access_control import PUBLIC_GROUP_ID
+    from breadbox.api.datasets import get_datasets_etag
+    from breadbox.crud.group import add_group
+    from breadbox.schemas.group import GroupIn
+
+    db = minimal_db
+    user = db.user
+    etag = get_datasets_etag(db, None)
+    public_etag = get_datasets_etag(db, PUBLIC_GROUP_ID)
+
+    # reading doesn't change the etag
+    assert get_datasets_etag(db, None) == etag
+    assert get_datasets_etag(db, PUBLIC_GROUP_ID) == public_etag
+
+    # adding a dataset changes both
+    dataset = factories.matrix_dataset(db, settings)
+    db.flush()
+    etag_after_add = get_datasets_etag(db, None)
+    public_etag_after_add = get_datasets_etag(db, PUBLIC_GROUP_ID)
+    assert etag_after_add != etag
+    assert public_etag_after_add != public_etag
+
+    # as does editing one
+    dataset.name = "renamed"
+    db.flush()
+    etag_after_update = get_datasets_etag(db, None)
+    public_etag_after_update = get_datasets_etag(db, PUBLIC_GROUP_ID)
+    assert etag_after_update != etag_after_add
+    assert public_etag_after_update != public_etag_after_add
+
+    # adding a group changes what a user might see, but not the contents of the public group
+    add_group(db, user, GroupIn(name="another group"))
+    db.flush()
+    assert get_datasets_etag(db, None) != etag_after_update
+    assert get_datasets_etag(db, PUBLIC_GROUP_ID) == public_etag_after_update
+
+    # the etag is user specific, unless we're looking at just the public group
+    etag_for_user = get_datasets_etag(db, None)
+    db.reset_user("someone-else")
+    assert get_datasets_etag(db, None) != etag_for_user
+    assert get_datasets_etag(db, PUBLIC_GROUP_ID) == public_etag_after_update

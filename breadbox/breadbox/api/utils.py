@@ -11,8 +11,7 @@ def get_client_etag(
         Union[str, None], Header()
     ] = None,  # etag from the client's cache
 ) -> Union[str, None]:
-    if if_none_match is None:
-        return None
+    return if_none_match
 
 
 RenderIfNew = Callable[[str, Callable[[], Any]], None]

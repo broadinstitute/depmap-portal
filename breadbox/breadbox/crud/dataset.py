@@ -72,30 +72,6 @@ def get_dataset_filter_clauses(db, user):
     return filter_clauses
 
 
-def get_datasets_etag(db: SessionWithUser, group_id: Optional[str]) -> str:
-    """
-    returns an etag for the result of get_datasets(*args)
-
-    That is to say, given:
-    
-    etag1 = get_datasets_etag()
-    datasets1 = get_datasets()
-    ... and then later ...
-    etag2 = get_dataset_etag()
-
-    if etag1 == etag2 
-    then datasets1 == get_datasets()
-    """
-    # The ways for get_datasets()'s result to change:
-    # Datasets have been mutated (the data is immutable, but the metadata is not. The name or other such fields can change)
-    # Datasets have been added/removed
-    # User has lost/gained access to see a dataset.
-    # We want this calc to be as fast as possible, so rather than hash all of the things which can change, we're storing
-    # a uuid which acts as a etag for the entire state of a table, and we'll hash those all together
-    mutation_ids = get_last_mutation_ids([Dataset.__tablename__, ...])
-    return stable_json_hash(mutation_ids)
-
-
 def get_datasets(
     db: SessionWithUser,
     user: str,
