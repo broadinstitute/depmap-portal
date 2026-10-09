@@ -76,6 +76,9 @@ class DimensionType(Base):
     )
 
 
+register_mutation_triggers(DimensionType.__table__)
+
+
 class DimensionTypeLabel(Base):
     __tablename__ = "dimension_type_label"
 

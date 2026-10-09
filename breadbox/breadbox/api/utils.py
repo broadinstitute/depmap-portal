@@ -1,9 +1,13 @@
 import hashlib
+import json
 
 from fastapi import status, Depends, Header
 from fastapi.responses import ORJSONResponse, Response
 from typing import Any, Callable, Optional, List, Union
 from typing import Annotated
+
+from breadbox.crud.table_mutation import get_mutation_counts
+from breadbox.db.session import SessionWithUser
 
 
 def get_client_etag(
@@ -63,3 +67,14 @@ def hash_id_list(values: list[str]):
     for id in values:
         hash.update(id.encode())
     return hash.hexdigest()
+
+
+def hash_mutation_counts(
+    db: SessionWithUser, table_names: List[str], user: Optional[str]
+) -> str:
+    """
+    Computes an etag from how many times each of the given tables have been mutated (see table_mutation),
+    and optionally the user, for responses which differ by user.
+    """
+    key = {"mutation_counts": get_mutation_counts(db, table_names), "user": user}
+    return hashlib.md5(json.dumps(key, sort_keys=True).encode()).hexdigest()

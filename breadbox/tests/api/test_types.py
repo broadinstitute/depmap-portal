@@ -1,7 +1,7 @@
 from breadbox.crud.dimension_types import get_dimension_type
 from breadbox.schemas.types import IdMapping
 from fastapi.testclient import TestClient
-from sqlalchemy import and_
+from sqlalchemy import and_, text
 from breadbox.models.dataset import DimensionType, Dataset, TabularDataset
 from breadbox.models.dataset import (
     Dimension,
@@ -1659,3 +1659,30 @@ def test_metadata_dataset_with_bad_list_values(
     )
     assert_status_not_ok(r_not_all_strings)
     assert r_not_all_strings.status_code == 400
+
+
+def test_get_dimension_type_identifiers_etag(client: TestClient, minimal_db, settings):
+    headers = {"X-Forwarded-Email": settings.admin_users[0]}
+    url = "types/dimensions/depmap_model/identifiers"
+
+    first = client.get(url, headers=headers)
+    assert_status_ok(first)
+    etag = first.headers["ETag"]
+
+    # unchanged -> 304
+    second = client.get(url, headers={**headers, "If-None-Match": etag})
+    assert second.status_code == 304
+
+    # changing the dimension type invalidates the etag
+    minimal_db.execute(text("UPDATE dimension_type SET display_name = 'renamed'"))
+    minimal_db.commit()
+    third = client.get(url, headers={**headers, "If-None-Match": etag})
+    assert third.status_code == 200
+    assert third.headers["ETag"] != etag
+
+    # as does adding a dataset
+    etag = third.headers["ETag"]
+    factories.matrix_dataset(minimal_db, settings)
+    fourth = client.get(url, headers={**headers, "If-None-Match": etag})
+    assert fourth.status_code == 200
+    assert fourth.headers["ETag"] != etag

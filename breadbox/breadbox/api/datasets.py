@@ -1,5 +1,3 @@
-import hashlib
-import json
 from typing import List, Optional, Set, Annotated
 from logging import getLogger
 from ..db.util import transaction
@@ -23,7 +21,7 @@ from fastapi import (
 
 from breadbox.db.session import SessionWithUser
 from breadbox.celery_task import utils
-from breadbox.api.utils import RenderIfNew, get_render_if_new
+from breadbox.api.utils import RenderIfNew, get_render_if_new, hash_mutation_counts
 from breadbox.compute.dataset_tasks import (
     get_file_dict,
     run_upload_dataset,
@@ -33,7 +31,6 @@ from ..schemas.custom_http_exception import UserError, DatasetNotFoundError
 from ..config import Settings, get_settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from ..crud import dataset as dataset_crud
-from ..crud.table_mutation import get_mutation_counts
 from ..models.group import Group, GroupEntry
 from ..crud import dimension_types as type_crud
 from ..crud.dimension_ids import get_dataset_feature_by_given_id
@@ -139,12 +136,7 @@ def get_datasets_etag(db: SessionWithUser, group_id: Optional[str]) -> str:
         user = db.user
         tables_to_check.extend(ACCESS_CONTROL_TABLES)
 
-    key = {
-        "mutation_counts": get_mutation_counts(db, tables_to_check),
-        "user": user,
-    }
-
-    return hashlib.md5(json.dumps(key, sort_keys=True).encode()).hexdigest()
+    return hash_mutation_counts(db, tables_to_check, user)
 
 
 @router.get(
