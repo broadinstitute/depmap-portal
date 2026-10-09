@@ -45,8 +45,8 @@ from breadbox.schemas.types import (
 from breadbox.api.utils import (
     get_response_with_etag,
     create_etag_from_mutation_counts,
-    RenderIfNew,
-    get_render_if_new,
+    RenderIfChanged,
+    get_render_if_changed,
 )
 from breadbox.service import metadata as metadata_service
 from breadbox.db.util import transaction
@@ -632,7 +632,7 @@ def list_dimension_types_endpoint(db: SessionWithUser = Depends(get_db_with_user
 def get_dimension_type_identifiers(
     name: str,
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
-    render_if_new: Annotated[RenderIfNew, Depends(get_render_if_new)],
+    render_if_changed: Annotated[RenderIfChanged, Depends(get_render_if_changed)],
     data_type: Annotated[Union[str, None], Query()] = None,
     show_only_dimensions_in_datasets: Annotated[bool, Query()] = False,
     limit: Annotated[Union[int, None], Query()] = None,
@@ -646,11 +646,6 @@ def get_dimension_type_identifiers(
     # The response is determined by the dimension type, the datasets (and their metadata) the user can see
     # and the contents of the datasets. Datasets are immutable, so changes to their contents always come
     # along with the dataset being added/removed.
-    etag = create_etag_from_mutation_counts(
-        db,
-        DATASET_TABLES + ACCESS_CONTROL_TABLES + [DimensionTypeModel.__tablename__],
-        {"user": db.user},
-    )
 
     def _get_response_content() -> list[DimensionIdentifiers]:
         dim_type = type_crud.get_dimension_type(db, name)
@@ -685,7 +680,12 @@ def get_dimension_type_identifiers(
             for id, label in sorted(dimension_ids_and_labels.items())
         ]
 
-    return render_if_new(etag, _get_response_content)
+    return render_if_changed(
+        db,
+        DATASET_TABLES + ACCESS_CONTROL_TABLES + [DimensionTypeModel.__tablename__],
+        _get_response_content,
+        extra={"user": db.user},
+    )
 
 
 @router.patch(

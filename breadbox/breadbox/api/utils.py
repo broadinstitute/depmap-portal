@@ -20,31 +20,57 @@ def get_client_etag(
     return if_none_match
 
 
-class RenderIfNew(Protocol):
+class RenderIfChanged(Protocol):
     def __call__(
         self,
-        current_etag: str,
+        db: SessionWithUser,
+        tables_to_check: List[str],
         get_response_content_callback: Callable[[], Any],
         *,
         response_model: Optional[Any] = None,
+        ignore_user: bool = False,
+        extra: Optional[Any] = None
     ) -> Response:
         ...
 
 
-def get_render_if_new(
-    request_etag: Annotated[Optional[str], Depends(get_client_etag)]
-) -> RenderIfNew:
+def get_render_if_changed(
+    request_etag: Annotated[Optional[str], Depends(get_client_etag)],
+) -> RenderIfChanged:
     """
     Method intended to be used as a dependency to handle checking etag and only rendering a response
     if etag does not match.
     """
 
     def needs_render(
-        current_etag: str,
+        db: SessionWithUser,
+        tables_to_check: List[str],
         get_response_content_callback: Callable[[], Any],
         *,
         response_model: Optional[Any] = None,
+        ignore_user: bool = False,
+        extra: Optional[Any] = None
     ):
+        if extra is None:
+            extra = {}
+
+        # don't want to mutate a passed in `extra` so wrap it in another dict that we own
+        _extra = {"extra": extra}
+        if not ignore_user:
+            # special case: include user in the etag by default. We allow callers to opt-out
+            # but we want to bias towards not doing anything which might allow leaks across users.
+            # the http client will be able to cache using the key (url + etag), but the user
+            # doesn't appear in the url (as it's sent via http header) so always encode it into the etag.
+            # (Unless the caller can promise that the result doesn't depend on user)
+            #
+            # Also note: Today we're hashing the literal user. However, we could increase our cache hit rate
+            # by instead looking up the group IDs associated with the user and encoding those. Many users
+            # are members of the same group_id set, so etags could be common across users. Just noting as
+            # a possibility for a future optimization if necessary.
+            _extra["user"] = db.user
+
+        current_etag = create_etag_from_mutation_counts(db, tables_to_check, _extra)
+
         return get_response_with_etag(
             current_etag, request_etag, get_response_content_callback, response_model
         )
