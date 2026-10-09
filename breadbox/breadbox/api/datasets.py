@@ -119,11 +119,8 @@ def get_datasets_etag(db: SessionWithUser, group_id: Optional[str]) -> str:
     # Datasets have been mutated (the data is immutable, but the metadata is not. The name or other such fields can change)
     # Datasets have been added/removed
     # User has lost/gained access to see a dataset.
-    # We want this calc to be as fast as possible, so rather than hash all of the things which can change, we're storing
-    # a mutation count which acts as a etag for the entire state of a table, and we'll hash those all together
-    #
-    # The other query parameters (feature_id, sample_id, etc.) don't need to be included because clients only
-    # compare etags for requests with identical URLs.
+    # The other query parameters (feature_id, sample_id, etc.) don't need to be part of the etag because clients
+    # only compare etags for requests with identical URLs.
 
     tables_to_check = list(DATASET_TABLES)
     if group_id == PUBLIC_GROUP_ID:

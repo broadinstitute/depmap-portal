@@ -75,6 +75,9 @@ def hash_mutation_counts(
     """
     Computes an etag from how many times each of the given tables have been mutated (see table_mutation),
     and optionally the user, for responses which differ by user.
+
+    We want this calc to be as fast as possible, so rather than hash all of the things which can change, we're
+    storing a mutation count which acts as a etag for the entire state of a table, and we hash those all together.
     """
     key = {"mutation_counts": get_mutation_counts(db, table_names), "user": user}
     return hashlib.md5(json.dumps(key, sort_keys=True).encode()).hexdigest()
