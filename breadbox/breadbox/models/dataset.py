@@ -19,6 +19,7 @@ from breadbox.schemas.dataset import ColumnMetadata
 from breadbox.db.base_class import Base, UUIDMixin
 from breadbox.models.group import GroupMixin
 from breadbox.models.data_type import DataType
+from breadbox.models.table_mutation import register_mutation_triggers
 from typing import Any, TypeVar, Type, TYPE_CHECKING, Optional
 from ..schemas.dataset import ValueType, AnnotationType
 
@@ -142,6 +143,10 @@ class Dataset(Base, UUIDMixin, GroupMixin):
     )  # NOTE: MD5 hashes are 128bits -> 32 hex digits
 
     __mapper_args__ = {"polymorphic_on": format, "polymorphic_identity": "dataset"}
+
+
+# Bump table_mutation.count for "dataset" on every insert/update/delete
+register_mutation_triggers(Dataset.__table__)
 
 
 class TabularDataset(Dataset):
