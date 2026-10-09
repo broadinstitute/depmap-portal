@@ -2,7 +2,6 @@ from typing import List, Optional, Set, Annotated
 from logging import getLogger
 from ..db.util import transaction
 from breadbox.utils.asserts import index_error_msg
-from pydantic import Json
 
 from pydantic import Json
 
@@ -21,7 +20,11 @@ from fastapi import (
 
 from breadbox.db.session import SessionWithUser
 from breadbox.celery_task import utils
-
+from breadbox.api.utils import (
+    RenderIfChanged,
+    get_render_if_changed,
+    create_etag_from_mutation_counts,
+)
 from breadbox.compute.dataset_tasks import (
     get_file_dict,
     run_upload_dataset,
@@ -31,6 +34,7 @@ from ..schemas.custom_http_exception import UserError, DatasetNotFoundError
 from ..config import Settings, get_settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from ..crud import dataset as dataset_crud
+from ..models.group import Group, GroupEntry
 from ..crud import dimension_types as type_crud
 from ..crud.dimension_ids import get_dataset_feature_by_given_id
 
@@ -90,6 +94,16 @@ def _get_root_query(sq: SliceQuery) -> SliceQuery:
     return current
 
 
+# The tables holding the datasets themselves
+DATASET_TABLES = [
+    DatasetModel.__tablename__,
+    TabularDataset.__tablename__,
+    MatrixDataset.__tablename__,
+]
+# The tables which determine which datasets a user is allowed to see
+ACCESS_CONTROL_TABLES = [Group.__tablename__, GroupEntry.__tablename__]
+
+
 @router.get(
     "/",
     operation_id="get_datasets",
@@ -98,28 +112,61 @@ def _get_root_query(sq: SliceQuery) -> SliceQuery:
     response_model_exclude_none=False,
 )
 def get_datasets(
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+    user: Annotated[str, Depends(get_user)],
+    render_if_changed: Annotated[RenderIfChanged, Depends(get_render_if_changed)],
     feature_id: Optional[str] = None,
     feature_type: Optional[str] = None,
     sample_id: Optional[str] = None,
     sample_type: Optional[str] = None,
     value_type: Optional[ValueType] = None,
-    db: SessionWithUser = Depends(get_db_with_user),
-    user: str = Depends(get_user),
+    group_id: Optional[str] = None,
 ):
     """
     Get metadata for all datasets available to current user.
 
     If `feature_id` and `feature_type` are specified, we return only the datasets that contain that feature.
 
+    If `group_id` is specified, we return only the datasets owned with that group
+
     If `feature_type` is specified without `feature_id`, then we return the datasets
     that have that `feature_type`.
 
     Similar for `sample_id` and `sample_type`.
     """
-    datasets = dataset_crud.get_datasets(
-        db, user, feature_id, feature_type, sample_id, sample_type, value_type
+
+    tables_to_check = list(DATASET_TABLES)
+    if group_id == PUBLIC_GROUP_ID:
+        # Special case which we handle as an optimization: Everyone can see everything in the public group, so if we've requested that, the result doesn't depend on
+        # the user or on changes to groups/group entries.
+        ignore_user_in_etag = True
+    else:
+        # Otherwise, the result depends on who is asking and on which groups they belong to, so the user and the
+        # access control tables need to be part of the etag. Caching happens by url + etag, but user is sent via header
+        # so we need to add it to the etag
+        ignore_user_in_etag = False
+        tables_to_check.extend(ACCESS_CONTROL_TABLES)
+
+    def _get_datasets():
+        datasets = dataset_crud.get_datasets(
+            db,
+            user,
+            feature_id,
+            feature_type,
+            sample_id,
+            sample_type,
+            value_type,
+            group_id,
+        )
+        return datasets
+
+    return render_if_changed(
+        db,
+        tables_to_check,
+        _get_datasets,
+        response_model=List[DatasetResponse],
+        ignore_user=ignore_user_in_etag,
     )
-    return [dataset for dataset in datasets]
 
 
 def _get_required_dataset(db: SessionWithUser, dataset_id: str):

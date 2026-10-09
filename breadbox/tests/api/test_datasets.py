@@ -3,6 +3,7 @@ import json
 import uuid
 import numpy as np
 import pandas as pd
+from sqlalchemy import text
 
 from breadbox.crud.dataset import get_dataset
 from breadbox.crud.dimension_types import get_dimension_type
@@ -2022,3 +2023,83 @@ def test_get_feature_data(minimal_db, settings, client: TestClient):
         "units": dataset.units,
         "dataset_label": dataset.name,
     }
+
+
+def test_get_datasets_returns_304_when_unchanged(
+    client: TestClient, minimal_db: SessionWithUser, settings
+):
+    headers = {"X-Forwarded-User": settings.default_user}
+    factories.matrix_dataset(minimal_db, settings)
+
+    first = client.get("/datasets/", headers=headers)
+    assert_status_ok(first)
+    etag = first.headers["ETag"]
+
+    second = client.get("/datasets/", headers={**headers, "If-None-Match": etag})
+    assert second.status_code == 304
+
+    # a change invalidates the etag
+    minimal_db.execute(text("UPDATE dataset SET name = 'renamed'"))
+    minimal_db.commit()
+    third = client.get("/datasets/", headers={**headers, "If-None-Match": etag})
+    assert third.status_code == 200
+    assert third.headers["ETag"] != etag
+
+    # and make sure it's stable
+    etag = third.headers["ETag"]
+    fourth = client.get("/datasets/", headers={**headers, "If-None-Match": etag})
+    assert fourth.status_code == 304
+
+    # inserting a dataset invalidates the etag
+    num_datasets = len(third.json())
+    minimal_db.reset_user(settings.admin_users[0])
+    new_dataset = factories.matrix_dataset(minimal_db, settings)
+    minimal_db.commit()
+    fifth = client.get("/datasets/", headers={**headers, "If-None-Match": etag})
+    assert fifth.status_code == 200
+    assert fifth.headers["ETag"] != etag
+    assert len(fifth.json()) == num_datasets + 1
+
+    # and so does deleting one
+    etag = fifth.headers["ETag"]
+    minimal_db.execute(
+        text("DELETE FROM dataset WHERE id = :id"), {"id": new_dataset.id}
+    )
+    minimal_db.commit()
+    sixth = client.get("/datasets/", headers={**headers, "If-None-Match": etag})
+    assert sixth.status_code == 200
+    assert sixth.headers["ETag"] != etag
+    assert len(sixth.json()) == num_datasets
+
+
+def test_get_datasets_etag_varies_by_user_except_for_public_group(
+    client: TestClient, minimal_db: SessionWithUser, settings
+):
+    from breadbox.crud.access_control import PUBLIC_GROUP_ID
+
+    factories.matrix_dataset(minimal_db, settings)
+    minimal_db.commit()
+
+    user_a = {"X-Forwarded-User": "user-a@sample.com"}
+    user_b = {"X-Forwarded-User": "user-b@sample.com"}
+    public_url = f"/datasets/?group_id={PUBLIC_GROUP_ID}"
+
+    def get_etag(url, headers):
+        response = client.get(url, headers=headers)
+        assert_status_ok(response)
+        return response.headers["ETag"]
+
+    # Different users can see different datasets, so they get different etags...
+    etag_a = get_etag("/datasets/", user_a)
+    assert get_etag("/datasets/", user_a) == etag_a
+    assert get_etag("/datasets/", user_b) != etag_a
+
+    # ... but everyone sees the same thing in the public group
+    public_etag_a = get_etag(public_url, user_a)
+    assert get_etag(public_url, user_b) == public_etag_a
+
+    # A user's etag is also invalidated by changes to groups, but the public group's isn't
+    minimal_db.execute(text("""INSERT INTO "group" (id, name) VALUES ('g1', 'new')"""))
+    minimal_db.commit()
+    assert get_etag("/datasets/", user_a) != etag_a
+    assert get_etag(public_url, user_a) == public_etag_a
