@@ -41,7 +41,12 @@ from breadbox.schemas.types import (
     AddDimensionType,
     DimensionIdentifiers,
 )
-from breadbox.api.utils import get_response_with_etag, hash_id_list
+from breadbox.api.utils import (
+    get_response_with_etag,
+    hash_id_list,
+    RenderIfNew,
+    get_render_if_new,
+)
 from breadbox.service import metadata as metadata_service
 from breadbox.db.util import transaction
 
@@ -625,13 +630,11 @@ def list_dimension_types_endpoint(db: SessionWithUser = Depends(get_db_with_user
 )
 def get_dimension_type_identifiers(
     name: str,
+    limit: Annotated[Union[int, None], Query()],
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+    render_if_new: Annotated[RenderIfNew, Depends(get_render_if_new)],
     data_type: Annotated[Union[str, None], Query()] = None,
     show_only_dimensions_in_datasets: Annotated[bool, Query()] = False,
-    limit: Annotated[Union[int, None], Query()] = None,
-    db: SessionWithUser = Depends(get_db_with_user),
-    if_none_match: Annotated[
-        Union[str, None], Header()
-    ] = None,  # etag from the client's cache
 ):
     """
     For the given dimension type and filters, get all given IDs and labels.
@@ -679,7 +682,7 @@ def get_dimension_type_identifiers(
             for id, label in sorted(dimension_ids_and_labels.items())
         ]
 
-    return get_response_with_etag(etag, if_none_match, _get_response_content)
+    return render_if_new(etag, _get_response_content)
 
 
 @router.patch(
