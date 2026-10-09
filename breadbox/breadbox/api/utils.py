@@ -1,10 +1,12 @@
 import hashlib
 import json
+from pydantic import Json, TypeAdapter
 
 from fastapi import status, Depends, Header
 from fastapi.responses import ORJSONResponse, Response
 from typing import Any, Callable, Dict, Optional, List, Union
 from typing import Annotated
+from typing import Any, Callable, Optional, Protocol
 
 from breadbox.crud.table_mutation import get_mutation_counts
 from breadbox.db.session import SessionWithUser
@@ -18,7 +20,15 @@ def get_client_etag(
     return if_none_match
 
 
-RenderIfNew = Callable[[str, Callable[[], Any]], None]
+class RenderIfNew(Protocol):
+    def __call__(
+        self,
+        current_etag: str,
+        get_response_content_callback: Callable[[], Any],
+        *,
+        response_model: Optional[Any] = None,
+    ) -> Response:
+        ...
 
 
 def get_render_if_new(
@@ -30,10 +40,13 @@ def get_render_if_new(
     """
 
     def needs_render(
-        current_etag: str, get_response_content_callback: Callable[[], Any]
+        current_etag: str,
+        get_response_content_callback: Callable[[], Any],
+        *,
+        response_model: Optional[Any] = None,
     ):
         return get_response_with_etag(
-            current_etag, request_etag, get_response_content_callback
+            current_etag, request_etag, get_response_content_callback, response_model
         )
 
     return needs_render
@@ -43,6 +56,7 @@ def get_response_with_etag(
     etag: str,
     if_none_match: Optional[str],
     get_response_content_callback: Callable[[], Any],
+    response_model: Optional[type],
 ) -> Response:
     """
     Helper function to handle ETag-based caching. This etag should be a hashed 
@@ -55,11 +69,20 @@ def get_response_with_etag(
     if if_none_match and if_none_match == etag:
         return Response(status_code=status.HTTP_304_NOT_MODIFIED, **common)
 
-    return ORJSONResponse(
-        status_code=status.HTTP_200_OK,
-        content=get_response_content_callback(),
-        **common
-    )
+    result = get_response_content_callback()
+    if response_model is not None:
+        # render_if_new builds the response itself, so FastAPI's response_model isn't applied.
+        # Serialize the ORM objects the same way here.
+        adapter = TypeAdapter(response_model)
+        content = adapter.dump_python(
+            adapter.validate_python(result, from_attributes=True),
+            mode="json",
+            by_alias=False,
+        )
+    else:
+        content = result
+
+    return ORJSONResponse(status_code=status.HTTP_200_OK, content=content, **common)
 
 
 def hash_id_list(values: list[str]):
