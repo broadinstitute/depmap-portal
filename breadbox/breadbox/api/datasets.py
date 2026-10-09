@@ -1,8 +1,10 @@
+import hashlib
+import json
 from typing import List, Optional, Set, Annotated
 from logging import getLogger
 from ..db.util import transaction
 from breadbox.utils.asserts import index_error_msg
-from pydantic import Json
+from pydantic import Json, TypeAdapter
 
 from pydantic import Json
 
@@ -31,6 +33,8 @@ from ..schemas.custom_http_exception import UserError, DatasetNotFoundError
 from ..config import Settings, get_settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from ..crud import dataset as dataset_crud
+from ..crud.table_mutation import get_mutation_counts
+from ..models.group import Group, GroupEntry
 from ..crud import dimension_types as type_crud
 from ..crud.dimension_ids import get_dataset_feature_by_given_id
 
@@ -90,6 +94,59 @@ def _get_root_query(sq: SliceQuery) -> SliceQuery:
     return current
 
 
+# The tables holding the datasets themselves
+DATASET_TABLES = [
+    DatasetModel.__tablename__,
+    TabularDataset.__tablename__,
+    MatrixDataset.__tablename__,
+]
+# The tables which determine which datasets a user is allowed to see
+ACCESS_CONTROL_TABLES = [Group.__tablename__, GroupEntry.__tablename__]
+
+
+def get_datasets_etag(db: SessionWithUser, group_id: Optional[str]) -> str:
+    """
+    returns an etag for the result of get_datasets(*args)
+
+    That is to say, given:
+
+    etag1 = get_datasets_etag()
+    datasets1 = get_datasets()
+    ... and then later ...
+    etag2 = get_dataset_etag()
+
+    if etag1 == etag2
+    then datasets1 == get_datasets()
+    """
+    # The ways for get_datasets()'s result to change:
+    # Datasets have been mutated (the data is immutable, but the metadata is not. The name or other such fields can change)
+    # Datasets have been added/removed
+    # User has lost/gained access to see a dataset.
+    # We want this calc to be as fast as possible, so rather than hash all of the things which can change, we're storing
+    # a mutation count which acts as a etag for the entire state of a table, and we'll hash those all together
+    #
+    # The other query parameters (feature_id, sample_id, etc.) don't need to be included because clients only
+    # compare etags for requests with identical URLs.
+
+    tables_to_check = list(DATASET_TABLES)
+    if group_id == PUBLIC_GROUP_ID:
+        # Everyone can see everything in the public group, so if we've requested that, the result doesn't depend on
+        # the user or on changes to groups/group entries.
+        user = None
+    else:
+        # Otherwise, the result depends on who is asking and on which groups they belong to, so the user and the
+        # access control tables need to be part of the etag.
+        user = db.user
+        tables_to_check.extend(ACCESS_CONTROL_TABLES)
+
+    key = {
+        "mutation_counts": get_mutation_counts(db, tables_to_check),
+        "user": user,
+    }
+
+    return hashlib.md5(json.dumps(key, sort_keys=True).encode()).hexdigest()
+
+
 @router.get(
     "/",
     operation_id="get_datasets",
@@ -121,7 +178,7 @@ def get_datasets(
     Similar for `sample_id` and `sample_type`.
     """
 
-    etag = dataset_crud.get_datasets_etag(db, group_id)
+    etag = get_datasets_etag(db, group_id)
 
     def _get_datasets():
         datasets = dataset_crud.get_datasets(
@@ -134,7 +191,14 @@ def get_datasets(
             value_type,
             group_id,
         )
-        return [dataset for dataset in datasets]
+        # render_if_new builds the response itself, so FastAPI's response_model isn't applied.
+        # Serialize the ORM objects the same way here.
+        adapter = TypeAdapter(List[DatasetResponse])
+        return adapter.dump_python(
+            adapter.validate_python(datasets, from_attributes=True),
+            mode="json",
+            by_alias=False,
+        )
 
     return render_if_new(etag, _get_datasets)
 

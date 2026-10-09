@@ -40,7 +40,7 @@ def mutation_trigger_statements(table_name: str) -> List[str]:
     """SQL to create the mutation triggers for a table. Shared by the models and migrations."""
     return [
         f"CREATE TRIGGER IF NOT EXISTS {trigger_name(table_name, e)} "
-        f"AFTER {e} ON {table_name} "
+        f'AFTER {e} ON "{table_name}" '
         f"BEGIN UPDATE table_mutation SET count = count + 1 WHERE name = '{table_name}'; END"
         for e in EVENTS
     ]
