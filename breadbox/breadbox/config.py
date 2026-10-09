@@ -16,8 +16,10 @@ class Settings(BaseSettings):
     use_depmap_proxy: bool
     default_user: Optional[str]
     host_scheme_override: Optional[str] = None
-    sql_endpoints_enabled: bool = False
     breadbox_env: str = "dev"
+
+    # If no user is specified, then SQL API access will be unrestricted
+    restrict_sql_endpoint_access_to_user: Optional[str] = None
 
     # prefix all routes with api_prefix if it's not an empty string
     api_prefix: str = ""
