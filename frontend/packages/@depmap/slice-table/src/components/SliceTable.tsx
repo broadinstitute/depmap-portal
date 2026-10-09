@@ -158,8 +158,11 @@ interface Props {
   // can render meaningfully.
   isLoading?: boolean;
   sliceTableRef?: React.RefObject<{
-    // Use this to force `getInitialState()` to be called.
-    forceInitialize: () => void;
+    // Use this to force `getInitialState()` to be called. By default the row
+    // order is re-derived from the new initial selection (selected rows first).
+    // Pass `preserveSortOrder` to re-seed the selection but leave the rows
+    // where they are.
+    forceInitialize: (options?: { preserveSortOrder?: boolean }) => void;
   }>;
 }
 
@@ -215,9 +218,16 @@ function SliceTable({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revision]);
 
+  const preserveSortOrderRef = useRef(false);
+
   React.useImperativeHandle(
     sliceTableRef,
-    () => ({ forceInitialize: () => setRevision((r) => r + 1) }),
+    () => ({
+      forceInitialize: (options) => {
+        preserveSortOrderRef.current = Boolean(options?.preserveSortOrder);
+        setRevision((r) => r + 1);
+      },
+    }),
     []
   );
 
@@ -311,6 +321,9 @@ function SliceTable({
   // thing.
   const lastReportedRef = useRef(initialRowSelection);
   const prevInitialRef = useRef(initialRowSelection);
+  // What the default sort orders by. Normally the initial selection, but it can
+  // be held back so that re-seeding the selection doesn't reshuffle the rows.
+  const sortSeedRef = useRef(initialRowSelection);
 
   // Adopting a new seed is an initialization, not a user action: re-baseline so
   // it isn't reported back to the consumer that supplied it. Done during render,
@@ -319,7 +332,14 @@ function SliceTable({
   if (prevInitialRef.current !== initialRowSelection) {
     prevInitialRef.current = initialRowSelection;
     lastReportedRef.current = initialRowSelection;
+
+    if (!preserveSortOrderRef.current) {
+      sortSeedRef.current = initialRowSelection;
+    }
+    preserveSortOrderRef.current = false;
   }
+
+  const sortSeed = sortSeedRef.current;
 
   useEffect(() => {
     if (rowSelectionChanged(lastReportedRef.current, rowSelection)) {
@@ -357,8 +377,8 @@ function SliceTable({
       const aId = getRowId(a);
       const bId = getRowId(b);
 
-      const aSelected = initialRowSelection[aId] || false;
-      const bSelected = initialRowSelection[bId] || false;
+      const aSelected = sortSeed[aId] || false;
+      const bSelected = sortSeed[bId] || false;
 
       if (aSelected && !bSelected) return -1;
       if (!aSelected && bSelected) return 1;
@@ -372,7 +392,7 @@ function SliceTable({
 
       return 0;
     },
-    [initialRowSelection]
+    [sortSeed]
   );
 
   // Apply implicit filter before ReactTable sees the data. This shapes the
