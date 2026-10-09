@@ -328,7 +328,8 @@ class FileHack:
 def validate_dataset_upload_and_add_to_db(
     db: SessionWithUser, settings: Settings, d: DatasetUpload
 ):
-    from breadbox.api.datasets import get_file_dict, run_upload_dataset, get_datasets
+    from breadbox.api.datasets import get_file_dict, run_upload_dataset
+    from breadbox.crud.dataset import get_datasets
     from breadbox.crud.access_control import PUBLIC_GROUP_ID
 
     # pick an arbitrary admin to do these operations. Only do this because this

@@ -2,7 +2,6 @@ from typing import List, Optional, Set, Annotated
 from logging import getLogger
 from ..db.util import transaction
 from breadbox.utils.asserts import index_error_msg
-from pydantic import Json, TypeAdapter
 
 from pydantic import Json
 
@@ -184,16 +183,9 @@ def get_datasets(
             value_type,
             group_id,
         )
-        # render_if_new builds the response itself, so FastAPI's response_model isn't applied.
-        # Serialize the ORM objects the same way here.
-        adapter = TypeAdapter(List[DatasetResponse])
-        return adapter.dump_python(
-            adapter.validate_python(datasets, from_attributes=True),
-            mode="json",
-            by_alias=False,
-        )
+        return datasets
 
-    return render_if_new(etag, _get_datasets)
+    return render_if_new(etag, _get_datasets, response_model=List[DatasetResponse])
 
 
 def _get_required_dataset(db: SessionWithUser, dataset_id: str):
