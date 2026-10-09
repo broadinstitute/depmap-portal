@@ -21,7 +21,16 @@ down_revision = "bd6abe9454f9"
 branch_labels = None
 depends_on = None
 
-TRACKED_TABLES = ["dataset"]
+# Tables whose mutations are counted. These are the tables which affect the etags of
+# get_datasets and get_dimension_type_identifiers.
+TRACKED_TABLES = [
+    "dataset",
+    "tabular_dataset",
+    "matrix_dataset",
+    "group",
+    "group_entry",
+    "dimension_type",
+]
 
 
 def upgrade():
