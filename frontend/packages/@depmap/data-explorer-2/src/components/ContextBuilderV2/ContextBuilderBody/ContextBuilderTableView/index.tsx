@@ -4,7 +4,7 @@ import { Spinner } from "@depmap/common-components";
 import SliceTable from "@depmap/slice-table";
 import { areSliceQueriesEqual, SliceQuery } from "@depmap/types";
 import { usePlotlyLoader } from "../../../../contexts/PlotlyLoaderContext";
-import { isCompleteExpression } from "../../../../utils/misc";
+import { isCompleteExpression } from "../../../../utils/dimensionHelpers";
 import {
   DEFAULT_EMPTY_EXPR,
   useContextBuilderState,

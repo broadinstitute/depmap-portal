@@ -5,7 +5,8 @@ import {
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
 } from "@depmap/types";
-import { getDimensionTypeLabel, pluralize } from "../../../../utils/misc";
+import { getDimensionTypeLabel } from "../../../../utils/misc";
+import { pluralize } from "../../../../utils/dimensionHelpers";
 import {
   Settings,
   useDataExplorerSettings,
