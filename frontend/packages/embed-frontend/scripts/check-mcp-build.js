@@ -13,6 +13,19 @@ const embedDir = path.resolve(
   "../../../../breadbox/breadbox/static/embed"
 );
 const file = process.argv[2] || path.join(embedDir, "mcp.html");
+
+// The link-generation doc that the embed build publishes for the MCP server
+// (ADR 0003 in @depmap/data-explorer-2).
+const dePackage = path.resolve(__dirname, "../../@depmap/data-explorer-2");
+const linksDocSource = path.join(dePackage, "docs/generating-de2-links.md");
+const linksDocCopy = path.join(embedDir, "generating-de2-links.md");
+const plotVersionSource = path.join(
+  dePackage,
+  "src/components/DataExplorerPage/plot-version.ts"
+);
+// The MCP server accepts the doc only if it starts with this heading and
+// contains "describes version N". Do not reword either without telling it.
+const LINKS_DOC_HEADING = "# Generating links to Data Explorer 2";
 const failures = [];
 
 function check(ok, message) {
@@ -91,10 +104,58 @@ if (!process.argv[2]) {
   );
 }
 
+// Only when checking the real build.
+function checkLinksDoc() {
+  if (!fs.existsSync(linksDocCopy)) {
+    check(false, `${linksDocCopy} is missing`);
+    return;
+  }
+
+  const copy = fs.readFileSync(linksDocCopy);
+  check(
+    copy.equals(fs.readFileSync(linksDocSource)),
+    "generating-de2-links.md differs from its source in data-explorer-2/docs"
+  );
+
+  const text = copy.toString("utf8");
+  check(
+    text.startsWith(LINKS_DOC_HEADING),
+    `generating-de2-links.md must start with "${LINKS_DOC_HEADING}"`
+  );
+
+  const described = text.match(/describes version (\d+)/);
+  check(
+    described,
+    'generating-de2-links.md has no "describes version N" phrase'
+  );
+
+  const constant = fs
+    .readFileSync(plotVersionSource, "utf8")
+    .match(/export const CURRENT_PLOT_VERSION\s*=\s*(\d+)/);
+  check(constant, "could not read CURRENT_PLOT_VERSION from plot-version.ts");
+
+  if (described && constant) {
+    check(
+      described[1] === constant[1],
+      `generating-de2-links.md describes version ${described[1]} but ` +
+        `CURRENT_PLOT_VERSION is ${constant[1]}: update the doc (ADR 0003)`
+    );
+  }
+}
+
+if (!process.argv[2]) {
+  checkLinksDoc();
+}
+
 if (failures.length) {
   console.error(`FAIL: ${file}`);
   failures.forEach((f) => console.error(`  - ${f}`));
   process.exit(1);
 }
 
+if (!process.argv[2]) {
+  console.log(
+    `OK: ${linksDocCopy} (matches source; describes the current plot version)`
+  );
+}
 console.log(`OK: ${file} (${(fs.statSync(file).size / 1e6).toFixed(2)} MB)`);

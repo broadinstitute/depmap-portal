@@ -8,7 +8,8 @@ Browser surfaces that Breadbox serves under `/embed/` (`/embed/plot`,
 
 1. `webpack.prod.js` → `breadbox/breadbox/static/embed/` (hashed chunks; **cleans
    the folder**)
-2. `webpack.mcp.js` → `static/embed/mcp.html` (then `scripts/check-mcp-build.js`)
+2. `webpack.mcp.js` → `static/embed/mcp.html` and
+   `static/embed/generating-de2-links.md` (then `scripts/check-mcp-build.js`)
 3. `webpack.node.js` → `static/plot-data/plot-data.js`
 
 ## MCP bundle
@@ -47,6 +48,16 @@ holds 2). So the view:
   `new Function` is blocked by the host's CSP (regl needs it).
 
 Views are separate iframes and deliberately don't coordinate.
+
+### The link-generation doc
+
+The same step publishes `@depmap/data-explorer-2/docs/generating-de2-links.md`
+(ADR 0003) at `/embed/generating-de2-links.md`, unhashed so the MCP server can
+fetch it from a stable URL. It is copied byte for byte and is build output
+(gitignored); never edit or commit the copy. `scripts/check-mcp-build.js` fails
+the build if it is missing, differs from the source, does not start with
+`# Generating links to Data Explorer 2`, lacks `describes version N`, or if N is
+not `CURRENT_PLOT_VERSION`. The MCP server relies on that heading and phrase.
 
 ### Building and trying it
 

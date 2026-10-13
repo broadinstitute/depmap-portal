@@ -1,5 +1,6 @@
 const path = require("path");
 const webpack = require("webpack");
+const CopyPlugin = require("copy-webpack-plugin");
 const jsonImporter = require("node-sass-json-importer");
 
 // Builds the MCP App view into ONE self-contained file, mcp.html, that an MCP
@@ -14,6 +15,15 @@ const jsonImporter = require("node-sass-json-importer");
 //
 // Unlike webpack.prod.js this deliberately does not extend webpack.common.js
 // (no HtmlWebpackPlugin, no CSS extraction).
+
+// The canonical Data Explorer link-generation doc (ADR 0003) is published next
+// to mcp.html, byte for byte and under a stable name, so the MCP server can
+// fetch it from /embed/generating-de2-links.md instead of keeping a copy.
+// scripts/check-mcp-build.js enforces the contract the MCP server relies on.
+const LINKS_DOC = path.resolve(
+  __dirname,
+  "../@depmap/data-explorer-2/docs/generating-de2-links.md"
+);
 
 const OUT_DIR = path.resolve(
   __dirname,
@@ -123,6 +133,9 @@ module.exports = {
       global: "window",
     }),
     new InlineIntoHtmlPlugin({ jsName: "mcp.js", htmlName: "mcp.html" }),
+    new CopyPlugin({
+      patterns: [{ from: LINKS_DOC, to: "generating-de2-links.md" }],
+    }),
   ],
 
   resolve: {
