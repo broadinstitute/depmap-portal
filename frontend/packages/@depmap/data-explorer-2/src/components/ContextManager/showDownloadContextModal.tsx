@@ -4,11 +4,8 @@ import { showInfoModal } from "@depmap/common-components";
 import SliceTable from "@depmap/slice-table";
 import { isV2Context } from "../../utils/context";
 import { fetchContext } from "../../utils/context-storage";
-import {
-  getDimensionTypeLabel,
-  pluralize,
-  uncapitalize,
-} from "../../utils/misc";
+import { getDimensionTypeLabel, uncapitalize } from "../../utils/misc";
+import { pluralize } from "../../utils/dimensionHelpers";
 import { convertContextV1toV2 } from "../../utils/context-converter";
 import { usePlotlyLoader } from "../../contexts/PlotlyLoaderContext";
 import styles from "../../styles/ContextManager.scss";

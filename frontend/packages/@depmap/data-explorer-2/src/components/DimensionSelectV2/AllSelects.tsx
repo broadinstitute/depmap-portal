@@ -1,5 +1,6 @@
 import React from "react";
-import { capitalize, getDimensionTypeLabel, pluralize } from "../../utils/misc";
+import { capitalize, getDimensionTypeLabel } from "../../utils/misc";
+import { pluralize } from "../../utils/dimensionHelpers";
 import ContextSelectorV2 from "../ContextSelectorV2";
 import DataTypeSelect from "./DataTypeSelect";
 import UnitsSelect from "./UnitsSelect";

@@ -1,4 +1,5 @@
-import { isCompleteExpression, isSampleTypeSync } from "../../utils/misc";
+import { isSampleTypeSync } from "../../utils/misc";
+import { isCompleteExpression } from "../../utils/dimensionHelpers";
 import { legacyPortalIdToBreadboxGivenId } from "../../utils/slice-id";
 import {
   DataExplorerContextV2,

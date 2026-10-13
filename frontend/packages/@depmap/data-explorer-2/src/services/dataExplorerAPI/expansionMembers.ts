@@ -1,6 +1,6 @@
 import { breadboxAPI, cached, evaluateContextPersisted } from "@depmap/api";
 import { DataExplorerContextV2 } from "@depmap/types";
-import { isSampleType } from "../../utils/misc";
+import { isSampleType } from "../../utils/dimensionHelpers";
 import { fetchDatasetIdentifiers } from "./identifiers";
 
 // ---------------------------------------------------------------------------
