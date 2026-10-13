@@ -8,7 +8,7 @@ import {
   fetchCorrelation,
   fetchLinearRegression,
   fetchPlotDimensions,
-} from "../breadboxMethods";
+} from "../standardPlot";
 
 // Fixtures shared across cases.
 

@@ -1,9 +1,7 @@
 import React from "react";
 import { PlotlyLoaderProvider } from "@depmap/data-explorer-2/src/contexts/PlotlyLoaderContext";
-import {
-  getDimensionTypeLabel,
-  pluralize,
-} from "@depmap/data-explorer-2/src/utils/misc";
+import { getDimensionTypeLabel } from "@depmap/data-explorer-2/src/utils/misc";
+import { pluralize } from "@depmap/data-explorer-2/src/utils/dimensionHelpers";
 import useCorrelationHeatmapData from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/useCorrelationHeatmapData";
 import PrototypeCorrelationHeatmap from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/PrototypeCorrelationHeatmap";
 import { useDataExplorerSettings } from "@depmap/data-explorer-2/src/contexts/DataExplorerSettingsContext";

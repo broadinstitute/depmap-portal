@@ -4,7 +4,8 @@ import {
   promptForValue,
   PromptComponentProps,
 } from "@depmap/common-components";
-import { getDimensionTypeLabel, pluralize } from "../../../../utils/misc";
+import { getDimensionTypeLabel } from "../../../../utils/misc";
+import { pluralize } from "../../../../utils/dimensionHelpers";
 import ContextSelectorV2 from "../../../ContextSelectorV2";
 import { DepMap } from "@depmap/globals";
 import { DataExplorerContextV2, DataExplorerPlotResponse } from "@depmap/types";

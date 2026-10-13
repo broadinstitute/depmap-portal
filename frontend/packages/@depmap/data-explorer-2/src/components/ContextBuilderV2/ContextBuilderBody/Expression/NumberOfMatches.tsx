@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { pluralize, uncapitalize } from "../../../../utils/misc";
+import { uncapitalize } from "../../../../utils/misc";
+import { pluralize } from "../../../../utils/dimensionHelpers";
 import { Expr } from "../../utils/expressionUtils";
 import useDimensionType from "../../hooks/useDimensionType";
 import useMatches from "../../hooks/useMatches";

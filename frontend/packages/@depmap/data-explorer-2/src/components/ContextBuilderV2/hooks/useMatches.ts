@@ -5,7 +5,7 @@ import {
   DataExplorerContextV2,
   SliceQuery,
 } from "@depmap/types";
-import { isCompleteExpression } from "../../../utils/misc";
+import { isCompleteExpression } from "../../../utils/dimensionHelpers";
 import {
   Expr,
   getContextNames,

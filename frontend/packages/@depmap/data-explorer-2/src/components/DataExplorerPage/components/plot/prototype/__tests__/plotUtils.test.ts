@@ -1535,7 +1535,7 @@ describe("getColorMap — continuous property with null values", () => {
       ...baseData,
       dimensions: {
         ...baseData.dimensions,
-        // The redirect described in useScatterPlotData/breadboxMethods.ts's
+        // The redirect described in useScatterPlotData/standardPlot.ts's
         // "HACK! I never imagined there would be continuous metadata"
         // comment: a continuous color_property arrives as dimensions.color,
         // not metadata.color_property.

@@ -31,12 +31,13 @@ export type { RememberedColumnsScope } from "./src/utils/rememberedTableColumns"
 export {
   contextsMatch,
   initializeDevContexts,
-  isContextAll,
   isNegatedContext,
   isV2Context,
   negateContext,
   saveContextToLocalStorageAndPersist,
 } from "./src/utils/context";
+
+export { isContextAll } from "./src/utils/contextExpr";
 
 export { convertContextV1toV2 } from "./src/utils/context-converter";
 
@@ -47,16 +48,19 @@ export {
   convertDimensionToSliceId,
   convertDimensionToSliceQuery,
   getDimensionTypeLabel,
-  isCompleteDimension,
-  isCompleteExpression,
   isPartialSliceId,
-  isSampleType,
   isSampleTypeSync,
-  pluralize,
   sortDimensionTypes,
   uncapitalize,
   urlLibEncode,
 } from "./src/utils/misc";
+
+export {
+  isCompleteDimension,
+  isCompleteExpression,
+  isSampleType,
+  pluralize,
+} from "./src/utils/dimensionHelpers";
 
 export { persistLegacyListAsContext } from "./src/utils/persistLegacyListAsContext";
 

@@ -68,7 +68,7 @@ Object.keys(untypedApi).forEach((name) => {
         stack = [lines[0], ...lines.slice(idx)].join("\n");
       }
 
-      window.console.warn(stack);
+      console.warn(stack);
       throw error;
     }
   };
