@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "analyze": "webpack --config=webpack.analyze.js --progress",
-    "build": "webpack --config=webpack.prod.js && webpack --config=webpack.node.js",
+    "build": "webpack --config=webpack.prod.js && yarn build:mcp && webpack --config=webpack.node.js",
+    "build:mcp": "webpack --config=webpack.mcp.js && node scripts/check-mcp-build.js",
     "build:node": "webpack --config=webpack.node.js",
     "dev": "webpack serve --progress --config=webpack.dev.js",
     "test": "jest"

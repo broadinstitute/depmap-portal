@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fake MCP host</title>
+  <style>
+    body { font-family: sans-serif; margin: 12px; }
+    iframe { width: 100%; border: 1px solid #ccc; }
+    pre { background: #f4f4f4; padding: 8px; max-height: 200px; overflow: auto; }
+  </style>
+</head>
+<body>
+<!--
+  A minimal stand-in for an MCP Apps host, for trying mcp.html without one.
+  See "MCP bundle" in the embed-frontend README.
+
+  Query params:
+    view=   URL of the built view   (default: the Breadbox static folder, which
+                                     works when this repo root is served)
+    data=   JSON file holding the body of a POST /temp/plot-data response's
+            `data` field                (default: plot-data.json beside this page)
+    params= JSON for the tool result's `params` (default: {"plot_type":"scatter"})
+-->
+<h3>Fake MCP host</h3>
+<iframe id="view" sandbox="allow-scripts" style="height: 560px"></iframe>
+<h4>Messages</h4>
+<pre id="log"></pre>
+<script>
+  const q = new URLSearchParams(location.search);
+  const viewUrl = q.get("view") || "/breadbox/breadbox/static/embed/mcp.html";
+  const dataUrl = q.get("data") || "plot-data.json";
+  const params = JSON.parse(q.get("params") || '{"plot_type":"scatter"}');
+  const frame = document.getElementById("view");
+  const log = document.getElementById("log");
+  const note = (dir, msg) => {
+    log.textContent += dir + " " + JSON.stringify(msg).slice(0, 300) + "\n";
+  };
+  const send = (msg) => {
+    note("host->view", msg);
+    frame.contentWindow.postMessage(msg, "*");
+  };
+
+  window.addEventListener("message", async (event) => {
+    if (event.source !== frame.contentWindow) return;
+    const msg = event.data;
+    note("view->host", msg);
+
+    if (msg.method === "ui/initialize") {
+      send({
+        jsonrpc: "2.0",
+        id: msg.id,
+        result: {
+          protocolVersion: msg.params.protocolVersion,
+          hostInfo: { name: "fake-host", version: "0" },
+          hostCapabilities: { serverTools: {}, openLinks: {} },
+          hostContext: { containerDimensions: { height: 500 } },
+        },
+      });
+    } else if (msg.method === "ui/notifications/initialized") {
+      send({
+        jsonrpc: "2.0",
+        method: "ui/notifications/tool-result",
+        params: {
+          content: [{ type: "text", text: "Showing a plot." }],
+          structuredContent: {
+            type: "plot",
+            api_version: 1,
+            params,
+            link: "https://example.com/data_explorer_2",
+          },
+        },
+      });
+    } else if (msg.method === "tools/call") {
+      let text;
+      let isError = false;
+      try {
+        text = await (await fetch(dataUrl)).text();
+      } catch (e) {
+        text = "upstream_error: " + e;
+        isError = true;
+      }
+      send({
+        jsonrpc: "2.0",
+        id: msg.id,
+        result: { content: [{ type: "text", text }], isError },
+      });
+    } else if (msg.id !== undefined && msg.method) {
+      send({ jsonrpc: "2.0", id: msg.id, result: {} });
+    }
+  });
+
+  frame.src = viewUrl;
+</script>
+</body>
+</html>
