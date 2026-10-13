@@ -8,13 +8,6 @@ import type {
 import { persistContext } from "./context-storage";
 import getContextHash from "./get-context-hash";
 
-export const isContextAll = (
-  context: DataExplorerContext | DataExplorerContextV2
-) => {
-  // `true` is a special value used to match on anything.
-  return Boolean(context) && context.expr === true;
-};
-
 export function isNegatedContext(
   context: DataExplorerContext | DataExplorerContextV2 | null
 ) {

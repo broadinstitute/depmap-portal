@@ -9,8 +9,8 @@ import { usePlotlyLoader } from "../../../../contexts/PlotlyLoaderContext";
 import {
   getDimensionTypeLabel,
   getExpansionAxis,
-  pluralize,
 } from "../../../../utils/misc";
+import { pluralize } from "../../../../utils/dimensionHelpers";
 import promptForExpansionMembers from "./promptForExpansionMembers";
 import styles from "../../styles/ConfigurationPanel.scss";
 

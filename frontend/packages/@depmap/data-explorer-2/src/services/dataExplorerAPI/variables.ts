@@ -4,7 +4,8 @@ import {
   DataExplorerContextVariable,
   SliceQuery,
 } from "@depmap/types";
-import { compareCaseInsensitive } from "@depmap/utils";
+// Deep import: the `@depmap/utils` package root re-exports DOM/React modules.
+import { compareCaseInsensitive } from "@depmap/utils/src/sort";
 import wellKnownDatasets from "../../constants/wellKnownDatasets";
 import { getDimensionDataWithoutLabels } from "./helpers";
 

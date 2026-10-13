@@ -25,7 +25,8 @@ import {
   loadRememberedColumns,
   rememberColumns,
 } from "../../../../utils/rememberedTableColumns";
-import { getDimensionTypeLabel, pluralize } from "../../../../utils/misc";
+import { getDimensionTypeLabel } from "../../../../utils/misc";
+import { pluralize } from "../../../../utils/dimensionHelpers";
 import HelpTip from "../HelpTip";
 import styles from "../../styles/ConfigurationPanel.scss";
 

@@ -8,6 +8,21 @@ import SliceTable from "../SliceTable";
 // couldn't be built.
 jest.mock("../useData", () => jest.fn());
 
+// useSliceTableState looks up dimension types and datasets on mount. There's
+// no `fetch` in jsdom, so without this every render logs a network error. The
+// calls stay pending on purpose: nothing here depends on what comes back, and
+// resolving them would set state after the render, outside of `act`.
+jest.mock("@depmap/api", () => {
+  const never = () => new Promise(() => {});
+
+  const breadboxAPI = {
+    getDimensionTypes: jest.fn(never),
+    getDatasets: jest.fn(never),
+  };
+
+  return { breadboxAPI, cached: () => breadboxAPI };
+});
+
 // `styles` is otherwise an empty object (see __mocks__/styleMock.js), which
 // would make "hidden" and "not hidden" both come out as undefined.
 jest.mock("../../styles/SliceTable.scss", () => ({
