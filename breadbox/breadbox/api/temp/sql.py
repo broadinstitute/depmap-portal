@@ -59,6 +59,11 @@ async def _concurrency_guard(callback: Callable[[], Awaitable[Response]]):
         semaphore.release()
 
 
+def _assert_user_has_access_to_sql_endpoints(user: str, settings: Settings):
+    if (settings.restrict_sql_endpoint_access_to_user is not None) and (settings.restrict_sql_endpoint_access_to_user != user):
+        raise HTTPException(403, "SQL endpoints not enabled in this environment")
+
+
 class SqlQuery(BaseModel):
     sql: str
 
@@ -76,8 +81,7 @@ def get_sql_schema(
     If a dataset given ID is specified, only return a subset of the schema definition 
     (tables relevant to that dataset).
     """
-    if not settings.sql_endpoints_enabled:
-        raise HTTPException(403, "SQL endpoints not enabled in this environment")
+    _assert_user_has_access_to_sql_endpoints(db.user, settings)
 
     if dataset_given_id is None:
         dataset = None
@@ -157,8 +161,7 @@ async def query_sql(
     # that many queries are in-flight, new requests immediately receive a 503 rather than queuing
     # indefinitely and consuming resources while waiting.
 
-    if not settings.sql_endpoints_enabled:
-        raise HTTPException(403, "SQL endpoints not enabled in this environment")
+    _assert_user_has_access_to_sql_endpoints(db.user, settings)
 
     async def _run():
         results_dir = settings.get_todays_result_dir()
