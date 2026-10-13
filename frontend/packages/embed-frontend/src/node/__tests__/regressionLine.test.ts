@@ -30,6 +30,12 @@ const PLOT = {
   index_ids: ["a", "b"],
   dimensions: {},
 };
+// `data` always carries the normalized config too; what it contains is covered
+// in normalizePlotConfig.test.ts.
+const WITH_CONFIG = {
+  ...PLOT,
+  plot_config: expect.objectContaining({ plot_type: "scatter" }),
+};
 const FIT = [{ group_label: "all", slope: 2, intercept: 1 }];
 
 beforeEach(() => {
@@ -47,7 +53,7 @@ it("adds the regression fit to data when one was computed", async () => {
 
   expect(await runPlotDataRequest(request)).toEqual({
     ok: true,
-    data: { ...PLOT, linreg_by_group: FIT },
+    data: { ...WITH_CONFIG, linreg_by_group: FIT },
   });
 });
 
@@ -56,7 +62,7 @@ it("leaves data exactly as the service returned it when no fit applies", async (
 
   const outcome = await runPlotDataRequest(request);
 
-  expect(outcome).toEqual({ ok: true, data: PLOT });
+  expect(outcome).toEqual({ ok: true, data: WITH_CONFIG });
   expect(Object.keys((outcome as { data: object }).data)).not.toContain(
     "linreg_by_group"
   );
@@ -70,7 +76,10 @@ it("still returns the plot when the fit can't be computed", async () => {
     })
   );
 
-  expect(await runPlotDataRequest(request)).toEqual({ ok: true, data: PLOT });
+  expect(await runPlotDataRequest(request)).toEqual({
+    ok: true,
+    data: WITH_CONFIG,
+  });
 });
 
 it("does not hide a bug in the script behind a missing fit", async () => {

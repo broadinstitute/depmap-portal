@@ -1,9 +1,12 @@
 import {
   DatasetAssociations,
   DataExplorerContextV2,
+  DataExplorerPlotConfig,
+  DataExplorerPlotResponse,
+  LinRegInfo,
   SliceQuery,
 } from "@depmap/types";
-import { postJson } from "../client";
+import { getJson, postJson } from "../client";
 import { getTabularDatasetData } from "./datasets";
 import { getDimensionTypeIdentifiers } from "./types";
 
@@ -22,6 +25,26 @@ export async function computeAssociations(
       slice_query: sliceQuery,
     }
   );
+}
+
+// One entry in the content-addressable store (used for contexts, among other
+// things). `value` is a JSON string.
+export async function getCasValue(hash: string) {
+  return getJson<{ value: string }>(`/temp/cas/${hash}`);
+}
+
+// Data behind a plot config, assembled server-side (see ADR 0010). The config
+// can be in any shape a client has ever produced (`version` attached); the
+// server normalizes it and returns the result as `data.plot_config`. `data`
+// also carries `linreg_by_group` when the config asks for a regression line.
+export async function getPlotData(plotConfig: object) {
+  return postJson<{
+    api_version: number;
+    data: DataExplorerPlotResponse & {
+      plot_config: DataExplorerPlotConfig;
+      linreg_by_group?: LinRegInfo[];
+    };
+  }>("/temp/plot-data", { api_version: 1, plot_config: plotConfig });
 }
 
 export async function fetchAssociations(
