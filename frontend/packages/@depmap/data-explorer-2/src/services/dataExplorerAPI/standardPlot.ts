@@ -25,133 +25,30 @@ import {
   MatrixDataset,
   SliceQuery,
 } from "@depmap/types";
+// Deep imports: the `@depmap/selects` package root re-exports React components.
+import {
+  resolveDisplayLabel,
+  serializeSliceQuery,
+} from "@depmap/selects/src/components/AnnotationSelect/sliceQueryUtils";
 import {
   buildDimTypeMap,
   buildTablesByDim,
-  resolveDisplayLabel,
-  serializeSliceQuery,
-} from "@depmap/selects";
-import { isContextAll } from "../../utils/context";
+} from "@depmap/selects/src/components/AnnotationSelect/schemaHelpers";
 import {
   isCompleteDimension,
   isExpansionDimension,
   isSampleType,
-  pluralize,
-} from "../../utils/misc";
+} from "../../utils/dimensionHelpers";
 import { fetchDatasetIdentifiers } from "./identifiers";
-import { getDimensionDataWithoutLabels } from "./helpers";
+import {
+  fetchAxisLabel,
+  fetchDatasetLabel,
+  fetchEntitiesLabel,
+  fetchValueType,
+} from "./labels";
+import { getDimensionDataWithoutLabels, prefetch } from "./helpers";
 
 type VarEqualityExpression = { "==": [{ var: string }, string] };
-
-export async function fetchEntitiesLabel(dimensionType: string) {
-  const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
-  const dimType = dimensionTypes.find((t) => t.name === dimensionType);
-
-  return dimType
-    ? pluralize(dimType.display_name || dimType.name)
-    : "unknown entities";
-}
-
-export async function fetchAxisLabel(
-  dimension?: DataExplorerPlotConfigDimension
-) {
-  if (!dimension || !isCompleteDimension(dimension)) {
-    return "";
-  }
-
-  const { context } = dimension;
-  const datasets = await cached(breadboxAPI).getDatasets();
-
-  const dataset = datasets.find((d) => {
-    return d.id === dimension.dataset_id || d.given_id === dimension.dataset_id;
-  });
-
-  let units = "";
-
-  if (dataset && "units" in dataset) {
-    units = dataset.units;
-  }
-
-  if (units === "unitless") {
-    units = "";
-  }
-
-  if (dimension.axis_type === "raw_slice") {
-    return `${context.name} ${units}`;
-  }
-
-  const { aggregation } = dimension;
-
-  const { ids } = await evaluateContextPersisted(
-    (context as unknown) as DataExplorerContextV2
-  );
-
-  const dsIdentifiers = await fetchDatasetIdentifiers(
-    dimension.slice_type,
-    dimension.dataset_id
-  );
-
-  const idsInDataset = new Set(dsIdentifiers.map(({ id }) => id));
-  const overlappingIds = ids.filter((id) => idsInDataset.has(id));
-  const contextCount = overlappingIds.length.toLocaleString();
-
-  const entities = await fetchEntitiesLabel(dimension.slice_type);
-
-  if (isContextAll(context)) {
-    return `${aggregation} ${units} of all ${contextCount} ${entities}`;
-  }
-
-  return `${aggregation} ${units} of ${contextCount} ${context.name} ${entities}`;
-}
-
-export async function fetchValueType(
-  dimensionOrSliceQuery?: DataExplorerPlotConfigDimension | SliceQuery
-) {
-  if (
-    !dimensionOrSliceQuery ||
-    (!isCompleteDimension(dimensionOrSliceQuery) &&
-      !isValidSliceQuery(dimensionOrSliceQuery))
-  ) {
-    return "continuous";
-  }
-
-  // The root of a SliceQuery always describes the data column itself —
-  // reindex_through only describes FK hops for reindexing. So dataset_id
-  // and identifier here are already correct for the value type lookup.
-  const { dataset_id } = dimensionOrSliceQuery;
-
-  const dataset = await cached(breadboxAPI).getDataset(dataset_id);
-
-  if (!dataset) {
-    throw new Error(`Unknown dataset "${dataset_id}"`);
-  }
-
-  if (dataset.format !== "matrix_dataset") {
-    if (isCompleteDimension(dimensionOrSliceQuery)) {
-      throw new Error(
-        "Dataset is not a matrix! This is not supported for plot dimensions."
-      );
-    }
-
-    return dataset.columns_metadata[dimensionOrSliceQuery.identifier].col_type;
-  }
-
-  return dataset.value_type;
-}
-
-export async function fetchDatasetLabel(dataset_id?: string) {
-  if (!dataset_id) {
-    return "";
-  }
-
-  const datasets = await cached(breadboxAPI).getDatasets();
-
-  const dataset = datasets.find((d) => {
-    return d.id === dataset_id || d.given_id === dataset_id;
-  });
-
-  return dataset ? dataset.name : "(Unknown dataset)";
-}
 
 const isPrimaryMetatadata = (dataset?: Dataset) => {
   if (dataset?.format !== "tabular_dataset") {
@@ -275,11 +172,13 @@ export async function fetchPlotDimensions(
   // postJson() caches the Promises. When we later repeat each fetch with an
   // `await`, we're actually awaiting an inflight promise, effectively making
   // all these requests concurrent.
-  cached(breadboxAPI).getDimensionTypes();
-  fetchDatasetLabel(dimensions.x?.dataset_id);
-  fetchDatasetLabel(dimensions.y?.dataset_id);
-  fetchDatasetLabel(dimensions.color?.dataset_id);
-  fetchDatasetLabel(dimensions.facet?.dataset_id);
+  prefetch(
+    cached(breadboxAPI).getDimensionTypes(),
+    fetchDatasetLabel(dimensions.x?.dataset_id),
+    fetchDatasetLabel(dimensions.y?.dataset_id),
+    fetchDatasetLabel(dimensions.color?.dataset_id),
+    fetchDatasetLabel(dimensions.facet?.dataset_id)
+  );
 
   const dimTypes = await cached(breadboxAPI).getDimensionTypes();
   const indexDimType = dimTypes.find((t) => t.name === index_type);
@@ -529,7 +428,6 @@ export async function fetchPlotDimensions(
       index_display_name,
       index_ids,
       index_labels,
-      linreg_by_group: [],
       dimensions: {} as DataExplorerPlotResponse["dimensions"],
       filters: {} as DataExplorerPlotResponse["filters"],
       metadata: {} as DataExplorerPlotResponse["metadata"],

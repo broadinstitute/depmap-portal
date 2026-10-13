@@ -10,9 +10,9 @@ import {
 import { dataExplorerAPI } from "../../../../services/dataExplorerAPI";
 import {
   getDimensionTypeLabel,
-  pluralize,
   sortDimensionTypes,
 } from "../../../../utils/misc";
+import { pluralize } from "../../../../utils/dimensionHelpers";
 import renderConditionally from "../../../../utils/render-conditionally";
 import PlotConfigSelect from "../../../PlotConfigSelect";
 import DimensionSelectV2 from "../../../DimensionSelectV2";

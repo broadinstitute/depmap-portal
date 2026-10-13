@@ -10,11 +10,8 @@ import {
   PartialDataExplorerPlotConfig,
   SliceQuery,
 } from "@depmap/types";
-import {
-  getExpansionAxes,
-  getExpansionAxis,
-  isExpansionDimension,
-} from "../../../utils/misc";
+import { getExpansionAxes, getExpansionAxis } from "../../../utils/misc";
+import { isExpansionDimension } from "../../../utils/dimensionHelpers";
 import { contextsMatch } from "../../../utils/context";
 import {
   canShowRegressionLinePerColor,
