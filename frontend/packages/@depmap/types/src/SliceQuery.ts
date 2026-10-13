@@ -32,11 +32,11 @@ export const areSliceQueriesEqual = (
   const valid2 = isValidSliceQuery(sq2);
 
   if (!valid1) {
-    window.console.warn("[areSliceQueriesEqual] invalid input:", sq1);
+    console.warn("[areSliceQueriesEqual] invalid input:", sq1);
   }
 
   if (!valid2) {
-    window.console.warn("[areSliceQueriesEqual] invalid input:", sq2);
+    console.warn("[areSliceQueriesEqual] invalid input:", sq2);
   }
 
   if (!valid1 || !valid2) {

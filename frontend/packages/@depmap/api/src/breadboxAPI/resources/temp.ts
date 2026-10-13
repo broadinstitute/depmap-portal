@@ -20,7 +20,7 @@ export async function fetchAssociations(
   );
 
   if ("detail" in result) {
-    window.console.warn("sliceQuery:", sliceQuery);
+    console.warn("sliceQuery:", sliceQuery);
     throw new Error(JSON.stringify(result.detail));
   }
 
@@ -132,7 +132,7 @@ export async function evaluateContext(context: NamelessContext) {
   >("/temp/context", context);
 
   if ("detail" in response) {
-    window.console.warn("Could not evaluate context", context);
+    console.warn("Could not evaluate context", context);
     throw new Error(JSON.stringify(response.detail, null, 2));
   }
 
@@ -170,7 +170,7 @@ export async function getContextDatasetCoverage(
   >(`/temp/context/dataset-coverage?scope=${scope}`, context);
 
   if ("detail" in response) {
-    window.console.warn("Could not compute dataset coverage", context);
+    console.warn("Could not compute dataset coverage", context);
     return { counts: {}, total: 0 };
   }
 

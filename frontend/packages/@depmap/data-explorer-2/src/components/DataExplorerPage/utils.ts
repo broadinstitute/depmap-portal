@@ -21,14 +21,15 @@ import {
 import { dataExplorerAPI } from "../../services/dataExplorerAPI";
 import {
   contextsMatch,
-  isContextAll,
   isNegatedContext,
   isV2Context,
   negateContext,
   replaceLegacyContextIfExistsInLocalStorage,
 } from "../../utils/context";
+import { isContextAll } from "../../utils/contextExpr";
 import { fetchContext, persistContext } from "../../utils/context-storage";
-import { isCompleteDimension, isPartialSliceId } from "../../utils/misc";
+import { isPartialSliceId } from "../../utils/misc";
+import { isCompleteDimension } from "../../utils/dimensionHelpers";
 import { convertContextV1toV2 } from "../../utils/context-converter";
 import {
   legacyPortalIdToBreadboxGivenId,
