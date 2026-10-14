@@ -42,6 +42,7 @@ import {
   parseShorthandParams,
 } from "./query-string-parser";
 import { CURRENT_PLOT_VERSION } from "./plot-version";
+import plotConfigReducer from "./reducers/plotConfigReducer";
 
 // Re-exported so existing callers (and tests) can keep importing this from
 // `./utils`. The definition lives in its own module to keep the import graph
@@ -212,24 +213,40 @@ export function toRelatedPlot(
     color_by = "aggregated_slice";
   }
 
-  return {
-    plot_type: numDimensions === 1 ? "density_1d" : "scatter",
+  const plot_type =
+    numDimensions === 1 ? ("density_1d" as const) : ("scatter" as const);
+
+  const nextDimensions = ["x", "y"].slice(0, numDimensions).reduce(
+    (dimensions, dimensionKey, index) => ({
+      ...dimensions,
+      [dimensionKey]: {
+        axis_type: "raw_slice",
+        aggregation: "first",
+        slice_type,
+        dataset_id,
+        context: toSingleSliceContext(slice_type, slice_ids[index]),
+      },
+    }),
+    {}
+  );
+
+  let nextPlot = {
+    plot_type,
     index_type,
-    ...(color_by ? { color_by, filters } : {}),
-    dimensions: ["x", "y"].slice(0, numDimensions).reduce(
-      (dimensions, dimensionKey, index) => ({
-        ...dimensions,
-        [dimensionKey]: {
-          axis_type: "raw_slice",
-          aggregation: "first",
-          slice_type,
-          dataset_id,
-          context: toSingleSliceContext(slice_type, slice_ids[index]),
-        },
-      }),
-      {}
-    ),
-  };
+    dimensions: nextDimensions,
+  } as DataExplorerPlotConfig;
+
+  if (color_by) {
+    nextPlot = { ...nextPlot, color_by, filters };
+
+    if (color_by === "aggregated_slice") {
+      nextPlot = plotConfigReducer(nextPlot, {
+        type: "swap_color_and_facet",
+      }) as DataExplorerPlotConfig;
+    }
+  }
+
+  return nextPlot;
 }
 
 export function heatmapToDensityPlot(plot: DataExplorerPlotConfig) {

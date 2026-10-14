@@ -3,6 +3,7 @@ import { isCompleteExpression } from "../../utils/dimensionHelpers";
 import { legacyPortalIdToBreadboxGivenId } from "../../utils/slice-id";
 import {
   DataExplorerContextV2,
+  DataExplorerPlotConfig,
   DataExplorerDatasetDescriptor,
   DimensionKey,
   FilterKey,
@@ -10,6 +11,7 @@ import {
 } from "@depmap/types";
 import { isCompletePlot } from "./validation";
 import { CURRENT_PLOT_VERSION } from "./plot-version";
+import plotConfigReducer from "./reducers/plotConfigReducer";
 
 type Datasets = Record<string, DataExplorerDatasetDescriptor[]>;
 
@@ -529,5 +531,16 @@ export function parseShorthandParams(params: qs.ParsedQs, datasets: Datasets) {
   // sentinel, and slice_id metadata. Those are repaired unconditionally
   // downstream by makePlotConfigBreadboxModeCompatible, which does not — and must
   // not — gate on version.
-  return { ...plot, version: CURRENT_PLOT_VERSION };
+  const stamped = { ...plot, version: CURRENT_PLOT_VERSION };
+
+  // `color1`/`color2` are legacy shorthand for "color by this context". We now
+  // want such links to color AND facet, which is exactly the "promote" case of
+  // swapping: color's backing moves to facet_by and color_by defers to it.
+  if (params.color1 || params.color2) {
+    return plotConfigReducer(stamped, {
+      type: "swap_color_and_facet",
+    }) as DataExplorerPlotConfig;
+  }
+
+  return stamped;
 }
