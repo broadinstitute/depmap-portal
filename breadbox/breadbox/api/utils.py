@@ -1,5 +1,6 @@
 import hashlib
 import json
+from opentelemetry import trace
 from pydantic import Json, TypeAdapter
 
 from fastapi import status, Depends, Header
@@ -38,7 +39,7 @@ def get_render_if_changed(
     request_etag: Annotated[Optional[str], Depends(get_client_etag)],
 ) -> RenderIfChanged:
     """
-    Method intended to be used as a dependency to handle checking etag and only rendering a response
+    Method intended to be used as an injected dependency to handle checking etag and only rendering a response
     if etag does not match.
     """
 
@@ -92,8 +93,15 @@ def get_response_with_etag(
     up-to-date response, or a 200 OK response with the content from the callback.
     """
     common = {"media_type": "application/json", "headers": {"ETag": etag}}
+
+    # Record the outcome on the current span so we can measure the cache hit rate.
+    # Only requests that sent an etag could have been hits, so "none" is tracked
+    # separately from "miss": hit rate = hit / (hit + miss).
+    span = trace.get_current_span()
     if if_none_match and if_none_match == etag:
+        span.set_attribute("etag.outcome", "hit")
         return Response(status_code=status.HTTP_304_NOT_MODIFIED, **common)
+    span.set_attribute("etag.outcome", "miss" if if_none_match else "none")
 
     result = get_response_content_callback()
     if response_model is not None:
