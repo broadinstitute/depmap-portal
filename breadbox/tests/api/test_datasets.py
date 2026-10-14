@@ -2029,7 +2029,8 @@ def test_get_datasets_returns_304_when_unchanged(
     client: TestClient, minimal_db: SessionWithUser, settings
 ):
     headers = {"X-Forwarded-User": settings.default_user}
-    factories.matrix_dataset(minimal_db, settings)
+    admin_headers = {"X-Forwarded-User": settings.admin_users[0]}
+    existing_dataset = factories.matrix_dataset(minimal_db, settings)
 
     first = client.get("/datasets/", headers=headers)
     assert_status_ok(first)
@@ -2038,9 +2039,24 @@ def test_get_datasets_returns_304_when_unchanged(
     second = client.get("/datasets/", headers={**headers, "If-None-Match": etag})
     assert second.status_code == 304
 
-    # a change invalidates the etag
-    minimal_db.execute(text("UPDATE dataset SET name = 'renamed'"))
+    # transient datasets never appear in the results, so adding one doesn't invalidate the etag
+    minimal_db.reset_user(settings.admin_users[0])
+    transient_dataset = factories.matrix_dataset(
+        minimal_db, settings, is_transient=True
+    )
     minimal_db.commit()
+    transient_added = client.get(
+        "/datasets/", headers={**headers, "If-None-Match": etag}
+    )
+    assert transient_added.status_code == 304
+
+    # a change invalidates the etag
+    renamed = client.patch(
+        f"/datasets/{existing_dataset.id}",
+        json={"format": "matrix", "name": "renamed"},
+        headers=admin_headers,
+    )
+    assert_status_ok(renamed)
     third = client.get("/datasets/", headers={**headers, "If-None-Match": etag})
     assert third.status_code == 200
     assert third.headers["ETag"] != etag
@@ -2062,10 +2078,8 @@ def test_get_datasets_returns_304_when_unchanged(
 
     # and so does deleting one
     etag = fifth.headers["ETag"]
-    minimal_db.execute(
-        text("DELETE FROM dataset WHERE id = :id"), {"id": new_dataset.id}
-    )
-    minimal_db.commit()
+    deleted = client.delete(f"/datasets/{new_dataset.id}", headers=admin_headers)
+    assert_status_ok(deleted)
     sixth = client.get("/datasets/", headers={**headers, "If-None-Match": etag})
     assert sixth.status_code == 200
     assert sixth.headers["ETag"] != etag
@@ -2099,7 +2113,8 @@ def test_get_datasets_etag_varies_by_user_except_for_public_group(
     assert get_etag(public_url, user_b) == public_etag_a
 
     # A user's etag is also invalidated by changes to groups, but the public group's isn't
-    minimal_db.execute(text("""INSERT INTO "group" (id, name) VALUES ('g1', 'new')"""))
+    minimal_db.reset_user(settings.admin_users[0])
+    factories.group(minimal_db, settings)
     minimal_db.commit()
     assert get_etag("/datasets/", user_a) != etag_a
     assert get_etag(public_url, user_a) == public_etag_a

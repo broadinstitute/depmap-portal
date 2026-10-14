@@ -19,7 +19,6 @@ from breadbox.schemas.dataset import ColumnMetadata
 from breadbox.db.base_class import Base, UUIDMixin
 from breadbox.models.group import GroupMixin
 from breadbox.models.data_type import DataType
-from breadbox.models.table_mutation import register_mutation_triggers
 from typing import Any, TypeVar, Type, TYPE_CHECKING, Optional
 from ..schemas.dataset import ValueType, AnnotationType
 
@@ -74,9 +73,6 @@ class DimensionType(Base):
         lazy="select",
         cascade="all",
     )
-
-
-register_mutation_triggers(DimensionType.__table__)
 
 
 class DimensionTypeLabel(Base):
@@ -148,10 +144,6 @@ class Dataset(Base, UUIDMixin, GroupMixin):
     __mapper_args__ = {"polymorphic_on": format, "polymorphic_identity": "dataset"}
 
 
-# Bump table_mutation.count on every insert/update/delete (used to compute etags)
-register_mutation_triggers(Dataset.__table__)
-
-
 class TabularDataset(Dataset):
     __tablename__ = "tabular_dataset"
 
@@ -181,9 +173,6 @@ class TabularDataset(Dataset):
                 references=dimension.references_dimension_type_name,
             )
         return columns
-
-
-register_mutation_triggers(TabularDataset.__table__)
 
 
 class MatrixDataset(Dataset):
@@ -228,9 +217,6 @@ class MatrixDataset(Dataset):
     )  # jsonfied string of a list_strings
 
     __mapper_args__ = {"polymorphic_identity": "matrix_dataset"}
-
-
-register_mutation_triggers(MatrixDataset.__table__)
 
 
 class Dimension(Base, UUIDMixin, GroupMixin):

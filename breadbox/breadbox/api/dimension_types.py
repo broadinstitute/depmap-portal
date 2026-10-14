@@ -34,7 +34,7 @@ from typing import cast
 from ..io.data_validation import validate_dimension_type_metadata
 from ..schemas.custom_http_exception import UserError, ResourceNotFoundError
 from breadbox.models.dataset import AnnotationType, DimensionType as DimensionTypeModel
-from breadbox.api.datasets import DATASET_TABLES, ACCESS_CONTROL_TABLES
+from breadbox.crud.cache_invalidation import GET_DATASETS, DIMENSION_TYPES
 import breadbox.service.dataset as dataset_service
 from breadbox.schemas.types import (
     DimensionType,
@@ -43,8 +43,6 @@ from breadbox.schemas.types import (
     DimensionIdentifiers,
 )
 from breadbox.api.utils import (
-    get_response_with_etag,
-    create_etag_from_mutation_counts,
     RenderIfChanged,
     get_render_if_changed,
 )
@@ -681,9 +679,7 @@ def get_dimension_type_identifiers(
         ]
 
     return render_if_changed(
-        db,
-        DATASET_TABLES + ACCESS_CONTROL_TABLES + [DimensionTypeModel.__tablename__],
-        _get_response_content,
+        db, [GET_DATASETS, DIMENSION_TYPES], _get_response_content,
     )
 
 

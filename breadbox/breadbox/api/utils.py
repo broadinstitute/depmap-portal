@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, Optional, List, Union
 from typing import Annotated
 from typing import Any, Callable, Optional, Protocol
 
-from breadbox.crud.table_mutation import get_mutation_counts
+from breadbox.crud.cache_invalidation import get_cache_versions
 from breadbox.db.session import SessionWithUser
 
 
@@ -25,7 +25,7 @@ class RenderIfChanged(Protocol):
     def __call__(
         self,
         db: SessionWithUser,
-        tables_to_check: List[str],
+        cache_keys: List[str],
         get_response_content_callback: Callable[[], Any],
         *,
         response_model: Optional[Any] = None,
@@ -45,7 +45,7 @@ def get_render_if_changed(
 
     def needs_render(
         db: SessionWithUser,
-        tables_to_check: List[str],
+        cache_keys: List[str],
         get_response_content_callback: Callable[[], Any],
         *,
         response_model: Optional[Any] = None,
@@ -70,7 +70,7 @@ def get_render_if_changed(
             # a possibility for a future optimization if necessary.
             _extra["user"] = db.user
 
-        current_etag = create_etag_from_mutation_counts(db, tables_to_check, _extra)
+        current_etag = create_etag_from_cache_keys(db, cache_keys, _extra)
 
         return get_response_with_etag(
             current_etag, request_etag, get_response_content_callback, response_model
@@ -126,16 +126,16 @@ def hash_id_list(values: list[str]):
     return hash.hexdigest()
 
 
-def create_etag_from_mutation_counts(
-    db: SessionWithUser, tables_to_check: List[str], extra: Dict[str, Any]
+def create_etag_from_cache_keys(
+    db: SessionWithUser, cache_keys: List[str], extra: Dict[str, Any]
 ) -> str:
     """
-    Computes an etag from how many times each of the given tables have been mutated (see table_mutation).
+    Computes an etag from the current versions of the given cache keys (see crud/cache_invalidation.py).
     `extra` is any other information which the response depends on (for example, the user for responses
-    which differ by user), which is hashed along with the counts.
+    which differ by user), which is hashed along with the versions.
 
-    We want this calc to be as fast as possible, so rather than hash all of the things which can change, we're
-    storing a mutation count which acts as a etag for the entire state of a table, and we hash those all together.
+    We want this calc to be as fast as possible, so rather than hash all of the things which can change, the
+    write paths replace a stored version whenever they could change the result, and we hash those together.
     """
-    key = {**extra, "mutation_counts": get_mutation_counts(db, tables_to_check)}
+    key = {**extra, "cache_versions": get_cache_versions(db, cache_keys)}
     return hashlib.md5(json.dumps(key, sort_keys=True).encode()).hexdigest()

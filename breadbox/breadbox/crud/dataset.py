@@ -24,6 +24,7 @@ from ..schemas.custom_http_exception import (
     UserError,
 )
 from breadbox.crud.access_control import user_has_access_to_group, PUBLIC_GROUP_ID
+from breadbox.crud.cache_invalidation import invalidate_for_dataset_change
 from breadbox.models.dataset import (
     Dataset,
     MatrixDataset,
@@ -642,6 +643,7 @@ def update_dataset(
         if not user_has_access_to_group(new_group, user, write_access=True):
             raise DatasetAccessError("User {user} cannot access this dataset!")
 
+    old_group_id = dataset.group_id
     for key, value in update_data.items():
         if key != "format":
             setattr(dataset, key, value)
@@ -649,6 +651,7 @@ def update_dataset(
             setattr(dataset, key, str(value))
 
     db.flush()
+    invalidate_for_dataset_change(db, dataset, old_group_id=old_group_id)
     return dataset
 
 
@@ -705,6 +708,7 @@ def delete_dataset(
     log.info("delete Dimension")
     db.query(Dimension).filter(Dimension.dataset_id == dataset.id).delete()
     log.info("delete_dataset %s delete dataset itself", dataset.id)
+    invalidate_for_dataset_change(db, dataset)
     db.delete(dataset)
 
     # Matrix dataset files are stored as hdf5 and need to be deleted as well

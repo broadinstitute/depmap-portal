@@ -8,11 +8,33 @@ Create Date: 2026-10-08 10:00:00.000000
 from alembic import op
 import sqlalchemy as sa
 
-from breadbox.models.table_mutation import (
-    drop_mutation_trigger_statements,
-    mutation_trigger_statements,
-    seed_statement,
-)
+
+# NOTE: these helpers used to live in breadbox/models/table_mutation.py, which was removed when
+# table_mutation was replaced by cache_version. They're inlined here so this migration still runs.
+EVENTS = ("INSERT", "UPDATE", "DELETE")
+
+
+def _trigger_name(table_name, trigger_event):
+    return f"trg_{table_name}_{trigger_event.lower()}_mutation"
+
+
+def mutation_trigger_statements(table_name):
+    return [
+        f"CREATE TRIGGER IF NOT EXISTS {_trigger_name(table_name, e)} "
+        f'AFTER {e} ON "{table_name}" '
+        f"BEGIN UPDATE table_mutation SET count = count + 1 WHERE name = '{table_name}'; END"
+        for e in EVENTS
+    ]
+
+
+def drop_mutation_trigger_statements(table_name):
+    return [f"DROP TRIGGER IF EXISTS {_trigger_name(table_name, e)}" for e in EVENTS]
+
+
+def seed_statement(table_name):
+    return (
+        f"INSERT OR IGNORE INTO table_mutation (name, count) VALUES ('{table_name}', 0)"
+    )
 
 
 # revision identifiers, used by Alembic.

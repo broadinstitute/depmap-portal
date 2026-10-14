@@ -23,8 +23,8 @@ from breadbox.celery_task import utils
 from breadbox.api.utils import (
     RenderIfChanged,
     get_render_if_changed,
-    create_etag_from_mutation_counts,
 )
+from breadbox.crud.cache_invalidation import GET_DATASETS, GET_DATASETS_PUBLIC
 from breadbox.compute.dataset_tasks import (
     get_file_dict,
     run_upload_dataset,
@@ -34,12 +34,10 @@ from ..schemas.custom_http_exception import UserError, DatasetNotFoundError
 from ..config import Settings, get_settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from ..crud import dataset as dataset_crud
-from ..models.group import Group, GroupEntry
 from ..crud import dimension_types as type_crud
 from ..crud.dimension_ids import get_dataset_feature_by_given_id
 
 from ..models.dataset import (
-    Dataset as DatasetModel,
     ValueType,
     MatrixDataset,
     TabularDataset,
@@ -94,16 +92,6 @@ def _get_root_query(sq: SliceQuery) -> SliceQuery:
     return current
 
 
-# The tables holding the datasets themselves
-DATASET_TABLES = [
-    DatasetModel.__tablename__,
-    TabularDataset.__tablename__,
-    MatrixDataset.__tablename__,
-]
-# The tables which determine which datasets a user is allowed to see
-ACCESS_CONTROL_TABLES = [Group.__tablename__, GroupEntry.__tablename__]
-
-
 @router.get(
     "/",
     operation_id="get_datasets",
@@ -135,17 +123,17 @@ def get_datasets(
     Similar for `sample_id` and `sample_type`.
     """
 
-    tables_to_check = list(DATASET_TABLES)
     if group_id == PUBLIC_GROUP_ID:
         # Special case which we handle as an optimization: Everyone can see everything in the public group, so if we've requested that, the result doesn't depend on
-        # the user or on changes to groups/group entries.
+        # the user or on changes to groups/group entries. It only changes when a public dataset does.
+        cache_keys = [GET_DATASETS_PUBLIC]
         ignore_user_in_etag = True
     else:
-        # Otherwise, the result depends on who is asking and on which groups they belong to, so the user and the
-        # access control tables need to be part of the etag. Caching happens by url + etag, but user is sent via header
-        # so we need to add it to the etag
+        # Otherwise, the result depends on who is asking and on which groups they belong to, so the user needs
+        # to be part of the etag (GET_DATASETS is invalidated when groups or group entries change). Caching
+        # happens by url + etag, but user is sent via header so we need to add it to the etag
+        cache_keys = [GET_DATASETS]
         ignore_user_in_etag = False
-        tables_to_check.extend(ACCESS_CONTROL_TABLES)
 
     def _get_datasets():
         datasets = dataset_crud.get_datasets(
@@ -162,7 +150,7 @@ def get_datasets(
 
     return render_if_changed(
         db,
-        tables_to_check,
+        cache_keys,
         _get_datasets,
         response_model=List[DatasetResponse],
         ignore_user=ignore_user_in_etag,

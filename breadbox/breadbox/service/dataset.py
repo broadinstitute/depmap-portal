@@ -29,6 +29,11 @@ from breadbox.crud.group import (
     get_transient_group,
 )
 
+from ..crud.cache_invalidation import (
+    DIMENSION_TYPES,
+    invalidate_cache_keys,
+    invalidate_for_dataset_change,
+)
 from ..crud.dataset import (
     add_tabular_dimensions,
     add_matrix_dataset_dimensions,
@@ -550,6 +555,7 @@ def add_tabular_dataset(
     )
     db.add(dataset)
     db.flush()
+    invalidate_for_dataset_change(db, dataset)
 
     add_tabular_dimensions(
         db, data_df, columns_metadata, dataset.id, dimension_type, group_id=group.id
@@ -621,6 +627,7 @@ def add_matrix_dataset(
     )
     db.add(dataset)
     db.flush()
+    invalidate_for_dataset_change(db, dataset)
 
     add_matrix_dataset_dimensions(
         db=db,
@@ -794,6 +801,9 @@ def update_dimension_type(
             if old_dataset is not None:
                 delete_dataset(db, user, old_dataset, filestore_location)
 
+            # the metadata dataset may have just become non-transient
+            invalidate_for_dataset_change(db, metadata_dataset)
+
         db.flush()
         if "properties_to_index" in given_updated_fields:
             set_properties_to_index(
@@ -809,6 +819,7 @@ def update_dimension_type(
         dimension_type.display_name = given_updated_fields["display_name"]
 
     db.flush()
+    invalidate_cache_keys(db, DIMENSION_TYPES)
 
 
 def update_dimension_type_metadata(
@@ -861,6 +872,7 @@ def update_dimension_type_metadata(
     db.add(dimension_type_metadata)
 
     db.flush()
+    invalidate_for_dataset_change(db, dimension_type_metadata)
     dimension_type.dataset_id = dataset_id  # pyright: ignore
     db.flush()
     db.refresh(dimension_type)
@@ -891,4 +903,5 @@ def update_dimension_type_metadata(
     populate_search_index_after_update(db, dimension_type)
 
     db.flush()
+    invalidate_cache_keys(db, DIMENSION_TYPES)
     return dimension_type
