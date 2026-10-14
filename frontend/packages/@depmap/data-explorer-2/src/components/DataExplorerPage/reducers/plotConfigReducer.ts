@@ -18,7 +18,7 @@ import {
   canSwapColorAndFacet,
   isAxisComplete,
   SwappablePlot,
-} from "../utils";
+} from "../colorFacetSwap";
 
 export type PlotConfigReducerAction =
   | { type: "set_plot"; payload: PartialDataExplorerPlotConfig }
