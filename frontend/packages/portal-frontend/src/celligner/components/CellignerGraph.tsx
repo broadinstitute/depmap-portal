@@ -294,7 +294,9 @@ export default class CellignerGraph extends React.Component<Props, State> {
     });
   };
 
-  onMakeContextButtonClick = async () => {
+  // The DepMap IDs of selected, visible points that are models (tumors and
+  // other sample types have no DepMap ID).
+  getSelectedModelIds = () => {
     const {
       alignments,
       lassoOrBoxSelectedPoints,
@@ -303,9 +305,12 @@ export default class CellignerGraph extends React.Component<Props, State> {
     } = this.props;
     const { tumorLegendPointVisibilty, colorLegendPointVisibilty } = this.state;
 
-    const pointVisibility = alignments.lineage.map(
-      (_, i) => tumorLegendPointVisibilty[i] && colorLegendPointVisibilty[i]
-    );
+    if (
+      lassoOrBoxSelectedPoints.size === 0 &&
+      sidePanelSelectedPoints.size === 0
+    ) {
+      return [];
+    }
 
     const selectedPtsForContext = getValidSelectedPoints(
       lassoOrBoxSelectedPoints,
@@ -313,18 +318,27 @@ export default class CellignerGraph extends React.Component<Props, State> {
       selectedPoints
     );
 
-    const selectedModelIds = alignments.sampleId.filter(
-      (_, index) =>
-        alignments.type[index] === CellignerSampleType.DEPMAP_MODEL &&
-        selectedPtsForContext.has(index) &&
-        pointVisibility[index] === true
-    );
+    const selectedModelIds: string[] = [];
 
+    selectedPtsForContext.forEach((index) => {
+      if (
+        alignments.type[index] === CellignerSampleType.DEPMAP_MODEL &&
+        tumorLegendPointVisibilty[index] &&
+        colorLegendPointVisibilty[index]
+      ) {
+        selectedModelIds.push(alignments.sampleId[index]);
+      }
+    });
+
+    return [...new Set(selectedModelIds)];
+  };
+
+  onMakeContextButtonClick = async () => {
     const context = {
       name: "",
       dimension_type: "depmap_model",
       expr: {
-        in: [{ var: "id" }, [...new Set(selectedModelIds)]],
+        in: [{ var: "id" }, this.getSelectedModelIds()],
       },
       vars: {
         id: {
@@ -339,36 +353,24 @@ export default class CellignerGraph extends React.Component<Props, State> {
   };
 
   getPlotControlEnabledTools = () => {
-    if (this.props.lassoOrBoxSelectedPoints.size > 0) {
-      return [
-        PlotToolOptions.Zoom,
-        PlotToolOptions.Pan,
-        PlotToolOptions.Lasso,
-        PlotToolOptions.Select,
-        PlotToolOptions.Deselect,
-        PlotToolOptions.MakeContext,
-        PlotToolOptions.UnselectAnnotatedPoints,
-      ];
-    }
-
-    if (this.props.sidePanelSelectedPoints.size > 0) {
-      return [
-        PlotToolOptions.Zoom,
-        PlotToolOptions.Pan,
-        PlotToolOptions.Lasso,
-        PlotToolOptions.Select,
-        PlotToolOptions.MakeContext,
-        PlotToolOptions.UnselectAnnotatedPoints,
-      ];
-    }
-
-    return [
+    const tools = [
       PlotToolOptions.Zoom,
       PlotToolOptions.Pan,
       PlotToolOptions.Lasso,
       PlotToolOptions.Select,
-      PlotToolOptions.UnselectAnnotatedPoints,
     ];
+
+    if (this.props.lassoOrBoxSelectedPoints.size > 0) {
+      tools.push(PlotToolOptions.Deselect);
+    }
+
+    if (this.getSelectedModelIds().length > 0) {
+      tools.push(PlotToolOptions.MakeContext);
+    }
+
+    tools.push(PlotToolOptions.UnselectAnnotatedPoints);
+
+    return tools;
   };
 
   render() {

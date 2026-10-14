@@ -359,6 +359,7 @@ export default class CellignerPage extends React.Component<Props, State> {
       selectedPrimarySite,
       cellLineList,
       sidePanelSelectedPts,
+      lassoOrBoxSelectedPts,
       allPossibleSidePanelSelectedPts,
     } = this.state;
 
@@ -372,35 +373,22 @@ export default class CellignerPage extends React.Component<Props, State> {
       cellLineList
     );
 
+    // NOTE: This is registered once as a Plotly event listener when the graph
+    // mounts, so it must not read state from this render's closure. Always
+    // read from `prev`.
     const handleSelectingContextPts = (pointIndexes: number[]) => {
-      if (!alignmentsArrWithCellLineCol) {
-        return;
-      }
-
       this.setState((prev) => {
-        const { lassoOrBoxSelectedPts } = prev;
+        const { sidePanelSelectedPts: sidePanel } = prev;
 
-        if (!lassoOrBoxSelectedPts) {
-          return prev;
-        }
+        // Plotly reports the complete selection each time, so it replaces
+        // the previous one (restricted to side panel points, if any).
+        const next = new Set(
+          sidePanel.size > 0
+            ? pointIndexes.filter((i) => sidePanel.has(i))
+            : pointIndexes
+        );
 
-        const next: Set<number> = new Set();
-
-        for (let index = 0; index < pointIndexes.length; index++) {
-          const pointIndex = pointIndexes[index];
-
-          if (
-            (!lassoOrBoxSelectedPts?.has(pointIndex) &&
-              sidePanelSelectedPts?.size > 0 &&
-              sidePanelSelectedPts?.has(pointIndex)) ||
-            (!lassoOrBoxSelectedPts?.has(pointIndex) &&
-              sidePanelSelectedPts?.size === 0)
-          ) {
-            next.add(pointIndex);
-          }
-        }
-
-        return { ...prev, lassoOrBoxSelectedPts: next };
+        return { lassoOrBoxSelectedPts: next };
       });
     };
 
@@ -422,7 +410,7 @@ export default class CellignerPage extends React.Component<Props, State> {
         selectedPrimarySite={selectedPrimarySite}
         selectedPoints={selectedPoints}
         annotatedPoints={formattedAnnotatedPoints}
-        lassoOrBoxSelectedPoints={this.state.lassoOrBoxSelectedPts}
+        lassoOrBoxSelectedPoints={lassoOrBoxSelectedPts}
         sidePanelSelectedPoints={sidePanelSelectedPts}
         subsetLegendBySelectedLineages={!!tumorDistances}
         handleUnselectTableRows={handleUnselectTableRows}
