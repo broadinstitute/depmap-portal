@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from typing import Annotated, Callable, Generator, Literal
 from logging import getLogger
 from fastapi import Body, Depends, Query
+from opentelemetry import trace
 
 from breadbox.crud.dimension_ids import get_dimension_type_labels_by_id
 from breadbox.api.dependencies import get_db_with_user
@@ -21,6 +22,7 @@ from .router import router
 import time
 
 log = getLogger(__name__)
+tracer = trace.get_tracer(__name__)
 
 from breadbox.utils.profiling import profiled_region, warn_if_slow
 
@@ -35,27 +37,30 @@ def _evaluate(db: SessionWithUser, settings: Settings, context: Context):
 
     def slice_loader(slice_query):
         with profiled_region("slice_loader"):
-            return slice_service.get_slice_data(
-                db, settings.filestore_location, slice_query
-            )
+            with tracer.start_as_current_span("slice_loader"):
+                return slice_service.get_slice_data(
+                    db, settings.filestore_location, slice_query
+                )
 
     def label_loader(dimension_type):
         with profiled_region("label_loader"):
-            return get_dimension_type_labels_by_id(db, dimension_type)
+            with tracer.start_as_current_span("label_loader"):
+                return get_dimension_type_labels_by_id(db, dimension_type)
 
     with profiled_region("evaluator.evaluate()"):
-        try:
-            evaluator = ContextEvaluator(context.dict(), slice_loader, label_loader)
-            return evaluator.evaluate()
-        except LookupError as e:
-            raise UserError(f"Encountered lookup error: {e}") from e
-        except (ValueError, TypeError) as e:
-            log.error(
-                "Context evaluation failed: %s\nContext: %s",
-                e,
-                context.model_dump_json(indent=2),
-            )
-            raise UserError(f"Context evaluation error: {e}") from e
+        with tracer.start_as_current_span("evaluator"):
+            try:
+                evaluator = ContextEvaluator(context.dict(), slice_loader, label_loader)
+                return evaluator.evaluate()
+            except LookupError as e:
+                raise UserError(f"Encountered lookup error: {e}") from e
+            except (ValueError, TypeError) as e:
+                log.error(
+                    "Context evaluation failed: %s\nContext: %s",
+                    e,
+                    context.model_dump_json(indent=2),
+                )
+                raise UserError(f"Context evaluation error: {e}") from e
 
 
 @router.post(
@@ -133,12 +138,10 @@ def get_context_dataset_coverage(
         with warn_if_slow(
             "get_context_dataset_coverage", lambda: f"scope={scope} context={context}",
         ):
-            with profiled_region("get_context_dataset_coverage: _evaluate"):
+            with tracer.start_as_current_span("_evaluate"):
                 result = _evaluate(db, settings, context)
 
-            with profiled_region(
-                "get_context_dataset_coverage: dataset_crud.count_dataset_coverage"
-            ):
+            with tracer.start_as_current_span("count_dataset_coverage"):
                 counts = dataset_crud.count_dataset_coverage(
                     db,
                     db.user,
