@@ -37,28 +37,28 @@ export function getValidSelectedPoints(
   sidePanelSelectedPoints: Set<number>,
   selectedPoints: number[] // The indices of the colored points
 ) {
-  let selectedPtsForContext = new Set([...lassoOrBoxSelectedPoints]);
+  let selectedPtsForContext = lassoOrBoxSelectedPoints;
 
   if (sidePanelSelectedPoints.size > 0 && lassoOrBoxSelectedPoints.size > 0) {
-    const intersectionOfSelectionMethods = [
-      ...sidePanelSelectedPoints,
-    ].filter((value) => [...lassoOrBoxSelectedPoints].includes(value));
-
-    selectedPtsForContext = new Set([...intersectionOfSelectionMethods]);
+    selectedPtsForContext = new Set(
+      [...sidePanelSelectedPoints].filter((value) =>
+        lassoOrBoxSelectedPoints.has(value)
+      )
+    );
+  } else if (
+    sidePanelSelectedPoints.size > 0 &&
+    lassoOrBoxSelectedPoints.size === 0
+  ) {
+    selectedPtsForContext = sidePanelSelectedPoints;
   }
 
-  if (sidePanelSelectedPoints.size > 0 && lassoOrBoxSelectedPoints.size === 0) {
-    selectedPtsForContext = new Set([...sidePanelSelectedPoints]);
+  if (selectedPoints.length === 0) {
+    return new Set(selectedPtsForContext);
   }
 
-  const visibleSelectedPts =
-    selectedPoints.length > 0
-      ? [...selectedPtsForContext].filter((pt: number) =>
-          selectedPoints.includes(pt)
-        )
-      : selectedPtsForContext;
+  const visible = new Set(selectedPoints);
 
-  return new Set([...visibleSelectedPts]);
+  return new Set([...selectedPtsForContext].filter((pt) => visible.has(pt)));
 }
 
 export function createFormattedAnnotatedPoints(
