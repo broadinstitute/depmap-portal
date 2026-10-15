@@ -273,7 +273,7 @@ class ExportDataset(
         # This docstring is used for a short one-line description shown next to the endpoint URL. Longer descriptions should go in namespace.doc(description=)
         # DO NOT put a docstring here that you would not want exposed to users of the API. Use # for comments instead
         """
-        Submit a task to download a custom subset of a dataset
+        Submit a task to download a custom subset of a matrix dataset.
         """
         dataset_id = request.json.get("datasetId")
         entity_labels = request.json.get("featureLabels")
