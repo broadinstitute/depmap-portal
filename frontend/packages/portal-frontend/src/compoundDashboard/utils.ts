@@ -39,8 +39,8 @@ export const getDatasetIdFromLabel = (datasetLabel: string) => {
 };
 
 export const COMPOUND_DASHBOARD_DATASET_IDS = [
-  "Rep_all_single_pt",
-  "Prism_oncology_AUC",
-  "Prism_oncology_seq_AUC",
   "Prism_oncology_unified_AUC",
+  "Prism_oncology_seq_AUC",
+  "Prism_oncology_AUC",
+  "Rep_all_single_pt",
 ];
