@@ -19,7 +19,8 @@ contexts, resolve labels and value types, and pick categories. That logic is lar
 config it consumes is a frozen wire format (see ADR 0001). Whatever the page renders for a
 given config is the contract.
 
-The consumer is Breadbox itself. A `POST /plot-data` endpoint spawns `node plot-data.js`
+The consumer is Breadbox itself. A `POST /temp/plot-data` endpoint (hidden from the OpenAPI
+docs; its contract is in `breadbox/README.md`) spawns `node plot-data.js`
 once per request, and the script reads back from that same Breadbox over localhost.
 Breadbox decides who the caller is and hands that to the child as request headers. The
 script is therefore a component inside a service that enforces limits on it (stdout size,
