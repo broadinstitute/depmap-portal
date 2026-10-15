@@ -52,6 +52,7 @@ def create_sanitizer() -> Sanitizer:
     new_settings["attributes"].update(
         {"img": ("src", "width", "height"), "code": ["class"], "div": ["class"]}
     )
+    new_settings["keep_typographic_whitespace"] = True
 
     return Sanitizer(settings=new_settings)
 
