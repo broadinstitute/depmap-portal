@@ -7,7 +7,7 @@ The pieces, from the outside in:
 
   PlotDataService.run     cache lookup, single-flight coalescing, one log line per call
   PlotDataService._execute  concurrency cap + queue, then the child, then interpret stdout
-  _run_child              spawn, feed stdin, read capped stdout / drain stderr, deadline, ALWAYS reap
+  _run_child              spawn, communicate() under the deadline, ALWAYS reap
 
 Nothing in here touches HTTP, so it can be tested without a client.
 """
@@ -42,7 +42,6 @@ SCRIPT_PATH = (
 )
 
 STDERR_TAIL_BYTES = 16 * 1024
-READ_CHUNK_BYTES = 64 * 1024
 # How long a child gets between SIGTERM and SIGKILL. (Module level so tests can shorten it.)
 KILL_GRACE_SECONDS = 2.0
 MAX_MESSAGE_CHARS = 500
@@ -95,11 +94,6 @@ def internal_error(log_detail: str) -> PlotDataError:
         "Something went wrong while building the plot data.",
         log_detail=log_detail,
     )
-
-
-class _OutputTooLarge(Exception):
-    def __init__(self, nbytes: int):
-        self.nbytes = nbytes
 
 
 @dataclass
@@ -378,20 +372,20 @@ class PlotDataService:
             timing.queue_ms = (_monotonic() - queued_at) * 1000
             started = _monotonic()
             try:
-                returncode, stdout, stderr_tail = await self._run_child(cmd, payload)
+                returncode, stdout, stderr = await self._run_child(cmd, payload)
             finally:
                 timing.node_ms = (_monotonic() - started) * 1000
         finally:
             self._release_slot()
 
-        body = self._interpret(returncode, stdout, stderr_tail)
+        body = self._interpret(returncode, stdout, stderr)
         if self.cache is not None and len(body) <= self.cache.maxsize:
             self.cache[key] = body
         return body
 
     async def _run_child(
         self, cmd: List[str], payload: bytes
-    ) -> Tuple[int, bytes, bytearray]:
+    ) -> Tuple[int, bytes, bytes]:
         s = self._settings
         # Minimal environment: Breadbox's own env may hold secrets the child must not see.
         env = {"PATH": os.environ.get("PATH", "")}
@@ -408,102 +402,38 @@ class PlotDataService:
             raise internal_error(f"could not start child: {e}")
         self.spawn_count += 1
 
-        stderr_tail = bytearray()
         try:
             try:
-                returncode, stdout = await asyncio.wait_for(
-                    self._communicate(proc, payload, stderr_tail),
-                    s.plot_data_timeout_seconds,
+                stdout, stderr = await asyncio.wait_for(
+                    proc.communicate(payload), s.plot_data_timeout_seconds
                 )
             except asyncio.TimeoutError:
                 raise PlotDataError(
-                    504,
-                    "timeout",
-                    "Building the plot data took too long.",
-                    log_detail=self._tail_text(stderr_tail),
-                )
-            except _OutputTooLarge as e:
-                raise PlotDataError(
-                    413,
-                    "result_too_large",
-                    "The plot data is too large to return.",
-                    details={"bytes": e.nbytes, "limit": s.plot_data_max_output_bytes,},
+                    504, "timeout", "Building the plot data took too long."
                 )
         finally:
             # Kill + wait no matter what: success, timeout, error or cancellation.
             await _shielded(_reap(proc))
-            # (closes the pipe transports now rather than whenever the GC gets to them)
-            transport = getattr(proc, "_transport", None)
-            if transport is not None:
-                transport.close()
-        return returncode, stdout, stderr_tail
-
-    async def _communicate(
-        self,
-        proc: "asyncio.subprocess.Process",
-        payload: bytes,
-        stderr_tail: bytearray,
-    ) -> Tuple[int, bytes]:
-        max_out = self._settings.plot_data_max_output_bytes
-        assert proc.stdin and proc.stdout and proc.stderr
-
-        async def write_stdin() -> None:
-            try:
-                proc.stdin.write(payload)  # type: ignore[union-attr]
-                await proc.stdin.drain()  # type: ignore[union-attr]
-            except (BrokenPipeError, ConnectionResetError):
-                pass  # the child quit without reading; its exit status tells the story
-            finally:
-                try:
-                    proc.stdin.close()  # type: ignore[union-attr]
-                except Exception:
-                    pass
-
-        async def read_stdout() -> bytes:
-            buf = bytearray()
-            while True:
-                chunk = await proc.stdout.read(READ_CHUNK_BYTES)  # type: ignore[union-attr]
-                if not chunk:
-                    return bytes(buf)
-                buf += chunk
-                if len(buf) > max_out:
-                    raise _OutputTooLarge(len(buf))
-
-        async def drain_stderr() -> None:
-            # Must be read concurrently or a chatty child blocks on a full pipe.
-            while True:
-                chunk = await proc.stderr.read(READ_CHUNK_BYTES)  # type: ignore[union-attr]
-                if not chunk:
-                    return
-                stderr_tail.extend(chunk)
-                if len(stderr_tail) > STDERR_TAIL_BYTES:
-                    del stderr_tail[:-STDERR_TAIL_BYTES]
-
-        tasks = [
-            asyncio.ensure_future(write_stdin()),
-            asyncio.ensure_future(read_stdout()),
-            asyncio.ensure_future(drain_stderr()),
-        ]
-        try:
-            results = await asyncio.gather(*tasks)
-            returncode = await proc.wait()
-            return returncode, results[1]
-        finally:
-            for t in tasks:
-                t.cancel()
-            await asyncio.gather(*tasks, return_exceptions=True)
+        assert proc.returncode is not None
+        return proc.returncode, stdout, stderr
 
     @staticmethod
-    def _tail_text(stderr_tail: bytearray) -> str:
-        return bytes(stderr_tail).decode("utf-8", errors="replace")
+    def _tail_text(stderr: bytes) -> str:
+        return stderr[-STDERR_TAIL_BYTES:].decode("utf-8", errors="replace")
 
-    def _interpret(
-        self, returncode: int, stdout: bytes, stderr_tail: bytearray
-    ) -> bytes:
+    def _interpret(self, returncode: int, stdout: bytes, stderr: bytes) -> bytes:
         """The child's whole output -> the 200 response body, or a PlotDataError."""
-        tail = self._tail_text(stderr_tail)
+        tail = self._tail_text(stderr)
         if returncode != 0:
             raise internal_error(f"child exited with status {returncode}\n{tail}")
+        limit = self._settings.plot_data_max_output_bytes
+        if len(stdout) > limit:
+            raise PlotDataError(
+                413,
+                "result_too_large",
+                "The plot data is too large to return.",
+                details={"bytes": len(stdout), "limit": limit},
+            )
         text = stdout.strip()
         if not text:
             raise internal_error(f"child wrote nothing to stdout\n{tail}")
@@ -524,7 +454,6 @@ class PlotDataService:
             body = json.dumps(
                 {"api_version": 1, "data": data}, separators=(",", ":"), allow_nan=False
             ).encode("utf-8")
-            limit = self._settings.plot_data_max_output_bytes
             if len(body) > limit:
                 raise PlotDataError(
                     413,

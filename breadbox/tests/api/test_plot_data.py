@@ -67,7 +67,6 @@ FAKE_CHILD = textwrap.dedent(
     elif mode == "big":
         sys.stdout.write('{"ok":true,"data":{"x":"' + "a" * cfg["size"] + '"}}')
         sys.stdout.flush()
-        time.sleep(30)
     elif mode == "sleep":
         if cfg.get("ignore_sigterm"):
             signal.signal(signal.SIGTERM, signal.SIG_IGN)
