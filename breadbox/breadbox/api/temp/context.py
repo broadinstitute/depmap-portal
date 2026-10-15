@@ -2,7 +2,6 @@ from contextlib import contextmanager
 from typing import Annotated, Callable, Generator, Literal
 from logging import getLogger
 from fastapi import Body, Depends, Query
-from opentelemetry import trace
 
 from breadbox.crud.dimension_ids import get_dimension_type_labels_by_id
 from breadbox.api.dependencies import get_db_with_user
@@ -22,9 +21,8 @@ from .router import router
 import time
 
 log = getLogger(__name__)
-tracer = trace.get_tracer(__name__)
 
-from breadbox.utils.profiling import profiled_region, warn_if_slow
+from breadbox.utils.profiling import profiled_region, warn_if_slow, new_span
 
 
 def _evaluate(db: SessionWithUser, settings: Settings, context: Context):
@@ -37,18 +35,18 @@ def _evaluate(db: SessionWithUser, settings: Settings, context: Context):
 
     def slice_loader(slice_query):
         with profiled_region("slice_loader"):
-            with _span("slice_loader"):
+            with new_span("slice_loader"):
                 return slice_service.get_slice_data(
                     db, settings.filestore_location, slice_query
                 )
 
     def label_loader(dimension_type):
         with profiled_region("label_loader"):
-            with _span("label_loader"):
+            with new_span("label_loader"):
                 return get_dimension_type_labels_by_id(db, dimension_type)
 
     with profiled_region("evaluator.evaluate()"):
-        with _span("evaluator"):
+        with new_span("evaluator"):
             try:
                 evaluator = ContextEvaluator(context.dict(), slice_loader, label_loader)
                 return evaluator.evaluate()
@@ -87,10 +85,6 @@ def evaluate_context(
         return ContextMatchResponse(
             ids=result.ids, labels=result.labels, num_candidates=result.num_candidates,
         )
-
-
-def _span(name):
-    return tracer.start_as_current_span(name)  # pyright: ignore
 
 
 @router.post(
@@ -142,10 +136,10 @@ def get_context_dataset_coverage(
         with warn_if_slow(
             "get_context_dataset_coverage", lambda: f"scope={scope} context={context}",
         ):
-            with _span("_evaluate"):  # noqa
+            with new_span("_evaluate"):  # noqa
                 result = _evaluate(db, settings, context)
 
-            with _span("count_dataset_coverage"):
+            with new_span("count_dataset_coverage"):
                 counts = dataset_crud.count_dataset_coverage(
                     db,
                     db.user,
