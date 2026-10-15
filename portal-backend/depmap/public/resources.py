@@ -45,6 +45,7 @@ def create_sanitizer() -> Sanitizer:
     new_settings["tags"].add("td")
     new_settings["tags"].add("tbody")
     new_settings["tags"].add("code")
+    new_settings["tags"].add("pre")
     new_settings["tags"].add("blockquote")
 
     new_settings["empty"].add("img")
