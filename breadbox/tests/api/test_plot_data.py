@@ -434,6 +434,20 @@ def test_dev_falls_back_to_default_user(plot_client, settings):
     }
 
 
+def test_restricted_to_one_user_when_the_setting_is_set(plot_client, app, settings):
+    settings.restrict_sql_endpoint_access_to_user = "depmap-mcp-server"
+    r = post(plot_client, {}, user="someone@example.com")
+    assert_error(r, 403, "forbidden")
+    assert service_of(app).spawn_count == 0
+    assert post(plot_client, {}, user="depmap-mcp-server").status_code == 200
+    assert service_of(app).spawn_count == 1
+
+
+def test_unrestricted_when_the_setting_is_none(plot_client, settings):
+    settings.restrict_sql_endpoint_access_to_user = None
+    assert post(plot_client, {}, user="anyone@example.com").status_code == 200
+
+
 # ------------------------------------------------------------------------ cache
 
 

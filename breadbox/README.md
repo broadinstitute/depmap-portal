@@ -64,7 +64,7 @@ use (including the MCP server), not external consumers.
   Every error is `{"error": {"code", "message", "details"}}`; codes are `invalid_request`,
   `unsupported_api_version`, `request_too_large`, `invalid_config`, `forbidden`,
   `dataset_not_found`, `result_too_large`, `busy` (with `Retry-After`), `upstream_error`,
-  `timeout` and `internal_error`. Identity comes from the usual `get_user` headers.
+  `timeout` and `internal_error`. Identity comes from the usual `get_user` headers. When `restrict_sql_endpoint_access_to_user` is set (the public portal), only that user may call it (403 `forbidden` otherwise); it is unset elsewhere.
 - Responses are cached in process memory per (user, config, version of the script) and identical
   concurrent calls share one child process. Responses carry `Server-Timing` and `X-Plot-Data-Bytes`.
 - Needs **Node >= 18** on `PATH` (the Docker image installs the distro `nodejs`) and the built

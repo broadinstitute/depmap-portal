@@ -149,8 +149,20 @@ async def run_until_disconnect(
         await asyncio.wait({watcher}, timeout=5)
 
 
+def _assert_user_may_call(user: str, settings: Settings) -> None:
+    # Same temporary throttle as the SQL endpoints: on the public portal only the MCP service
+    # account may call, so the open internet cannot start Node processes. Elsewhere the
+    # setting is None and everyone is allowed. (It will go away once individual users can be
+    # rate-limited.)
+    allowed = settings.restrict_sql_endpoint_access_to_user
+    if allowed is not None and allowed != user:
+        raise PlotDataError(
+            403, "forbidden", "This endpoint is not enabled for this user."
+        )
+
+
 # Hidden from the OpenAPI docs: this is internal plumbing for DepMap Portal clients (the MCP
-# server and embedded plots), so it is not advertised, and it is not part of the generated client.
+# server), so it is not advertised, and it is not part of the generated client.
 @router.post("/plot-data", operation_id="get_plot_data", include_in_schema=False)
 async def get_plot_data(
     request: Request,
@@ -162,6 +174,7 @@ async def get_plot_data(
     Build the data behind a Data Explorer plot config by running the standalone
     plot-data Node script (ADR 0010) as the calling user.
     """
+    _assert_user_may_call(user, settings)
     try:
         body = await read_body_capped(request, settings.plot_data_max_request_bytes)
         req = parse_request(body)
