@@ -82,19 +82,6 @@ export function getRequestFailure(error: unknown): { status?: number } | null {
   return tagged && tagged.isRequestFailure ? { status: tagged.status } : null;
 }
 
-// Some Breadbox endpoints report failure as a 200 whose whole body is
-// `{ "detail": ... }`. Only that exact shape counts: ordinary responses are
-// objects keyed by feature or sample IDs, which must never be mistaken for it.
-function isDetailOnlyBody(json: unknown): json is { detail: unknown } {
-  if (typeof json !== "object" || json === null || Array.isArray(json)) {
-    return false;
-  }
-
-  const keys = Object.keys(json);
-
-  return keys.length === 1 && keys[0] === "detail";
-}
-
 async function request<T>(
   url: string,
   options: RequestInit,
@@ -193,19 +180,6 @@ async function request<T>(
     console.error("Failed to parse JSON response:", err);
     throw markRequestFailure(
       new Error("Failed to parse JSON response"),
-      response.status
-    );
-  }
-
-  // Applied only to a configured client (the standalone Node script). The web
-  // apps leave this to the individual resource functions that know to look.
-  if (settings && isDetailOnlyBody(json)) {
-    throw markRequestFailure(
-      new Error(
-        typeof json.detail === "string"
-          ? json.detail
-          : JSON.stringify(json.detail)
-      ),
       response.status
     );
   }
