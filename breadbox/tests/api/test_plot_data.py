@@ -530,7 +530,9 @@ def test_identical_concurrent_calls_share_one_child(plot_client, app, tmp_path):
         wait_for_file(tmp_path / "pid")
         f2 = pool.submit(post, plot_client, config)
         wait_until(
-            lambda: any(f.waiters == 2 for f in service_of(app)._flights.values())
+            lambda: any(
+                f.waiters == 2 for f in service_of(app).limiter._flights.values()
+            )
         )
         release.write_text("go")
         r1, r2 = f1.result(10), f2.result(10)
@@ -564,13 +566,13 @@ def test_third_request_queues_behind_cap_of_two(plot_client, app, settings, tmp_
         futures.append(
             pool.submit(post, plot_client, hold_config(tmp_path, "3", release))
         )
-        wait_until(lambda: len(service_of(app)._waiters) == 1)
+        wait_until(lambda: len(service_of(app).limiter._waiters) == 1)
         time.sleep(0.3)
         assert not (tmp_path / "pid-3").exists()  # still queued, not running
         assert service_of(app).spawn_count == 2
         release.write_text("go")
         assert [f.result(10).status_code for f in futures] == [200, 200, 200]
-    assert service_of(app)._active == 0 and not service_of(app)._waiters
+    assert service_of(app).limiter._active == 0 and not service_of(app).limiter._waiters
 
 
 def test_queue_full_is_429(plot_client, app, settings, tmp_path):
@@ -581,7 +583,7 @@ def test_queue_full_is_429(plot_client, app, settings, tmp_path):
         f1 = pool.submit(post, plot_client, hold_config(tmp_path, "1", release))
         wait_for_file(tmp_path / "pid-1")
         f2 = pool.submit(post, plot_client, hold_config(tmp_path, "2", release))
-        wait_until(lambda: len(service_of(app)._waiters) == 1)
+        wait_until(lambda: len(service_of(app).limiter._waiters) == 1)
         r3 = post(plot_client, hold_config(tmp_path, "3", release))
         assert_error(r3, 429, "busy")
         assert int(r3.headers["retry-after"]) >= 1
@@ -602,7 +604,7 @@ def test_waiting_too_long_is_429(plot_client, app, settings, tmp_path):
         assert "retry-after" in r2.headers
         release.write_text("go")
         assert f1.result(10).status_code == 200
-    assert service_of(app)._active == 0 and not service_of(app)._waiters
+    assert service_of(app).limiter._active == 0 and not service_of(app).limiter._waiters
 
 
 # ------------------------------------------------- cancellation / disconnecting
@@ -628,7 +630,7 @@ def run_service_cancelled(settings, tmp_path, cancel_after_pid=True):
         return pid
 
     pid = asyncio.run(main())
-    assert service._active == 0 and not service._flights
+    assert service.limiter._active == 0 and not service.limiter._flights
     return pid
 
 
