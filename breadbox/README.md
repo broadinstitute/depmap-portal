@@ -72,17 +72,18 @@ use (including the MCP server), not external consumers.
 
 Settings (environment variables / `.env`, all optional):
 
-| Setting                                                     | Default                 |                                                                                |
-| ----------------------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------ |
-| `PLOT_DATA_BASE_URL`                                        | `http://127.0.0.1:8000` | where the child reads Breadbox; unprefixed (no `/breadbox`), loopback          |
-| `PLOT_DATA_MAX_REQUEST_BYTES`                               | 262144                  | request body cap                                                               |
-| `PLOT_DATA_TIMEOUT_SECONDS`                                 | 30                      | per-call deadline; the child is killed (504)                                   |
-| `PLOT_DATA_MAX_OUTPUT_BYTES`                                | 8388608                 | child stdout cap (413)                                                         |
-| `PLOT_DATA_MAX_CONCURRENCY`                                 | 2                       | simultaneous children                                                          |
-| `PLOT_DATA_MAX_QUEUE` / `PLOT_DATA_QUEUE_TIMEOUT_SECONDS`   | 8 / 5                   | waiters allowed / how long they wait before a 429                              |
-| `PLOT_DATA_NODE_MAX_OLD_SPACE_MB`                           | 512                     | child heap                                                                     |
-| `PLOT_DATA_CACHE_MAX_BYTES` / `PLOT_DATA_CACHE_TTL_SECONDS` | 134217728 / 300         | response cache; 0 disables it (concurrent identical calls are still coalesced) |
-| `PLOT_DATA_COMMAND_OVERRIDE`                                | unset                   | JSON list replacing the whole child command; for tests                         |
+| Setting                                                     | Default                 |                                                                                                |
+| ----------------------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------- |
+| `PLOT_DATA_BASE_URL`                                        | `http://127.0.0.1:8000` | where the child reads Breadbox; unprefixed (no `/breadbox`), loopback                          |
+| `PLOT_DATA_MAX_REQUEST_BYTES`                               | 262144                  | request body cap                                                                               |
+| `PLOT_DATA_TIMEOUT_SECONDS`                                 | 30                      | per-call deadline; the child is killed (504)                                                   |
+| `PLOT_DATA_MAX_OUTPUT_BYTES`                                | 8388608                 | child stdout cap, checked once the child has finished (413)                                    |
+| `PLOT_DATA_MAX_CONCURRENCY`                                 | 2                       | simultaneous children                                                                          |
+| `PLOT_DATA_MAX_QUEUE` / `PLOT_DATA_QUEUE_TIMEOUT_SECONDS`   | 8 / 5                   | waiters allowed / how long they wait before a 429                                              |
+| `PLOT_DATA_NODE_MAX_OLD_SPACE_MB`                           | 512                     | child heap                                                                                     |
+| `PLOT_DATA_CACHE_MAX_BYTES` / `PLOT_DATA_CACHE_TTL_SECONDS` | 134217728 / 300         | response cache; 0 disables it (concurrent identical calls are still coalesced)                 |
+| `PLOT_DATA_CHILD_ENV_PASSTHROUGH`                           | `[]`                    | JSON list of environment variable names to copy into the child (it otherwise gets `PATH` only) |
+| `PLOT_DATA_COMMAND_OVERRIDE`                                | unset                   | JSON list replacing the whole child command; for tests                                         |
 
 Tests: `pytest tests/api/test_plot_data.py` uses a fake child and runs anywhere.
 `tests/api/test_plot_data_live.py` serves the app on a real port and runs the real bundle

@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Awaitable, Dict, List, Optional, TypeVar, Union
+from typing import Any, Awaitable, Dict, List, Optional, TypeVar
 
 from fastapi import Depends, Request
 from fastapi.responses import JSONResponse, Response
@@ -31,21 +31,6 @@ class PlotDataRequest(BaseModel):
 
     api_version: StrictInt
     plot_config: Dict[str, Any]
-
-
-class PlotDataResponse(BaseModel):
-    api_version: int
-    data: Dict[str, Any]
-
-
-class PlotDataErrorBody(BaseModel):
-    code: str
-    message: str
-    details: Optional[Dict[str, Any]] = None
-
-
-class PlotDataErrorResponse(BaseModel):
-    error: PlotDataErrorBody
 
 
 def plot_data_error_response(exc: PlotDataError) -> JSONResponse:
@@ -164,38 +149,9 @@ async def run_until_disconnect(
         await asyncio.wait({watcher}, timeout=5)
 
 
-_RESPONSES: Dict[Union[int, str], Dict[str, Any]] = {
-    code: {"model": PlotDataErrorResponse, "description": desc}
-    for code, desc in {
-        400: "invalid_request, unsupported_api_version",
-        403: "forbidden",
-        404: "dataset_not_found",
-        413: "request_too_large, result_too_large",
-        422: "invalid_config",
-        429: "busy (see Retry-After)",
-        500: "internal_error",
-        502: "upstream_error",
-        504: "timeout",
-    }.items()
-}
-
-
-@router.post(
-    "/plot-data",
-    operation_id="get_plot_data",
-    response_model=PlotDataResponse,
-    responses=_RESPONSES,
-    # The body is parsed by hand so that every failure uses the one error shape, so the
-    # request schema has to be declared here.
-    openapi_extra={
-        "requestBody": {
-            "required": True,
-            "content": {
-                "application/json": {"schema": PlotDataRequest.model_json_schema(),}
-            },
-        }
-    },
-)
+# Hidden from the OpenAPI docs: this is internal plumbing for DepMap Portal clients (the MCP
+# server and embedded plots), so it is not advertised, and it is not part of the generated client.
+@router.post("/plot-data", operation_id="get_plot_data", include_in_schema=False)
 async def get_plot_data(
     request: Request,
     user: str = Depends(get_user),

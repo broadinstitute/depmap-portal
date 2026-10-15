@@ -214,6 +214,19 @@ def test_child_gets_a_minimal_environment(plot_client, monkeypatch):
     assert set(data["env_keys"]) <= {"PATH", "LC_CTYPE", "__CF_USER_TEXT_ENCODING"}
 
 
+def test_env_passthrough_forwards_only_listed_names(plot_client, settings, monkeypatch):
+    monkeypatch.setenv("PLOT_DATA_TEST_ALLOWED", "yes")
+    monkeypatch.setenv("PLOT_DATA_TEST_SECRET", "hunter2")
+    settings.plot_data_child_env_passthrough = [
+        "PLOT_DATA_TEST_ALLOWED",
+        "NOT_SET_ANYWHERE",
+    ]
+    data = post(plot_client, {}).json()["data"]
+    assert "PLOT_DATA_TEST_ALLOWED" in data["env_keys"]
+    assert "NOT_SET_ANYWHERE" not in data["env_keys"]
+    assert data["env_has_secret"] is False
+
+
 def test_large_request_and_stdin_do_not_deadlock(plot_client):
     # bigger than a pipe buffer, below the 256 KB cap
     config = {"blob": "z" * 200_000}
@@ -683,3 +696,7 @@ def test_get_user_is_the_dependency_in_use(app):
     # guards against someone re-implementing identity inside the route
     route = next(r for r in app.routes if getattr(r, "path", "") == "/temp/plot-data")
     assert get_user in [d.call for d in route.dependant.dependencies]
+
+
+def test_route_is_not_in_the_openapi_schema(app):
+    assert not any("plot-data" in path for path in app.openapi()["paths"])

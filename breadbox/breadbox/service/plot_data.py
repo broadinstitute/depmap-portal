@@ -387,8 +387,12 @@ class PlotDataService:
         self, cmd: List[str], payload: bytes
     ) -> Tuple[int, bytes, bytes]:
         s = self._settings
-        # Minimal environment: Breadbox's own env may hold secrets the child must not see.
+        # Minimal environment: Breadbox's own env may hold secrets the child must not see,
+        # so only PATH and whatever is explicitly listed in settings gets through.
         env = {"PATH": os.environ.get("PATH", "")}
+        for name in s.plot_data_child_env_passthrough:
+            if name in os.environ:
+                env[name] = os.environ[name]
         try:
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
