@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 from typing import Any, Awaitable, Dict, List, Optional, TypeVar, Union
 
@@ -10,6 +9,7 @@ from pydantic import BaseModel, StrictInt, ValidationError
 from breadbox.api.dependencies import get_user
 from breadbox.api.temp.router import router
 from breadbox.config import Settings, get_settings
+from breadbox.utils.strict_json import loads_strict
 from breadbox.service.plot_data import (
     SUPPORTED_API_VERSIONS,
     PlotDataError,
@@ -98,13 +98,9 @@ def _too_large(limit: int) -> PlotDataError:
     )
 
 
-def _reject_constant(name: str):
-    raise ValueError(f"unexpected JSON constant {name}")
-
-
 def parse_request(body: bytes) -> PlotDataRequest:
     try:
-        doc = json.loads(body, parse_constant=_reject_constant)
+        doc = loads_strict(body)
     except (ValueError, RecursionError):
         raise PlotDataError(
             400, "invalid_request", "The request body is not valid JSON."

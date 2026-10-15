@@ -23,7 +23,10 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Deque, Dict, List, Optional, Tuple
 
+from cachetools import TTLCache
+
 from breadbox.config import Settings
+from breadbox.utils.strict_json import loads_strict
 
 log = logging.getLogger(__name__)
 
@@ -119,55 +122,6 @@ class _Flight:
     waiters: int = 0
 
 
-class ResponseCache:
-    """Byte-bounded LRU with a TTL. Stores finished response bodies."""
-
-    def __init__(self, max_bytes: int, ttl_seconds: float):
-        self.max_bytes = max_bytes
-        self.ttl_seconds = ttl_seconds
-        self._entries: "collections.OrderedDict[str, Tuple[float, bytes]]" = (
-            collections.OrderedDict()
-        )
-        self._bytes = 0
-
-    @property
-    def enabled(self) -> bool:
-        return self.max_bytes > 0 and self.ttl_seconds > 0
-
-    def get(self, key: str) -> Optional[bytes]:
-        entry = self._entries.get(key)
-        if entry is None:
-            return None
-        expires_at, body = entry
-        if _monotonic() >= expires_at:
-            self._remove(key)
-            return None
-        self._entries.move_to_end(key)
-        return body
-
-    def put(self, key: str, body: bytes) -> None:
-        if not self.enabled or len(body) > self.max_bytes:
-            return
-        if key in self._entries:
-            self._remove(key)
-        self._entries[key] = (_monotonic() + self.ttl_seconds, body)
-        self._bytes += len(body)
-        while self._bytes > self.max_bytes:
-            oldest = next(iter(self._entries))
-            self._remove(oldest)
-
-    def _remove(self, key: str) -> None:
-        _, body = self._entries.pop(key)
-        self._bytes -= len(body)
-
-    def __len__(self) -> int:
-        return len(self._entries)
-
-    @property
-    def size_bytes(self) -> int:
-        return self._bytes
-
-
 def canonical_json(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"))
 
@@ -185,10 +139,6 @@ def _script_build_id(path: pathlib.Path) -> str:
         _build_id_cache.clear()
         _build_id_cache[key] = build_id
     return build_id
-
-
-def _reject_constant(name: str):
-    raise ValueError(f"unexpected JSON constant {name}")
 
 
 async def _reap(proc: "asyncio.subprocess.Process") -> None:
@@ -226,9 +176,19 @@ async def _shielded(coro) -> None:
 class PlotDataService:
     def __init__(self, settings: Settings):
         self._settings = settings
-        self.cache = ResponseCache(
-            settings.plot_data_cache_max_bytes, settings.plot_data_cache_ttl_seconds
-        )
+        # Finished response bodies, bounded by total bytes (getsizeof=len) with a TTL.
+        # None when disabled.
+        self.cache: Optional["TTLCache[str, bytes]"] = None
+        if (
+            settings.plot_data_cache_max_bytes > 0
+            and settings.plot_data_cache_ttl_seconds > 0
+        ):
+            self.cache = TTLCache(
+                maxsize=settings.plot_data_cache_max_bytes,
+                ttl=settings.plot_data_cache_ttl_seconds,
+                getsizeof=len,
+                timer=lambda: _monotonic(),
+            )
         self.spawn_count = 0  # children started; for tests and diagnostics
         self._loop: Optional[asyncio.AbstractEventLoop] = None
         self._flights: Dict[str, _Flight] = {}
@@ -248,7 +208,7 @@ class PlotDataService:
             cmd, build_id = self._command_and_build_id()
             key = self._cache_key(plot_config, api_version, user, build_id)
 
-            body = self.cache.get(key)
+            body = self.cache.get(key) if self.cache is not None else None
             if body is not None:
                 cache_state = "hit"
                 result = CallResult(body, cache_state, Timing())
@@ -425,7 +385,8 @@ class PlotDataService:
             self._release_slot()
 
         body = self._interpret(returncode, stdout, stderr_tail)
-        self.cache.put(key, body)
+        if self.cache is not None and len(body) <= self.cache.maxsize:
+            self.cache[key] = body
         return body
 
     async def _run_child(
@@ -548,7 +509,7 @@ class PlotDataService:
             raise internal_error(f"child wrote nothing to stdout\n{tail}")
         try:
             # a second document after the first makes this fail with "Extra data"
-            doc = json.loads(text, parse_constant=_reject_constant)
+            doc = loads_strict(text)
         except (ValueError, RecursionError) as e:
             raise internal_error(
                 f"child stdout was not exactly one JSON document: {e}\n{tail}"

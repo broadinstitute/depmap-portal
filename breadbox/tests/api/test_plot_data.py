@@ -492,17 +492,22 @@ def test_cache_disabled(plot_client, app, settings):
     assert service_of(app).spawn_count == 2
 
 
-def test_cache_is_byte_bounded_lru(settings):
-    cache = plot_data_module.ResponseCache(max_bytes=10, ttl_seconds=100)
-    cache.put("a", b"1234")
-    cache.put("b", b"1234")
-    cache.get("a")  # a is now the most recently used
-    cache.put("c", b"1234")  # evicts b
-    assert cache.get("b") is None
-    assert cache.get("a") == b"1234" and cache.get("c") == b"1234"
-    assert cache.size_bytes == 8
-    cache.put("huge", b"x" * 11)  # larger than the whole cache: not stored
-    assert cache.get("huge") is None
+def test_cache_is_byte_bounded(plot_client, app, settings):
+    settings.plot_data_cache_max_bytes = (
+        600  # room for a couple of the small echo bodies
+    )
+    for i in range(6):
+        assert post(plot_client, {"i": i}).status_code == 200
+    cache = service_of(app).cache
+    assert 0 < len(cache) < 6
+    assert cache.currsize <= 600
+
+
+def test_body_larger_than_the_whole_cache_is_not_stored(plot_client, app, settings):
+    settings.plot_data_cache_max_bytes = 100
+    post(plot_client, {"a": 1})
+    assert cache_state(post(plot_client, {"a": 1})) == "miss"
+    assert service_of(app).spawn_count == 2
 
 
 def test_identical_concurrent_calls_share_one_child(plot_client, app, tmp_path):
