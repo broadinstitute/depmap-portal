@@ -130,30 +130,11 @@ export async function evaluateContext(context: NamelessContext) {
     }
   }
 
-  const response = await postJson<
-    | {
-        ids: string[];
-        labels: string[];
-        num_candidates: number;
-      }
-    // WORKAROUND: Errors result in a code 200 like regular responses.
-    // We'll look for detail property to detect them.
-    // FIXME: Figure out why Breadbox doesn't respond with an error! It's
-    // formatted like one.
-    | {
-        detail: {
-          message: string;
-          error_type: string;
-        };
-      }
-  >("/temp/context", context);
-
-  if ("detail" in response) {
-    console.warn("Could not evaluate context", context);
-    throw new Error(JSON.stringify(response.detail, null, 2));
-  }
-
-  return response;
+  return postJson<{
+    ids: string[];
+    labels: string[];
+    num_candidates: number;
+  }>("/temp/context", context);
 }
 
 // How many of a context's entities each dataset actually contains.
@@ -180,16 +161,8 @@ export async function getContextDatasetCoverage(
   context: NamelessContext,
   scope: "all" | "public" = "all"
 ) {
-  const response = await postJson<
-    | { counts: Record<string, number>; total: number }
-    // Same workaround as evaluateContext above: errors come back with a 200.
-    | { detail: { message: string; error_type: string } }
-  >(`/temp/context/dataset-coverage?scope=${scope}`, context);
-
-  if ("detail" in response) {
-    console.warn("Could not compute dataset coverage", context);
-    return { counts: {}, total: 0 };
-  }
-
-  return response;
+  return postJson<{ counts: Record<string, number>; total: number }>(
+    `/temp/context/dataset-coverage?scope=${scope}`,
+    context
+  );
 }
