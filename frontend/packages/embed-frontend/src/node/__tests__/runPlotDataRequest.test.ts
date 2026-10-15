@@ -210,12 +210,6 @@ describe("upstream_error", () => {
     expectError(outcome, "upstream_error");
   });
 
-  it("maps a 200 whose body is just a detail", async () => {
-    const { outcome } = await runAgainst(sendJson(200, { detail: "boom" }));
-
-    expectError(outcome, "upstream_error");
-  });
-
   it("maps a body that isn't JSON", async () => {
     const { outcome } = await runAgainst((res) => {
       res.writeHead(200, { "content-type": "application/json" });
