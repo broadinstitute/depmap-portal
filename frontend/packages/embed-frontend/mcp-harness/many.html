@@ -15,7 +15,7 @@
   Mounts N views in a column, like a long chat, to reproduce the browser's WebGL
   context limit (16 live contexts per page; each scattergl plot holds 2).
   Same fake-host protocol as index.html. Query params: n= (default 12),
-  view=, data=, params= (see index.html), same=1 (add allow-same-origin to
+  data=, params= (see index.html), same=1 (add allow-same-origin to
   the sandbox so the views run in this page's renderer process and share its
   WebGL budget; without it the probe cannot see the views' contexts).
 
@@ -35,8 +35,14 @@
 <script>
   const q = new URLSearchParams(location.search);
   const n = Number(q.get("n") || 12);
-  const viewUrl = q.get("view") || "/breadbox/breadbox/static/embed/mcp.html";
-  const dataUrl = q.get("data") || "plot-data.json";
+  // Not a query param: loading a URL from the query string is an open redirect,
+  // and with same=1 it would run arbitrary content next to this page.
+  const viewUrl = "/breadbox/breadbox/static/embed/mcp.html";
+  // The canned response must come from this origin (the repo root being served).
+  const dataUrl = new URL(q.get("data") || "plot-data.json", location.href);
+  if (dataUrl.origin !== location.origin) {
+    throw new Error("data= must be a path on this origin");
+  }
   const params = JSON.parse(q.get("params") || '{"plot_type":"scatter"}');
   const frames = [];
 

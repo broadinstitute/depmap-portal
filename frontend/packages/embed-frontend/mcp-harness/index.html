@@ -15,8 +15,9 @@
   See "MCP bundle" in the embed-frontend README.
 
   Query params:
-    view=   URL of the built view   (default: the Breadbox static folder, which
-                                     works when this repo root is served)
+    (The view is always /breadbox/breadbox/static/embed/mcp.html, i.e. the build
+    output, so serve the repo root. It is deliberately not a query param: a
+    page that loads a URL from its own query string is an open redirect.)
     data=   JSON file holding the body of a POST /temp/plot-data response's
             `data` field                (default: plot-data.json beside this page)
     params= JSON for the tool result's `params` (default: {"plot_type":"scatter"})
@@ -27,8 +28,12 @@
 <pre id="log"></pre>
 <script>
   const q = new URLSearchParams(location.search);
-  const viewUrl = q.get("view") || "/breadbox/breadbox/static/embed/mcp.html";
-  const dataUrl = q.get("data") || "plot-data.json";
+  const viewUrl = "/breadbox/breadbox/static/embed/mcp.html";
+  // The canned response must come from this origin (the repo root being served).
+  const dataUrl = new URL(q.get("data") || "plot-data.json", location.href);
+  if (dataUrl.origin !== location.origin) {
+    throw new Error("data= must be a path on this origin");
+  }
   const params = JSON.parse(q.get("params") || '{"plot_type":"scatter"}');
   const frame = document.getElementById("view");
   const log = document.getElementById("log");
