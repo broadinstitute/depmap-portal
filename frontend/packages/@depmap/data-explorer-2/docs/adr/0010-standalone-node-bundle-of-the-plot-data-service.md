@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Applies to:** `services/dataExplorerAPI` and everything it imports, `ClientSettings` in
   `@depmap/api`, and the build in `embed-frontend`. The service is no longer only browser
-  code, so edits to its dependency graph have a second consumer.
+  code, so edits to its dependency graph have a second consumer. The MCP view that renders its output is ADR 0011.
 - **Key symbols:** `fetchPlotData`, `fetchPlotLinearRegression`, `configureBreadboxClient`,
   `ClientSettings`, `runPlotDataRequest`, `PlotDataOutcome`, `api_version`,
   `webpack.node.js`, `plot-data.js`, `dimensionHelpers.ts`, `contextExpr.ts`

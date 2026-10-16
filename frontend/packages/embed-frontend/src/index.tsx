@@ -8,7 +8,6 @@ import "./index.scss";
 
 const EmbeddedPlot = lazy(() => import("./surfaces/EmbeddedPlot"));
 const EmbeddedTable = lazy(() => import("./surfaces/EmbeddedTable"));
-const McpView = lazy(() => import("./surfaces/McpView"));
 
 function App() {
   const path = window.location.pathname
@@ -37,10 +36,6 @@ function App() {
       surface = <EmbeddedTable />;
       break;
 
-    case "/mcp":
-      surface = <McpView />;
-      break;
-
     default:
       return (
         <div style={{ padding: 20 }}>
@@ -49,7 +44,6 @@ function App() {
           <ul>
             <li>/plot</li>
             <li>/table</li>
-            <li>/mcp</li>
           </ul>
         </div>
       );
