@@ -1,17 +1,10 @@
 /* styling for the whole resources page container, including the filters on the side */
 .ResourcesV3PageContainer {
   font-family: "Roboto";
-  display: grid;
-  grid-template-rows: 110px calc(100vh - 110px - 50px);
-  grid-template-columns: 1fr 3fr;
-  grid-template-areas:
-    "header header header header"
-    "nav post post post";
 }
 
 .resourcesPageHeader {
-  grid-area: header;
-  padding-left: 40px;
+  height: 110px;
 
   h1 {
     font-weight: bold;
@@ -24,8 +17,6 @@
 
 /* styling for the post content */
 .postContentContainer {
-  grid-area: post;
-  overflow-y: auto;
   a {
     overflow-wrap: break-word;
   }
@@ -35,8 +26,9 @@
     margin-bottom: 20px;
   }
   p {
-    font-size: 16px;
-    line-height: 25px;
+    // font-size: 16px;
+    // line-height: 25px;
+    margin-bottom: 1.2em;
   }
 
   ul {
@@ -44,8 +36,13 @@
     line-height: 35px;
   }
 
+  .postTitle {
+    margin-top: 0;
+    margin-bottom: 5px;
+  }
+
   .postDate {
-    padding: 5px 0 20px 0;
+    padding: 0 0 20px 0;
     p {
       font-size: 12px;
       line-height: 18px;
@@ -55,40 +52,85 @@
 }
 
 .postContent {
-  padding: 0 50px 0 50px;
+  padding: 0 20px;
 }
 
 /* styling for the nav accordions section */
 .postsNavList {
-  grid-area: nav;
-  height: calc(100vh - 110px - 50px);
   overflow-y: auto;
-  background-color: #f5f8fd !important;
-}
+  max-height: 40vh;
 
-.navPostItem {
-  border: none;
-  border-bottom: 1px solid lightgray !important;
-  font-weight: 500;
-
-  @media screen and (min-width: 800px) {
-    padding-left: 55px;
-    padding-right: 20px;
-    font-size: 16px;
+  /* keep the menu visible while the post scrolls with the page */
+  @media screen and (min-width: 992px) {
+    position: sticky;
+    top: 50px; /* clear the 50px site nav */
+    max-height: calc(100vh - 50px);
   }
-  @media screen and (max-width: 799px) {
-    padding-left: 20px;
-    padding-right: 10px;
+
+  /* strip the bootstrap panel / list-group boxes so the menu is a flat list */
+  :global(.panel-group) {
+    margin-bottom: 0;
   }
-}
 
-.panelHeading {
-  display: grid;
-  grid-template-columns: 95% 5%;
-  grid-template-areas: "title glyph-symbol";
-}
+  :global(.panel) {
+    margin-top: 0 !important;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
 
-.headingTitle {
-  grid-area: "title";
-  padding-right: "10px";
+  :global(.panel-heading) {
+    padding: 0;
+    background: transparent !important;
+    border: none !important;
+  }
+
+  :global(.panel-collapse) > :global(.list-group) {
+    margin-bottom: 0;
+    border: none !important;
+  }
+
+  /* menu headings and posts share the same row styling */
+  .navRow {
+    margin-bottom: 0;
+    /* padding-left is adjusted inline for nesting depth */
+    padding: 8px 10px;
+    font-size: 15px;
+    line-height: 1.4;
+    color: #333;
+    background: transparent;
+    border: none;
+    /* beats bootstrap's .list-group-item:last-child rounded corners */
+    border-radius: 0 !important;
+    cursor: pointer;
+
+    &:hover,
+    &:focus {
+      color: #333;
+      background: #f0f3f8;
+    }
+  }
+
+  .panelHeading {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "title glyph-symbol";
+    font-weight: 600;
+  }
+
+  .headingTitle {
+    grid-area: title;
+  }
+
+  .navPostItem {
+    font-weight: 400;
+  }
+
+  .navPostItem:global(.active) {
+    font-weight: 600;
+    color: #286090 !important;
+    background: #e8eff9 !important;
+    box-shadow: inset 3px 0 0 #337ab7;
+  }
 }
