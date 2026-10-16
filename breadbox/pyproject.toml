@@ -21,6 +21,7 @@ httpx = "^0.23.1"
 uvicorn = "^0.20.0"
 pydantic = {extras = ["email"], version = "^2.7.1"}
 aiocache = {extras = ["redis"], version = "^0.12.3"}
+cachetools = "^5.5.2"
 taigapy = {version = "3.14.0", source = "public-python"}
 SQLAlchemy= "^2.0.40"
 factory-boy = "^3.3.0"
