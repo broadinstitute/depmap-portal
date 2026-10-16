@@ -475,6 +475,18 @@ Setting `facet_by` on a `scatter` plot is the most visually distinctive case: in
 
 The following fields color, facet, filter, or annotate a plot.
 
+### Prefer faceting over coloring for high-cardinality groupings
+
+Coloring and faceting can both express "group these points by X," but they scale very differently. Coloring draws every category in the same space, so each category is plotted right on top of the others. That is fine for a handful of groups, but for something like lineage (30+ categories) the result is overplotting: categories hide one another, and a legend with that many near-indistinguishable colors is hard to read.
+
+Faceting gives each category its own track (`density_1d`), x-axis cluster (`waterfall`) or panel (`scatter`), so nothing is drawn on top of anything else. **For high-cardinality categorical properties such as `OncotreeLineage`, a link should usually set `facet_by` rather than (only) `color_by`.**
+
+Because of the version 2 default (see [above](#the-version-2-default-flip-color_by-and-facet_by)), you get both for free: set `facet_by`, include `"version": 2`, and omit `color_by`, and each facet is also given its own color. (Without `version`, an omitted `color_by` means "no coloring", so either stamp the version or set `"color_by": "facet"` explicitly.) Reserve a standalone `color_by` (with `facet_by` unset, or with `"color_by": "uniform"` to drop color) for low-cardinality groupings, or for a continuous value where there are no discrete groups to separate.
+
+The same applies to the `color1`/`color2` [shorthand URL parameters](#available-formats): they are interpreted as faceting _and_ coloring, as if `facet1`/`facet2` had been given with `color_by` deferring to them.
+
+See [Faceted scatterplot (small multiples)](#faceted-scatterplot-small-multiples) and the [facet_by](#facet_by-string) `property` example below.
+
 ### color_by [string]
 
 Specifies how the plot should be colored. There are several strategies: some map directly to values (continuous or categorical), while others map to membership of an arbitrary facet. The supported values are `"raw_slice"`, `"aggregated_slice"`, `"property"`, `"custom"`, `"facet"`, and `"uniform"`.

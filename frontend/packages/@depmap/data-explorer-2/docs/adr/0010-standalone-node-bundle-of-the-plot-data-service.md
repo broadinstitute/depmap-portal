@@ -79,12 +79,6 @@ see, so `dataset_not_found` deliberately covers "exists but you can't see it". M
 the first three are fixed, user-readable strings. The client's own messages include request
 URLs and Breadbox's raw `detail`, which are not shown.
 
-**A `200` whose body is just `{ "detail": ... }` is an error.** Some Breadbox endpoints
-report failure that way, and the resource functions that know about it each check
-individually. In the script's configured client the check is applied once, to every
-response. It matches only an object whose sole key is `detail`, so ordinary data (objects
-keyed by feature or sample ID) cannot trip it. The browser client is unchanged.
-
 **Expected failures exit 0; only a true crash exits non-zero.** `ok: false` is a normal
 answer. Anything the script cannot classify into one of the four codes is a bug in the
 script and is allowed to fail loudly: a native `TypeError`, `ReferenceError`, `RangeError`

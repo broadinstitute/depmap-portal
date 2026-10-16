@@ -1,7 +1,6 @@
 import {
   Dataset,
   DatasetUpdateArgs,
-  ErrorTypeError,
   SearchDimenionsRequest,
   SearchDimenionsResponse,
   SliceQuery,
@@ -148,62 +147,25 @@ export async function getTabularDatasetData(
 ) {
   checkDatasetId(datasetId);
 
-  const result = await postJson<{
+  return postJson<{
     [key: string]: Record<string, any>;
   }>(uri`/datasets/tabular/${datasetId}`, args);
-
-  // WORKAROUND: Breadbox responds with a 200 even though there was an error.
-  if ("detail" in result) {
-    const isErrorObj = typeof result.detail === "object";
-
-    throw new ErrorTypeError({
-      errorType: isErrorObj
-        ? result.detail.errorType
-        : ("UNSPECIFIED_LEGACY_ERROR" as ErrorTypeError["errorType"]),
-
-      message: isErrorObj ? result.detail.message : result.detail,
-    });
-  }
-
-  return result;
 }
 
 export async function getDatasetSamples(datasetId: string) {
   checkDatasetId(datasetId);
 
-  const result = await getJson<{ id: string; label: string }[]>(
+  return getJson<{ id: string; label: string }[]>(
     uri`/datasets/samples/${datasetId}`
   );
-
-  if (!Array.isArray(result)) {
-    const detail = (result as any).detail;
-
-    throw new ErrorTypeError({
-      errorType: detail.error_type,
-      message: detail.message,
-    });
-  }
-
-  return result;
 }
 
 export async function getDatasetFeatures(datasetId: string) {
   checkDatasetId(datasetId);
 
-  const result = await getJson<{ id: string; label: string }[]>(
+  return getJson<{ id: string; label: string }[]>(
     uri`/datasets/features/${datasetId}`
   );
-
-  if (!Array.isArray(result)) {
-    const detail = (result as any).detail;
-
-    throw new ErrorTypeError({
-      errorType: detail.error_type,
-      message: detail.message,
-    });
-  }
-
-  return result;
 }
 
 export function searchDimensions({

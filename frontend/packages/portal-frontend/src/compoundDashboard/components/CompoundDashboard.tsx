@@ -20,7 +20,9 @@ import { GlossaryItem } from "src/common/components/Glossary/types";
 import { CompoundDashboardView } from "./CompoundDashboardColumnControls";
 
 function CompoundDashboard() {
-  const [datasetId, setDatasetId] = useState<DatasetId>("Rep_all_single_pt");
+  const [datasetId, setDatasetId] = useState<DatasetId>(
+    "Prism_oncology_unified_AUC"
+  );
   const { data, error } = useCompoundDashboardData(datasetId);
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
   const [viewSelection, setViewSelection] = useState<CompoundDashboardView>(
