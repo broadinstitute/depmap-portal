@@ -13,6 +13,8 @@ import {
   fetchPlotLinearRegression,
 } from "@depmap/data-explorer-2/src/services/dataExplorerAPI/fetchPlotData";
 import { isCompleteDimension } from "@depmap/data-explorer-2/src/utils/dimensionHelpers";
+import { normalizePlotConfig } from "@depmap/data-explorer-2/src/utils/normalizePlotConfig";
+import fetchContextFromCas from "./fetchContextFromCas";
 
 export const SUPPORTED_API_VERSION = 1;
 
@@ -25,6 +27,9 @@ export type PlotDataErrorCode =
 // `linreg_by_group` is the one thing `data` carries beyond the response the page
 // fetches: see ADR 0010.
 export type PlotData = DataExplorerPlotResponse & {
+  // The config the rest of `data` answers: the request's `plot_config` after
+  // normalization (see below). Always present.
+  plot_config: DataExplorerPlotConfig;
   linreg_by_group?: LinRegInfo[];
 };
 
@@ -112,17 +117,39 @@ function parseRequest(input: unknown): ParsedRequest | PlotDataOutcome {
     return fail("invalid_config", "The plot config is missing index_type.");
   }
 
-  if (!isObject(dimensions)) {
+  // Old payloads (see normalizePlotConfig) carried `dimensions` as an array.
+  const dimensionList = Array.isArray(dimensions)
+    ? dimensions
+    : isObject(dimensions) && Object.values(dimensions);
+
+  if (!dimensionList) {
     return fail("invalid_config", "The plot config is missing dimensions.");
   }
 
-  for (const axis of REQUIRED_AXES[plotType]) {
-    if (!isCompleteDimension(dimensions[axis] as never)) {
-      return fail(
-        "invalid_config",
-        `A ${plotType} plot needs a complete "${axis}" dimension.`
-      );
-    }
+  // Normalization assumes this much, and would crash on anything less. Whether
+  // the dimensions are *complete* is checked once they've been normalized.
+  if (
+    !dimensionList.every((d: unknown) => isObject(d) && isObject(d.context))
+  ) {
+    return fail("invalid_config", "The plot config has a malformed dimension.");
+  }
+
+  const { filters } = plotConfig;
+
+  if (
+    filters !== undefined &&
+    (!isObject(filters) || !Object.values(filters).every(isObject))
+  ) {
+    return fail("invalid_config", "The plot config has malformed filters.");
+  }
+
+  const { metadata } = plotConfig;
+
+  if (
+    metadata !== undefined &&
+    (!isObject(metadata) || !Object.values(metadata).every(isObject))
+  ) {
+    return fail("invalid_config", "The plot config has malformed metadata.");
   }
 
   return {
@@ -130,6 +157,23 @@ function parseRequest(input: unknown): ParsedRequest | PlotDataOutcome {
     baseUrl,
     headers: headers as Record<string, string>,
   };
+}
+
+// Run on the normalized config: a raw one can be incomplete only on paper (a
+// context still a hash, say).
+function checkComplete(plotConfig: DataExplorerPlotConfig) {
+  const { plot_type: plotType, dimensions } = plotConfig;
+
+  for (const axis of REQUIRED_AXES[plotType] || []) {
+    if (!isCompleteDimension(dimensions?.[axis as "x"] as never)) {
+      return fail(
+        "invalid_config",
+        `A ${plotType} plot needs a complete "${axis}" dimension.`
+      );
+    }
+  }
+
+  return null;
 }
 
 // Returns null for anything that isn't a failure we can name. Those are bugs in
@@ -204,14 +248,31 @@ export async function runPlotDataRequest(
   configureBreadboxClient({ baseUrl: parsed.baseUrl, headers: parsed.headers });
 
   try {
-    const data = await fetchPlotData(parsed.plotConfig);
-    const linreg_by_group = await fetchRegressionIfRequested(parsed.plotConfig);
+    // The client may send a config in any shape it has ever minted, with
+    // `version` attached, and the page would migrate it before drawing. So do
+    // it here, where Breadbox can be asked what the browser would ask.
+    const plotConfig = await normalizePlotConfig(parsed.plotConfig, {
+      fetchContext: fetchContextFromCas,
+    });
 
-    // Only present when a fit was asked for and computed, so every other
-    // config gets exactly the response the page would.
+    const incomplete = plotConfig && checkComplete(plotConfig);
+
+    if (!plotConfig || incomplete) {
+      return incomplete || fail("invalid_config", "The plot config is empty.");
+    }
+
+    const data = await fetchPlotData(plotConfig);
+    const linreg_by_group = await fetchRegressionIfRequested(plotConfig);
+
+    // `linreg_by_group` is only present when a fit was asked for and computed,
+    // so every other config gets exactly the response the page would.
     return {
       ok: true,
-      data: linreg_by_group ? { ...data, linreg_by_group } : data,
+      data: {
+        ...data,
+        plot_config: plotConfig,
+        ...(linreg_by_group ? { linreg_by_group } : null),
+      },
     };
   } catch (e) {
     const outcome = classifyError(e);
