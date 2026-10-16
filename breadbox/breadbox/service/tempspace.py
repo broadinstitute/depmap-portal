@@ -4,6 +4,9 @@ import random
 import os
 import shutil
 from google.cloud import storage
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class DoesNotExist(Exception):
@@ -175,7 +178,17 @@ class GCSObjStore(ObjStore):
     def delete(self, paths: list[TempspacePath]):
         blob_names = [self._full_path(path) for path in paths]
         if blob_names:
-            self.bucket.delete_blobs(blob_names)
+
+            def ignore_not_found(blob):
+                # according to the docs on bucket.delete_blobs:
+                # on_error: "Takes single argument: blob. Called once for each blob raising NotFound; otherwise, the exception is propagated. Note that on_error is not supported in a Batch context."
+                # It sounds like this method isn't called for _all_ errors, just NotFound. However, deleting an object that isn't found is fine. It may be another process/thread
+                # which deleted it while we were cleaning up in parallel. So just log a warning and ignore
+                log.warning(
+                    f"Got NotFound when trying to delete {blob} -- likely another process cleaning up in parallel"
+                )
+
+            self.bucket.delete_blobs(blob_names, on_error=ignore_not_found)
 
 
 class Tempspace:
