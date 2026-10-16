@@ -35,8 +35,13 @@
     line-height: 35px;
   }
 
+  .postTitle {
+    margin-top: 0;
+    margin-bottom: 5px;
+  }
+
   .postDate {
-    padding: 5px 0 20px 0;
+    padding: 0 0 20px 0;
     p {
       font-size: 12px;
       line-height: 18px;
@@ -60,25 +65,71 @@
     top: 50px; /* clear the 50px site nav */
     max-height: calc(100vh - 50px);
   }
-}
 
-.navPostItem {
-  border: none;
-  border-bottom: 1px solid lightgray !important;
-  font-weight: 500;
+  /* strip the bootstrap panel / list-group boxes so the menu is a flat list */
+  :global(.panel-group) {
+    margin-bottom: 0;
+  }
 
-  /* padding-left is set inline, based on nesting depth */
-  padding-right: 10px;
-  font-size: 16px;
-}
+  :global(.panel) {
+    margin-top: 0 !important;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
 
-.panelHeading {
-  display: grid;
-  grid-template-columns: 95% 5%;
-  grid-template-areas: "title glyph-symbol";
-}
+  :global(.panel-heading) {
+    padding: 0;
+    background: transparent !important;
+    border: none !important;
+  }
 
-.headingTitle {
-  grid-area: "title";
-  padding-right: "10px";
+  :global(.panel-collapse) > :global(.list-group) {
+    margin-bottom: 0;
+    border: none !important;
+  }
+
+  /* menu headings and posts share the same row styling */
+  .navRow {
+    margin-bottom: 0;
+    /* padding-left is adjusted inline for nesting depth */
+    padding: 8px 10px;
+    font-size: 15px;
+    line-height: 1.4;
+    color: #333;
+    background: transparent;
+    border: none;
+    /* beats bootstrap's .list-group-item:last-child rounded corners */
+    border-radius: 0 !important;
+    cursor: pointer;
+
+    &:hover,
+    &:focus {
+      color: #333;
+      background: #f0f3f8;
+    }
+  }
+
+  .panelHeading {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "title glyph-symbol";
+    font-weight: 600;
+  }
+
+  .headingTitle {
+    grid-area: title;
+  }
+
+  .navPostItem {
+    font-weight: 400;
+  }
+
+  .navPostItem:global(.active) {
+    font-weight: 600;
+    color: #286090 !important;
+    background: #e8eff9 !important;
+    box-shadow: inset 3px 0 0 #337ab7;
+  }
 }

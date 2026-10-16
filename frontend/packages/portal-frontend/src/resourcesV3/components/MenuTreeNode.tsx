@@ -42,7 +42,10 @@ export default function MenuTreeNode({
       }}
     >
       <Panel.Heading>
-        <Panel.Toggle componentClass="div" className={styles.panelHeading}>
+        <Panel.Toggle
+          componentClass="div"
+          className={`${styles.navRow} ${styles.panelHeading}`}
+        >
           <span
             className={styles.headingTitle}
             style={{ paddingLeft: indentPx }}
@@ -88,9 +91,8 @@ export default function MenuTreeNode({
                   style={{ textDecoration: "none" }}
                 >
                   <ListGroupItem
-                    className={styles.navPostItem}
+                    className={`${styles.navRow} ${styles.navPostItem}`}
                     style={{
-                      borderRadius: "0px",
                       paddingLeft: NAV_ITEM_BASE_PADDING_PX + postIndentPx,
                     }}
                     active={selectedPostSlug === postSlug}

@@ -97,6 +97,21 @@ export default function ResourcesV3Page() {
     ? postCache[selectedPostSummary.id]
     : undefined;
 
+  const selectedPostTitle = selectedPostSummary?.title;
+
+  useEffect(() => {
+    if (!selectedPostTitle) {
+      return undefined;
+    }
+
+    const originalTitle = document.title;
+    document.title = selectedPostTitle;
+
+    return () => {
+      document.title = originalTitle;
+    };
+  }, [selectedPostTitle]);
+
   if (error) {
     return (
       <div className={`container ${styles.ResourcesV3PageContainer}`}>
@@ -112,7 +127,7 @@ export default function ResourcesV3Page() {
   return (
     <div className={`container ${styles.ResourcesV3PageContainer}`}>
       <div className={styles.resourcesPageHeader}>
-        <h1>Depmap Resources</h1>
+        <h1>DepMap Resources</h1>
         <h3>
           Browse resource categories for information and frequently asked
           questions
@@ -135,11 +150,21 @@ export default function ResourcesV3Page() {
         <section className={`col-md-9 ${styles.postContentContainer}`}>
           {selectedPostSummary && (
             <div className={styles.postContent}>
-              <div className={styles.postDate}>
-                <p>Posted: {selectedPostSummary.created_at}</p>
-                <p>Updated: {selectedPostSummary.updated_at}</p>
-              </div>
-              <h2>{selectedPostSummary.title}</h2>
+              <h1 className={styles.postTitle}>{selectedPostSummary.title}</h1>
+              {selectedPostSummary.updated_at && (
+                <div className={styles.postDate}>
+                  <p>
+                    Updated:{" "}
+                    {new Date(
+                      selectedPostSummary.updated_at
+                    ).toLocaleDateString("en-US", {
+                      month: "2-digit",
+                      day: "2-digit",
+                      year: "numeric",
+                    })}
+                  </p>
+                </div>
+              )}
               {selectedPost ? (
                 <Markdown>{selectedPost.content}</Markdown>
               ) : (
