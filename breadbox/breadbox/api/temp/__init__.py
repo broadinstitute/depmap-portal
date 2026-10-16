@@ -7,5 +7,6 @@ import breadbox.api.temp.associations
 import breadbox.api.temp.sql
 import breadbox.api.temp.predictive_models
 import breadbox.api.temp.parquet_export
+import breadbox.api.temp.plot_data
 
 __all__ = ["router"]
