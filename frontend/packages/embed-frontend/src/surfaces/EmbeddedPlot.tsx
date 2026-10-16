@@ -4,14 +4,11 @@ import {
   DataExplorerSettingsContext,
   DEFAULT_SETTINGS,
 } from "@depmap/data-explorer-2/src/contexts/DataExplorerSettingsContext";
-import { breadboxAPI } from "@depmap/api";
-import { decodePlotFromQueryString } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
+import { readPlotFromQueryString } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
+import { isCompletePlot } from "@depmap/data-explorer-2/src/components/DataExplorerPage/validation";
 import { DataExplorerPlotConfig } from "@depmap/types";
 import ContainerSized from "../components/ContainerSized";
-import LoadingSpinner from "../components/LoadingSpinner";
-import { PlotView } from "../components/Plot";
-
-type PlotData = Awaited<ReturnType<typeof breadboxAPI.getPlotData>>["data"];
+import Plot from "../components/Plot";
 
 const EMBEDDED_PLOT_STYLES = {
   ...DEFAULT_SETTINGS.plotStyles,
@@ -43,36 +40,30 @@ export function readPlotStylesFromQueryString() {
 }
 
 function EmbeddedPlot() {
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(false);
   const [plotConfig, setPlotConfig] = useState<DataExplorerPlotConfig | null>(
     null
   );
-  const [data, setData] = useState<PlotData | null>(null);
   const plotStyles = useMemo(() => readPlotStylesFromQueryString(), []);
 
   useEffect(() => {
     (async () => {
       try {
-        // Reads `p=` (and the other URL formats) but doesn't migrate the plot.
-        // The server does that and hands back the plot it actually used.
-        const raw = await decodePlotFromQueryString();
-
-        if (!raw) {
-          throw new Error("There is no plot in the URL.");
-        }
-
-        const response = await breadboxAPI.getPlotData(raw);
-        setPlotConfig(response.data.plot_config);
-        setData(response.data);
+        const plot = await readPlotFromQueryString();
+        setPlotConfig(plot);
       } catch (e) {
         window.console.error(e);
-        setError(e instanceof Error ? e.message : String(e));
+        setError(true);
       }
     })();
   }, []);
 
-  if (error) {
-    return <div style={{ padding: 20 }}>Cannot render plot. {error}</div>;
+  if (error || (plotConfig && !isCompletePlot(plotConfig))) {
+    return (
+      <div style={{ padding: 20 }}>
+        Cannot render plot. There was a problem reading the query params.
+      </div>
+    );
   }
 
   return (
@@ -80,18 +71,7 @@ function EmbeddedPlot() {
       value={{ settings: { plotStyles }, launchSettingsModal: () => {} }}
     >
       <ContainerSized>
-        {({ height }) =>
-          plotConfig && data ? (
-            <PlotView
-              plotConfig={plotConfig}
-              data={data}
-              linreg_by_group={data.linreg_by_group}
-              height={height}
-            />
-          ) : (
-            <LoadingSpinner />
-          )
-        }
+        {({ height }) => <Plot plotConfig={plotConfig} height={height} />}
       </ContainerSized>
     </DataExplorerSettingsContext.Provider>
   );
