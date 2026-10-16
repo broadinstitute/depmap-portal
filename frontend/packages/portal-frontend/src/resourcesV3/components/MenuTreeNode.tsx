@@ -87,7 +87,7 @@ export default function MenuTreeNode({
               return (
                 <Link
                   key={postSlug}
-                  to={`?menu=${menu.slug}&post=${postSlug}`}
+                  to={`/resources-v3/${postSlug}`}
                   style={{ textDecoration: "none" }}
                 >
                   <ListGroupItem

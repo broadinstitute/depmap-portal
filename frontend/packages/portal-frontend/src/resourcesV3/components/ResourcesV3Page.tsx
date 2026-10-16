@@ -1,24 +1,16 @@
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { PanelGroup } from "react-bootstrap";
-import { useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Markdown, Spinner } from "@depmap/common-components";
 import { breadboxAPI, cached } from "@depmap/api";
 import { CmsMenu, CmsPost, CmsPostSummary } from "@depmap/types";
 import styles from "src/resourcesV3/styles/ResourcesV3Page.scss";
 import MenuTreeNode from "./MenuTreeNode";
 
-// A custom hook that builds on useLocation to parse
-// the query string for you. (See: https://v5.reactrouter.com/web/example/query-parameters)
-function useQuery() {
-  const { search } = useLocation();
-
-  return useMemo(() => new URLSearchParams(search), [search]);
-}
-
 export default function ResourcesV3Page() {
-  const query = useQuery();
-  const selectedPostSlug = query.get("post");
+  const { postSlug } = useParams<{ postSlug?: string }>();
+  const selectedPostSlug = postSlug || null;
 
   const [menus, setMenus] = useState<CmsMenu[] | null>(null);
   const [postSummaries, setPostSummaries] = useState<CmsPostSummary[] | null>(
