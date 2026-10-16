@@ -1,0 +1,18 @@
+// Deliberately not index.scss: that file declares @font-face rules pointing at
+// font files, and mcp.html must make no requests (or carry fonts) of its own.
+// Text falls back to the host's sans-serif.
+html {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: sans-serif;
+  font-size: 14px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
