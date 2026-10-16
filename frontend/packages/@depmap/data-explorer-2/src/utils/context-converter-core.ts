@@ -18,13 +18,35 @@ const CATEGORICAL_MATRICES = new Set([
   wellKnownDatasets.mutation_protein_change,
 ]);
 
+// Index of the last character `.` would refuse to match (a line terminator),
+// or -1.
+const lastLineTerminator = (s: string) => {
+  for (let i = s.length - 1; i >= 0; i -= 1) {
+    const c = s[i];
+
+    if (c === "\n" || c === "\r" || c === "\u2028" || c === "\u2029") {
+      return i;
+    }
+  }
+
+  return -1;
+};
+
+// Strips a trailing " (...)" from a label like "afatinib (BRD:...)".
+//
+// This is a pair of indexOf scans rather than the regexes / (?=\(.*$)/ and
+// /-\(.*$/, which are polynomial on strings with many repetitions of "-(" (the
+// `.*$` is re-scanned from every candidate). They match the same strings: a
+// " (" or "-(" counts only if no line terminator follows its "(".
 const extractCompoundName = (label?: string | null) => {
   if (!label) {
     return null;
   }
 
-  const idx = label.search(/ (?=\(.*$)/); // space before '('
-  if (idx === -1 || /-\(.*$/.test(label)) {
+  const from = Math.max(0, lastLineTerminator(label) - 1);
+  const idx = label.indexOf(" (", from); // space before '('
+
+  if (idx === -1 || label.indexOf("-(", from) !== -1) {
     return null;
   }
 
