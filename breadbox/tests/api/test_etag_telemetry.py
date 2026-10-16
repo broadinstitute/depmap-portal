@@ -24,7 +24,7 @@ def test_get_response_with_etag_records_outcome_on_span(
         callback_calls.append(1)
         return {"a": 1}
 
-    with tracer.start_as_current_span("request"):
+    with tracer.start_as_current_span("request"):  # pyright: ignore
         response = get_response_with_etag("current-etag", if_none_match, callback, None)
 
     assert response.status_code == expected_status
@@ -32,4 +32,4 @@ def test_get_response_with_etag_records_outcome_on_span(
     assert len(callback_calls) == (0 if expected_outcome == "hit" else 1)
 
     (span,) = exporter.get_finished_spans()
-    assert span.attributes["etag.outcome"] == expected_outcome
+    assert span.attributes["etag.outcome"] == expected_outcome  # pyright:ignore

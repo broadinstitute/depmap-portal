@@ -17,6 +17,7 @@ from breadbox.schemas.group import GroupEntryIn
 from breadbox.models.group import AccessType
 
 from tests import factories
+from uuid import UUID
 
 
 @pytest.fixture
@@ -96,7 +97,7 @@ def test_updating_and_deleting_datasets(admin_db, settings):
         admin_db,
         user,
         private_dataset,
-        MatrixDatasetUpdateParams(format="matrix", group_id=PUBLIC_GROUP_ID),
+        MatrixDatasetUpdateParams(format="matrix", group_id=UUID(PUBLIC_GROUP_ID)),
     )
     assert _changed_keys(before, _versions(admin_db)) == {
         GET_DATASETS,
@@ -109,7 +110,7 @@ def test_updating_and_deleting_datasets(admin_db, settings):
         admin_db,
         user,
         private_dataset,
-        MatrixDatasetUpdateParams(format="matrix", group_id=private_group.id),
+        MatrixDatasetUpdateParams(format="matrix", group_id=UUID(private_group.id)),
     )
     assert _changed_keys(before, _versions(admin_db)) == {
         GET_DATASETS,
