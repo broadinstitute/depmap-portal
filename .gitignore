@@ -197,3 +197,6 @@ pipeline-old-0209
 conseq-debug.log
 *-DO-NOT-EDIT-ME
 *DO-NOT-EDIT-ME
+
+# Local capture of a /temp/plot-data response for the MCP harness; can hold real data
+frontend/packages/embed-frontend/mcp-harness/plot-data.json
