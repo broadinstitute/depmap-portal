@@ -1,30 +1,31 @@
 import React from "react";
 import usePlotData from "@depmap/data-explorer-2/src/components/DataExplorerPage/hooks/usePlotData";
-import { DataExplorerPlotConfig } from "@depmap/types";
+import {
+  DataExplorerPlotConfig,
+  DataExplorerPlotResponse,
+  LinRegInfo,
+} from "@depmap/types";
 import LoadingSpinner from "../LoadingSpinner";
 import EmbeddedDensity1DPlot from "./EmbeddedDensity1DPlot";
 import EmbeddedWaterfallPlot from "./EmbeddedWaterfallPlot";
 import EmbeddedScatterPlot from "./EmbeddedScatterPlot";
 import EmbeddedCorrelationHeatmap from "./EmbeddedCorrelationHeatmap";
 
-interface Props {
-  plotConfig?: DataExplorerPlotConfig | null;
+interface PlotViewProps {
+  plotConfig: DataExplorerPlotConfig;
+  data: DataExplorerPlotResponse;
+  linreg_by_group?: LinRegInfo[] | null;
   height: number;
 }
 
-function Plot({ plotConfig = null, height }: Props) {
-  const {
-    data,
-    linreg_by_group,
-    // fetchedPlotConfig,
-    // hadError,
-    // errorMessage,
-  } = usePlotData(plotConfig);
-
-  if (!data || !plotConfig) {
-    return <LoadingSpinner />;
-  }
-
+// Presentational only: renders already-fetched data. Shared by every surface,
+// whether the data came from the browser or from POST /temp/plot-data.
+export function PlotView({
+  plotConfig,
+  data,
+  linreg_by_group = null,
+  height,
+}: PlotViewProps) {
   switch (plotConfig.plot_type) {
     case "density_1d":
       return (
@@ -66,6 +67,28 @@ function Plot({ plotConfig = null, height }: Props) {
     default:
       return null;
   }
+}
+
+interface Props {
+  plotConfig?: DataExplorerPlotConfig | null;
+  height: number;
+}
+
+function Plot({ plotConfig = null, height }: Props) {
+  const { data, linreg_by_group } = usePlotData(plotConfig);
+
+  if (!data || !plotConfig) {
+    return <LoadingSpinner />;
+  }
+
+  return (
+    <PlotView
+      plotConfig={plotConfig}
+      data={data}
+      linreg_by_group={linreg_by_group}
+      height={height}
+    />
+  );
 }
 
 export default Plot;
