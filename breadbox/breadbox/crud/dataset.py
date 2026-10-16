@@ -41,6 +41,7 @@ from breadbox.models.dataset import (
 from breadbox.crud.group import (
     get_group,
     get_groups_with_visible_contents,
+    get_group_ids_with_visible_contents,
 )
 from breadbox.io.filestore_crud import delete_data_files
 import typing
@@ -80,6 +81,7 @@ def get_datasets(
     sample_type: Optional[str] = None,
     value_type: Optional[ValueType] = None,
     data_type: Optional[str] = None,
+    group_id: Optional[str] = None,
 ) -> list[Dataset]:
     assert (
         db.user == user
@@ -93,8 +95,13 @@ def get_datasets(
             raise UserError("If sample_id is specified, sample_type must be provided")
 
     # Get all datasets that should be discoverable by the user
-    groups = get_groups_with_visible_contents(db, user)
-    group_ids = [group.id for group in groups]
+    group_ids = get_group_ids_with_visible_contents(db, user)
+    if group_id is not None:
+        if group_id not in group_ids:
+            raise UserError("User does not have access to the queried group")
+        else:
+            # limit our search to just the one group requested
+            group_ids = [group_id]
 
     # Include columns for MatrixDataset, TabularDataset
     dataset_poly = with_polymorphic(Dataset, [MatrixDataset, TabularDataset])

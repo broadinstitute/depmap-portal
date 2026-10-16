@@ -19,6 +19,7 @@ from sqlalchemy.orm import (
 )
 
 from ..db.base_class import Base, UUIDMixin
+from .table_mutation import register_mutation_triggers
 
 from typing import Any, TypeVar, Type, TYPE_CHECKING, Optional
 
@@ -64,6 +65,11 @@ class GroupEntry(Base, UUIDMixin):
     )
 
     group = relationship(Group, back_populates="group_entries")
+
+
+# Bump table_mutation.count on every insert/update/delete (used to compute etags)
+register_mutation_triggers(Group.__table__)
+register_mutation_triggers(GroupEntry.__table__)
 
 
 class GroupMixin:
