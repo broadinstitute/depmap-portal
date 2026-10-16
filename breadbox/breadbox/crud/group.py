@@ -9,6 +9,7 @@ from breadbox.crud.access_control import (
     user_can_view_group_contents,
     TRANSIENT_GROUP_ID,
 )
+from breadbox.crud.cache_invalidation import GET_DATASETS, invalidate_cache_keys
 from breadbox.db.session import SessionWithUser
 from breadbox.models.group import AccessType, Group, GroupEntry
 from breadbox.models.dataset import Dataset
@@ -145,6 +146,8 @@ def add_group(db: SessionWithUser, user: str, group_in: GroupIn, id=None):
     db.add(group_entry)
 
     db.flush()
+    # groups and group entries control which datasets a user can see
+    invalidate_cache_keys(db, GET_DATASETS)
     return group
 
 
@@ -167,6 +170,7 @@ def delete_group(db: SessionWithUser, user: str, group: Group):
     db.delete(group)
 
     db.flush()
+    invalidate_cache_keys(db, GET_DATASETS)
 
     return True
 
@@ -192,6 +196,7 @@ def add_group_entry(
 
     db.add(group_entry)
     db.flush()
+    invalidate_cache_keys(db, GET_DATASETS)
     return group_entry
 
 
@@ -232,4 +237,5 @@ def delete_group_entry(db: SessionWithUser, user: str, group_entry_id: str):
 
     db.query(GroupEntry).filter(GroupEntry.id == group_entry_id).delete()
     db.flush()
+    invalidate_cache_keys(db, GET_DATASETS)
     return True

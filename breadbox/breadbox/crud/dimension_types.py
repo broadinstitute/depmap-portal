@@ -6,6 +6,12 @@ from sqlalchemy import and_, inspect
 import pandas as pd
 import numpy as np
 
+from breadbox.crud.cache_invalidation import (
+    DIMENSION_TYPES,
+    GET_DATASETS,
+    invalidate_cache_keys,
+    invalidate_for_dataset_change,
+)
 from breadbox.db.session import SessionWithUser
 from breadbox.schemas.custom_http_exception import DimensionTypeNotFoundError
 from breadbox.schemas.dataset import TabularDatasetIn
@@ -140,6 +146,8 @@ def add_dimension_type(
     )
     db.add(dimension_type)
     db.flush()
+    # get_datasets() filters by dimension type axis
+    invalidate_cache_keys(db, DIMENSION_TYPES, GET_DATASETS)
 
     if dataset_in is not None and metadata_df is not None:
         group_id = str(dataset_in.group_id)
@@ -156,6 +164,7 @@ def add_dimension_type(
 
         dataset_id = dataset_in.id
         db.flush()
+        invalidate_for_dataset_change(db, metadata_dataset)
         dimension_type.dataset_id = dataset_id  # pyright: ignore
         db.flush()
 
@@ -247,11 +256,14 @@ def update_dataset_dimensions_with_dimension_type(
 def delete_dimension_type(db: SessionWithUser, dimension_type: DimensionType):
     """Delete the dimension type as well as its metadata dataset."""
     if dimension_type.dataset is not None:
+        invalidate_for_dataset_change(db, dimension_type.dataset)
         db.delete(dimension_type.dataset)
         dimension_type.dataset = None
         db.flush()
     db.delete(dimension_type)
     db.flush()
+    # get_datasets() filters by dimension type axis
+    invalidate_cache_keys(db, DIMENSION_TYPES, GET_DATASETS)
     return True
 
 

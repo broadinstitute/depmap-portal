@@ -1674,8 +1674,12 @@ def test_get_dimension_type_identifiers_etag(client: TestClient, minimal_db, set
     assert second.status_code == 304
 
     # changing the dimension type invalidates the etag
-    minimal_db.execute(text("UPDATE dimension_type SET display_name = 'renamed'"))
-    minimal_db.commit()
+    updated = client.patch(
+        "types/dimensions/depmap_model",
+        json={"display_name": "renamed"},
+        headers=headers,
+    )
+    assert_status_ok(updated)
     third = client.get(url, headers={**headers, "If-None-Match": etag})
     assert third.status_code == 200
     assert third.headers["ETag"] != etag
