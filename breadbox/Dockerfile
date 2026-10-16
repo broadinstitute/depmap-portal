@@ -17,8 +17,13 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     liblzma-dev \
     libatomic1 \
+    nodejs \
     && apt-get upgrade -y \
     && rm -rf /var/lib/apt/lists/*
+
+# POST /temp/plot-data runs a self-contained Node bundle (no npm or node packages needed).
+# It needs the global fetch/Headers/FormData of Node >= 18; trixie's distro package is 20.x.
+RUN node --version && node -e 'const major = +process.versions.node.split(".")[0]; if (major < 18) { console.error("Node >= 18 is required, found " + process.version); process.exit(1); }'
 
 # Install pyenv
 ENV PYENV_ROOT=/root/.pyenv
@@ -40,6 +45,11 @@ COPY git-sha /install/git-sha
 # Copy files:
 COPY . /install/breadbox
 WORKDIR /install/breadbox
+
+# The plot-data bundle is gitignored build output (`yarn build:embed`, run by
+# build-docker-image.sh). Without it, POST /temp/plot-data could only ever answer 500.
+RUN test -f /install/breadbox/breadbox/static/plot-data/plot-data.js || \
+    (echo "breadbox/static/plot-data/plot-data.js is missing: run 'yarn build:embed' in frontend/ before building the image" >&2; exit 1)
 
 # Install dependencies:
 RUN pip install poetry==1.8.5

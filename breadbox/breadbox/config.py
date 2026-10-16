@@ -37,6 +37,28 @@ class Settings(BaseSettings):
     # the host:port to use for connecting to redis (used by caching)
     redis_host: Optional[str] = os.getenv("REDIS_HOST")
 
+    # --- POST /plot-data (see breadbox/service/plot_data.py) ---
+    # Root URL the plot-data Node script uses to read back from this same Breadbox.
+    # Must be the *unprefixed* loopback address: it must not contain the /breadbox
+    # prefix (requests that arrive with it are a 404 on loopback).
+    plot_data_base_url: str = "http://127.0.0.1:8000"
+    plot_data_max_request_bytes: int = 256 * 1024
+    plot_data_timeout_seconds: float = 30.0
+    plot_data_max_output_bytes: int = 8 * 1024 * 1024
+    plot_data_max_concurrency: int = 2
+    plot_data_max_queue: int = 8
+    plot_data_queue_timeout_seconds: float = 5.0
+    plot_data_node_max_old_space_mb: int = 512
+    # Whole-response cache. A size of 0 (or a ttl of 0) disables it.
+    plot_data_cache_max_bytes: int = 128 * 1024 * 1024
+    plot_data_cache_ttl_seconds: float = 300.0
+    # Replaces the whole child command (`node --max-old-space-size=.. plot-data.js`).
+    # Only meant for tests, which substitute a fake child.
+    plot_data_command_override: Optional[List[str]] = None
+    # The child runs with PATH only, so Breadbox's secrets stay out of it. Names listed here
+    # are copied from Breadbox's own environment as well (e.g. ["NODE_OPTIONS"]).
+    plot_data_child_env_passthrough: List[str] = []
+
     model_config = SettingsConfigDict(
         env_file=os.environ.get("BREADBOX_SETTINGS_PATH", ".env"),
     )
