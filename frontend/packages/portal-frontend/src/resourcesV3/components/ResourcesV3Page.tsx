@@ -99,7 +99,7 @@ export default function ResourcesV3Page() {
 
   if (error) {
     return (
-      <div className={styles.ResourcesV3PageContainer}>
+      <div className={`container ${styles.ResourcesV3PageContainer}`}>
         <p>Sorry, there was a problem loading resources.</p>
       </div>
     );
@@ -110,7 +110,7 @@ export default function ResourcesV3Page() {
   }
 
   return (
-    <div className={styles.ResourcesV3PageContainer}>
+    <div className={`container ${styles.ResourcesV3PageContainer}`}>
       <div className={styles.resourcesPageHeader}>
         <h1>Depmap Resources</h1>
         <h3>
@@ -119,34 +119,36 @@ export default function ResourcesV3Page() {
         </h3>
       </div>
 
-      <section className={styles.postsNavList}>
-        <PanelGroup>
-          {menus.map((menu) => (
-            <MenuTreeNode
-              key={menu.slug}
-              menu={menu}
-              slugToPostSummary={slugToPostSummary}
-              selectedPostSlug={selectedPostSlug}
-            />
-          ))}
-        </PanelGroup>
-      </section>
-      <section className={styles.postContentContainer}>
-        {selectedPostSummary && (
-          <div className={styles.postContent}>
-            <div className={styles.postDate}>
-              <p>Posted: {selectedPostSummary.created_at}</p>
-              <p>Updated: {selectedPostSummary.updated_at}</p>
+      <div className="row">
+        <section className={`col-md-3 ${styles.postsNavList}`}>
+          <PanelGroup>
+            {menus.map((menu) => (
+              <MenuTreeNode
+                key={menu.slug}
+                menu={menu}
+                slugToPostSummary={slugToPostSummary}
+                selectedPostSlug={selectedPostSlug}
+              />
+            ))}
+          </PanelGroup>
+        </section>
+        <section className={`col-md-9 ${styles.postContentContainer}`}>
+          {selectedPostSummary && (
+            <div className={styles.postContent}>
+              <div className={styles.postDate}>
+                <p>Posted: {selectedPostSummary.created_at}</p>
+                <p>Updated: {selectedPostSummary.updated_at}</p>
+              </div>
+              <h2>{selectedPostSummary.title}</h2>
+              {selectedPost ? (
+                <Markdown>{selectedPost.content}</Markdown>
+              ) : (
+                selectedPostContentLoading && <Spinner />
+              )}
             </div>
-            <h2>{selectedPostSummary.title}</h2>
-            {selectedPost ? (
-              <Markdown>{selectedPost.content}</Markdown>
-            ) : (
-              selectedPostContentLoading && <Spinner />
-            )}
-          </div>
-        )}
-      </section>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
