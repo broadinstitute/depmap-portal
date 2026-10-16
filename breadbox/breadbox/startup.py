@@ -14,6 +14,8 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from starlette.datastructures import MutableHeaders
 
 from .api import api_router
+from .api.temp.plot_data import plot_data_error_handler
+from .service.plot_data import PlotDataError
 from .config import Settings
 from .ui import SinglePageApplication
 from importlib.metadata import version
@@ -30,6 +32,9 @@ def create_app(settings: Settings):
         swagger_ui_oauth2_redirect_url=f"{api_prefix}/docs/oauth2-redirect",
         version=version("breadbox"),
     )
+
+    # POST /temp/plot-data reports every failure in its own {"error": {...}} shape
+    app.add_exception_handler(PlotDataError, plot_data_error_handler)
 
     if settings.breadbox_env != "dev":
         FastAPIInstrumentor.instrument_app(app)
