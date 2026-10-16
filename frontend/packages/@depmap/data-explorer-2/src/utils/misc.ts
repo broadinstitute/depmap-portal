@@ -8,13 +8,25 @@ import {
   SliceQuery,
 } from "@depmap/types";
 
-import { isCompleteDimension, isExpansionDimension } from "./dimensionHelpers";
+import {
+  formatDimensionTypeName,
+  isCompleteDimension,
+  isExpansionDimension,
+} from "./dimensionHelpers";
 
 // HACK: Stash a reference to `dimensionTypes`
 // so these utils can be called synchronously.
 let dimensionTypes = null as DimensionType[] | null;
 
-if (!process.env.JEST_WORKER_ID) {
+// Starts loading `dimensionTypes`. This is called once, by the package root
+// (index.ts), and is deliberately not run on import: the embed and the Node
+// bundle import this module by deep path and must not make a request (or rely
+// on one finishing) just by doing so.
+export function primeDimensionTypes() {
+  if (process.env.JEST_WORKER_ID) {
+    return;
+  }
+
   cached(breadboxAPI)
     .getDimensionTypes()
     .then((result) => {
@@ -35,28 +47,7 @@ export function getDimensionTypeLabel(dimension_type?: string) {
     return dimType.display_name;
   }
 
-  if (dimension_type === "depmap_model") {
-    return "model";
-  }
-
-  if (dimension_type === "compound_experiment") {
-    return "compound sample";
-  }
-
-  if (dimension_type === "msigdb_gene_set") {
-    return "MSigDB gene set";
-  }
-
-  return (
-    dimension_type
-      // Explicitly limit the size of input (for no other reason than to shut
-      // up GitHub CodeQL which thinks someone might used this to DDoS us 🤦)
-      .slice(0, 1000)
-      // no underscores
-      .replace(/_/g, " ")
-      // strip out version suffixes
-      .replace(/\s*v?\d+$/i, "")
-  );
+  return formatDimensionTypeName(dimension_type);
 }
 
 export const isPartialSliceId = (value: string | null) => {

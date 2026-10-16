@@ -136,3 +136,35 @@ export const pluralize = (str: string) => {
 
   return `${str.replace(/y$/, "ie")}s`;
 };
+
+// The label for a dimension type when its `display_name` isn't to hand. Pure, so
+// it gives the same answer every time (see getDimensionTypeLabel in misc.ts,
+// which prefers the `display_name` once that has loaded).
+export function formatDimensionTypeName(dimension_type?: string) {
+  if (!dimension_type) {
+    return "";
+  }
+
+  if (dimension_type === "depmap_model") {
+    return "model";
+  }
+
+  if (dimension_type === "compound_experiment") {
+    return "compound sample";
+  }
+
+  if (dimension_type === "msigdb_gene_set") {
+    return "MSigDB gene set";
+  }
+
+  return (
+    dimension_type
+      // Explicitly limit the size of input (for no other reason than to shut
+      // up GitHub CodeQL which thinks someone might used this to DDoS us 🤦)
+      .slice(0, 1000)
+      // no underscores
+      .replace(/_/g, " ")
+      // strip out version suffixes
+      .replace(/\s*v?\d+$/i, "")
+  );
+}

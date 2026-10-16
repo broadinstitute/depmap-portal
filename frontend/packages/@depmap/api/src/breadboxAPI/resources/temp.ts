@@ -3,7 +3,7 @@ import {
   DataExplorerContextV2,
   SliceQuery,
 } from "@depmap/types";
-import { postJson } from "../client";
+import { getJson, postJson } from "../client";
 import { getTabularDatasetData } from "./datasets";
 import { getDimensionTypeIdentifiers } from "./types";
 
@@ -22,6 +22,12 @@ export async function computeAssociations(
       slice_query: sliceQuery,
     }
   );
+}
+
+// One entry in the content-addressable store (used for contexts, among other
+// things). `value` is a JSON string.
+export async function getCasValue(hash: string) {
+  return getJson<{ value: string }>(`/temp/cas/${hash}`);
 }
 
 export async function fetchAssociations(
