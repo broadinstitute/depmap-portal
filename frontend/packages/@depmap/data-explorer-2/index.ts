@@ -1,3 +1,4 @@
+import { primeDimensionTypes } from "./src/utils/misc";
 export { default as ContextSelectorV2 } from "./src/components/ContextSelectorV2";
 export { default as PlotConfigSelect } from "./src/components/PlotConfigSelect";
 export { default as renderConditionally } from "./src/utils/render-conditionally";
@@ -90,3 +91,6 @@ export {
   LEGEND_RANGE_10,
 } from "./src/components/DataExplorerPage/components/plot/prototype/plotUtils";
 export type { LegendKey } from "./src/components/DataExplorerPage/components/plot/prototype/plotUtils";
+
+// Web apps only: see primeDimensionTypes.
+primeDimensionTypes();

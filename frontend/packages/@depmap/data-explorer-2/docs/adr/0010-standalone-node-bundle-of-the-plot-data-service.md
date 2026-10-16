@@ -149,6 +149,41 @@ than the working directory.
 
 **The output is not content-hashed.** Nothing caches it, and the parent finds it by name.
 
+### Normalization runs in the script
+
+**The script migrates the `plot_config` it is sent, then answers with the migrated
+one as `data.plot_config`.** A client may send a config in any shape it has ever
+minted (`version` attached, or absent for the oldest), and the page would have
+migrated it before drawing. `normalizePlotConfig` (`utils/normalizePlotConfig.ts`)
+holds those steps: the structural repairs, the version-gated migrations, resolving
+context hashes, and rewriting legacy dataset IDs and slice IDs. The page calls the
+same function, so a config means the same thing in both places.
+
+Some of those steps ask Breadbox things (a context by hash, the dataset and
+dimension-type lists), which a sandboxed MCP view could never do. The script can:
+it already holds the caller's identity and the Breadbox address. The passes that
+need a request are therefore unconditional, as they always were. See the comments in
+`normalizePlotConfig` for why they must not be gated on version.
+
+**Anything environmental is injected, not imported** (`NormalizeDeps`). The browser
+passes its Cache-API-backed `fetchContext`, the converter that shows a modal on
+failure, and a callback that rewrites stored legacy contexts in `localStorage`. The
+script passes `fetchContextFromCas`, which uses the configured Breadbox client, and
+nothing else. The conversion itself lives in `context-converter-core.ts`, and
+`isV2Context` / `negateContext` moved to `contextExpr.ts`; both are re-exported from
+their old homes.
+
+**Validation is split around normalization.** The envelope and the _shape_ the
+migrations assume (`dimensions`, `filters` and `metadata` are objects of objects)
+are checked first, so a malformed config is `invalid_config` and not a crash.
+Whether the required axes are _complete_ is checked on the normalized config,
+because a raw one can look incomplete (a context that is still a hash).
+
+**`plot_config` rides inside `data`, like `linreg_by_group`,** for the same reason:
+Breadbox passes `data` through untouched. A client that renders must draw from
+`data.plot_config` rather than the config it sent. It is always present. The
+collision caveat below applies to it too.
+
 ## Considered options
 
 - **Reimplement the assembly in Python, in Breadbox or beside the MCP server.** Rejected: it
@@ -191,6 +226,17 @@ than the working directory.
 - **Bad:** a malformed config that trips a native error deep in assembly is reported as an
   internal error, not `invalid_config`. Up-front validation narrows this but cannot close
   it.
+- **Bad:** the script now makes extra Breadbox requests before building data, and a
+  config that needs a context lookup can fail with `invalid_config` for a context
+  that is gone. A missing context is `invalid_config` ("not found"), deliberately not
+  `dataset_not_found`.
+- **Bad:** context hashes are resolved from Breadbox only. The page retries a failed
+  lookup against the legacy Portal's CAS; the script has no such address (`base_url`
+  is the Breadbox root) and does not try. A hash that only the legacy store can
+  answer works on the page and is `invalid_config` ("not found") through the script.
+- **Bad:** normalization has more code on the Node path that can touch `window`
+  without the build noticing. `convertContextV1toV2Core` and `normalizePlotConfig`
+  must stay free of it, like `dimensionHelpers.ts`.
 - **Neutral:** the in-memory `cached()` layer still runs in Node and is useful within one
   invocation. The persistent IndexedDB layer fails closed without `indexedDB` and does
   nothing.
