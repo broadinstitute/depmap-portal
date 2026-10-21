@@ -1,3 +1,4 @@
+import { primeDimensionTypes } from "./src/utils/misc";
 export { default as ContextSelectorV2 } from "./src/components/ContextSelectorV2";
 export { default as PlotConfigSelect } from "./src/components/PlotConfigSelect";
 export { default as renderConditionally } from "./src/utils/render-conditionally";
@@ -31,12 +32,13 @@ export type { RememberedColumnsScope } from "./src/utils/rememberedTableColumns"
 export {
   contextsMatch,
   initializeDevContexts,
-  isContextAll,
   isNegatedContext,
   isV2Context,
   negateContext,
   saveContextToLocalStorageAndPersist,
 } from "./src/utils/context";
+
+export { isContextAll } from "./src/utils/contextExpr";
 
 export { convertContextV1toV2 } from "./src/utils/context-converter";
 
@@ -47,16 +49,19 @@ export {
   convertDimensionToSliceId,
   convertDimensionToSliceQuery,
   getDimensionTypeLabel,
-  isCompleteDimension,
-  isCompleteExpression,
   isPartialSliceId,
-  isSampleType,
   isSampleTypeSync,
-  pluralize,
   sortDimensionTypes,
   uncapitalize,
   urlLibEncode,
 } from "./src/utils/misc";
+
+export {
+  isCompleteDimension,
+  isCompleteExpression,
+  isSampleType,
+  pluralize,
+} from "./src/utils/dimensionHelpers";
 
 export { persistLegacyListAsContext } from "./src/utils/persistLegacyListAsContext";
 
@@ -86,3 +91,6 @@ export {
   LEGEND_RANGE_10,
 } from "./src/components/DataExplorerPage/components/plot/prototype/plotUtils";
 export type { LegendKey } from "./src/components/DataExplorerPage/components/plot/prototype/plotUtils";
+
+// Web apps only: see primeDimensionTypes.
+primeDimensionTypes();

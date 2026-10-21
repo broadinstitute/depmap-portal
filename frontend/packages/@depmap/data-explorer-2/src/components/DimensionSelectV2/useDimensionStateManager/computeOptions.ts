@@ -5,7 +5,8 @@ import {
   dataTypeSortComparator,
 } from "@depmap/utils";
 import { DimensionType } from "@depmap/types";
-import { pluralize, sortDimensionTypes } from "../../../utils/misc";
+import { sortDimensionTypes } from "../../../utils/misc";
+import { pluralize } from "../../../utils/dimensionHelpers";
 import { State, SLICE_TYPE_NULL } from "./types";
 import {
   DataExplorerDatasetDescriptor,

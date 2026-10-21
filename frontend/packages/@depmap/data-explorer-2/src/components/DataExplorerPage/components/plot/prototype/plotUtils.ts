@@ -723,7 +723,7 @@ export function formatDataForScatterPlot(
   // Defaults to "x" — true for scatter/density, where x is always the real
   // measured dimension. Waterfall calls this with "y": its response remaps
   // the real measured dimension onto y and gives x a synthetic "rank" label
-  // (see fetchWaterfall's HACK comment in breadboxMethods.ts), so the
+  // (see fetchWaterfall's HACK comment in standardPlot.ts), so the
   // suffix belongs on y there, not on whatever "Rank"/"" happens to be on x.
   extrasAxis: "x" | "y" = "x"
 ) {
@@ -938,7 +938,7 @@ export function formatDataForWaterfall(
 
   // "y" — waterfall's response remaps the real measured dimension onto y and
   // gives x a synthetic "rank" label (see the HACK comment on this response
-  // shape in breadboxMethods.ts's fetchWaterfall), so the "filtered by"/
+  // shape in standardPlot.ts's fetchWaterfall), so the "filtered by"/
   // "faceted by" suffix belongs on y here, not on whatever happens to be on x.
   const formatted = formatDataForScatterPlot(data, color_by, target, "y");
 

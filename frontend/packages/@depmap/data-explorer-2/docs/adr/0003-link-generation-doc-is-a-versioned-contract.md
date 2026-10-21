@@ -5,15 +5,15 @@
 ## Context
 
 [0001](./0001-plot-config-schema-versioning.md) put a `version` field on the wire and
-established that an absent `version` means "pre-versioning" — an invariant that holds *only
-because every mint point stamps*.
+established that an absent `version` means "pre-versioning" — an invariant that holds _only
+because every mint point stamps_.
 
 There are two mint points for structured payloads, and they are not alike:
 
 1. **`plotToQueryString`** — the app's own writer. It stamps `CURRENT_PLOT_VERSION`
    mechanically, on every serialization. It cannot forget.
 2. **External authors** — DepMap Delphi, and humans hand-writing URLs. These stamp only if
-   the documentation tells them to, and stamp *correctly* only if the documentation and the
+   the documentation tells them to, and stamp _correctly_ only if the documentation and the
    code agree on what the number means.
 
 The code cannot police the second one. A `version: 1` stamp from an external author is an
@@ -52,7 +52,7 @@ constraint as 0001, one level up: the code is not the whole mechanism.
 The failure mode is a **silent misrender, in both directions**:
 
 - Doc teaches version-2 semantics but still says "stamp 1" → Delphi mints payloads that
-  *mean* v2 while *declaring* v1 → the reader runs the v1→v2 migration on them and
+  _mean_ v2 while _declaring_ v1 → the reader runs the v1→v2 migration on them and
   materializes an old default the author never intended.
 - Doc says "stamp 2" but still teaches v1 semantics → payloads skip the migration and
   inherit new-default semantics the author didn't ask for.
@@ -74,6 +74,19 @@ that is a regression of this decision, not an improvement.
 examples are fenced code blocks rather than Word table cells with highlight markup, and the
 file is diffable in review — which is what makes the lockstep rule checkable by a human at
 all. A binary blob in Google Drive is checkable by nobody.
+
+**The doc is also published, and the build now checks the lockstep rule.** The embed build
+(`embed-frontend`, `webpack.mcp.js`) copies it, byte for byte, to
+`/embed/generating-de2-links.md` on Breadbox, and the DepMap MCP server fetches it from
+there instead of keeping a copy. Its checks (`scripts/check-mcp-build.js`) fail the build
+if the copy is missing or differs from this file, if the text does not start with
+`# Generating links to Data Explorer 2`, if it lacks a `describes version N` phrase, or if N
+is not `CURRENT_PLOT_VERSION` (read from `plot-version.ts`). So bumping the constant
+without updating the doc is now a build error, no longer the silent defect described above.
+(Diff-locality is still how a reviewer sees it before the build runs.) The MCP server
+accepts the doc only on that heading and phrase, so **do not reword either without telling
+the MCP side.** The published copy is gitignored build output; this file remains the only
+source.
 
 ## Related
 

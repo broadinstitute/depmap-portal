@@ -37,10 +37,6 @@ export async function fetchDatasetIdentifiers(
         dataset_id
       );
 
-  if ("detail" in result) {
-    throw new Error(JSON.stringify(result.detail));
-  }
-
   return result;
 }
 
@@ -52,10 +48,6 @@ export async function fetchDatasetFeatures(dataset_id: string) {
   const result = await cached(breadboxAPI, {
     persist: true,
   }).getDatasetFeatures(dataset_id);
-
-  if ("detail" in result) {
-    throw new Error(JSON.stringify(result.detail));
-  }
 
   return result;
 }
