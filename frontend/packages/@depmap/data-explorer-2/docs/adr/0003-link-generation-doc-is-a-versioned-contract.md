@@ -81,7 +81,10 @@ all. A binary blob in Google Drive is checkable by nobody.
 there instead of keeping a copy. Its checks (`scripts/check-mcp-build.js`) fail the build
 if the copy is missing or differs from this file, if the text does not start with
 `# Generating links to Data Explorer 2`, if it lacks a `describes version N` phrase, or if N
-is not `CURRENT_PLOT_VERSION` (read from `plot-version.ts`). So bumping the constant
+is not `CURRENT_PLOT_VERSION` (read from `plot-version.ts`). It also fails if any complete plot example in the doc (a `json` block with a
+`plot_type`) lacks `"version": N`, because models copy examples much more reliably than they
+follow prose, and an unstamped payload is silently read as the pre-versioning schema (for
+example, a `facet_by` plot with every point grey). So bumping the constant
 without updating the doc is now a build error, no longer the silent defect described above.
 (Diff-locality is still how a reviewer sees it before the build runs.) The MCP server
 accepts the doc only on that heading and phrase, so **do not reword either without telling
