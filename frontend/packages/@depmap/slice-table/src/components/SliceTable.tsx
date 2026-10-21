@@ -6,6 +6,7 @@ import React, {
   useState,
 } from "react";
 import cx from "classnames";
+import type { Button } from "react-bootstrap";
 import { Spinner } from "@depmap/common-components";
 import ReactTable from "@depmap/react-table";
 import type { RowSelectionState, SortingState } from "@depmap/react-table";
@@ -75,6 +76,11 @@ interface Props {
   hideLabelColumn?: boolean;
   // Dataset IDs that should not appear in the "Add Column" menus.
   hiddenDatasets?: Set<string>;
+  // Whether a column of the table's own index type may offer "Create context".
+  // Turn this off where the table already lives inside a context builder: that
+  // item opens another builder, which hosts another table, and so on. Columns
+  // of a *different* type are unaffected, since they lead somewhere new.
+  allowSameTypeContextCreation?: boolean;
   // Columns the caller supplies itself, for values that aren't Breadbox slices.
   // Give an entry an `accessorFn` to make it sortable, searchable and
   // exportable; omit it for a column that only renders controls.
@@ -106,6 +112,9 @@ interface Props {
   containerClassName?: string;
   // Use this to apply custom CSS to the controls.
   controlsClassName?: string;
+  // See Controls' own comment: lets a caller for whom "Download data" is
+  // the primary action (rather than one option among several) say so.
+  downloadButtonBsStyle?: React.ComponentProps<typeof Button>["bsStyle"];
   downloadFilename?: string;
   // An implicit filter that is always applied and invisible to the end user.
   // Rows for which this returns false are excluded from the dataset entirely —
@@ -149,8 +158,11 @@ interface Props {
   // can render meaningfully.
   isLoading?: boolean;
   sliceTableRef?: React.RefObject<{
-    // Use this to force `getInitialState()` to be called.
-    forceInitialize: () => void;
+    // Use this to force `getInitialState()` to be called. By default the row
+    // order is re-derived from the new initial selection (selected rows first).
+    // Pass `preserveSortOrder` to re-seed the selection but leave the rows
+    // where they are.
+    forceInitialize: (options?: { preserveSortOrder?: boolean }) => void;
   }>;
 }
 
@@ -174,6 +186,7 @@ function SliceTable({
   hideIdColumn = false,
   hideLabelColumn = false,
   hiddenDatasets = undefined,
+  allowSameTypeContextCreation = true,
   customColumns = undefined,
   customColumnPlacement = "end",
   getColumnDisplayOptions = undefined,
@@ -182,6 +195,7 @@ function SliceTable({
   hideActions = false,
   containerClassName = undefined,
   controlsClassName = undefined,
+  downloadButtonBsStyle = undefined,
   downloadFilename = "",
   implicitFilter = undefined,
   rowIds = undefined,
@@ -204,9 +218,16 @@ function SliceTable({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revision]);
 
+  const preserveSortOrderRef = useRef(false);
+
   React.useImperativeHandle(
     sliceTableRef,
-    () => ({ forceInitialize: () => setRevision((r) => r + 1) }),
+    () => ({
+      forceInitialize: (options) => {
+        preserveSortOrderRef.current = Boolean(options?.preserveSortOrder);
+        setRevision((r) => r + 1);
+      },
+    }),
     []
   );
 
@@ -258,6 +279,7 @@ function SliceTable({
     implicitFilter,
     rowIds,
     hiddenDatasets,
+    allowSameTypeContextCreation,
     retryToken,
   });
 
@@ -299,6 +321,9 @@ function SliceTable({
   // thing.
   const lastReportedRef = useRef(initialRowSelection);
   const prevInitialRef = useRef(initialRowSelection);
+  // What the default sort orders by. Normally the initial selection, but it can
+  // be held back so that re-seeding the selection doesn't reshuffle the rows.
+  const sortSeedRef = useRef(initialRowSelection);
 
   // Adopting a new seed is an initialization, not a user action: re-baseline so
   // it isn't reported back to the consumer that supplied it. Done during render,
@@ -307,7 +332,14 @@ function SliceTable({
   if (prevInitialRef.current !== initialRowSelection) {
     prevInitialRef.current = initialRowSelection;
     lastReportedRef.current = initialRowSelection;
+
+    if (!preserveSortOrderRef.current) {
+      sortSeedRef.current = initialRowSelection;
+    }
+    preserveSortOrderRef.current = false;
   }
+
+  const sortSeed = sortSeedRef.current;
 
   useEffect(() => {
     if (rowSelectionChanged(lastReportedRef.current, rowSelection)) {
@@ -345,8 +377,8 @@ function SliceTable({
       const aId = getRowId(a);
       const bId = getRowId(b);
 
-      const aSelected = initialRowSelection[aId] || false;
-      const bSelected = initialRowSelection[bId] || false;
+      const aSelected = sortSeed[aId] || false;
+      const bSelected = sortSeed[bId] || false;
 
       if (aSelected && !bSelected) return -1;
       if (!aSelected && bSelected) return 1;
@@ -360,7 +392,7 @@ function SliceTable({
 
       return 0;
     },
-    [initialRowSelection]
+    [sortSeed]
   );
 
   // Apply implicit filter before ReactTable sees the data. This shapes the
@@ -385,6 +417,7 @@ function SliceTable({
       <div className={cx(styles.SliceTable, containerClassName)}>
         <Controls
           controlsClassName={controlsClassName}
+          downloadButtonBsStyle={downloadButtonBsStyle}
           tableRef={tableRef}
           isLoading={combinedLoading}
           hadError={Boolean(error)}

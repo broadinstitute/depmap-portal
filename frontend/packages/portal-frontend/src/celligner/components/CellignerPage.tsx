@@ -373,29 +373,22 @@ export default class CellignerPage extends React.Component<Props, State> {
       cellLineList
     );
 
+    // NOTE: This is registered once as a Plotly event listener when the graph
+    // mounts, so it must not read state from this render's closure. Always
+    // read from `prev`.
     const handleSelectingContextPts = (pointIndexes: number[]) => {
-      const out: Set<number> = new Set();
+      this.setState((prev) => {
+        const { sidePanelSelectedPts: sidePanel } = prev;
 
-      if (!alignmentsArrWithCellLineCol) {
-        return out;
-      }
+        // Plotly reports the complete selection each time, so it replaces
+        // the previous one (restricted to side panel points, if any).
+        const next = new Set(
+          sidePanel.size > 0
+            ? pointIndexes.filter((i) => sidePanel.has(i))
+            : pointIndexes
+        );
 
-      for (let index = 0; index < pointIndexes.length; index++) {
-        const pointIndex = pointIndexes[index];
-
-        if (
-          (!lassoOrBoxSelectedPts?.has(pointIndex) &&
-            sidePanelSelectedPts?.size > 0 &&
-            sidePanelSelectedPts?.has(pointIndex)) ||
-          (!lassoOrBoxSelectedPts?.has(pointIndex) &&
-            sidePanelSelectedPts?.size === 0)
-        ) {
-          out.add(pointIndex);
-        }
-      }
-
-      return this.setState({
-        lassoOrBoxSelectedPts: out,
+        return { lassoOrBoxSelectedPts: next };
       });
     };
 
@@ -497,6 +490,19 @@ export default class CellignerPage extends React.Component<Props, State> {
       );
     };
 
+    // Computed once per render (not per table row).
+    const showAllRows =
+      lassoOrBoxSelectedPts.size === 0 && sidePanelSelectedPts.size === 0;
+    const validSelectedPts = showAllRows
+      ? new Set<number>()
+      : getValidSelectedPoints(
+          lassoOrBoxSelectedPts,
+          sidePanelSelectedPts,
+          selectedPoints
+        );
+    const isRowVisible = (pointIndex: number) =>
+      showAllRows || validSelectedPts.has(pointIndex);
+
     if (activeTab === "cell-line-for-tumors") {
       const cellLinesForTumorsColumns: Array<WideTableColumns> = ([
         {
@@ -530,30 +536,8 @@ export default class CellignerPage extends React.Component<Props, State> {
                           distance: cellLineDistances[i],
                         };
                       })
-                      .filter(
-                        (model) =>
-                          [
-                            ...getValidSelectedPoints(
-                              lassoOrBoxSelectedPts,
-                              sidePanelSelectedPts,
-                              selectedPoints
-                            ),
-                          ].includes(model.pointIndex) ||
-                          (lassoOrBoxSelectedPts.size === 0 &&
-                            sidePanelSelectedPts.size === 0)
-                      )
-                  : models.filter(
-                      (model) =>
-                        [
-                          ...getValidSelectedPoints(
-                            lassoOrBoxSelectedPts,
-                            sidePanelSelectedPts,
-                            selectedPoints
-                          ),
-                        ].includes(model.pointIndex) ||
-                        (lassoOrBoxSelectedPts.size === 0 &&
-                          sidePanelSelectedPts.size === 0)
-                    )
+                      .filter((model) => isRowVisible(model.pointIndex))
+                  : models.filter((model) => isRowVisible(model.pointIndex))
               }
               columns={cellLinesForTumorsColumns}
               sorted={[{ id: "distance", desc: true }]}
@@ -593,30 +577,8 @@ export default class CellignerPage extends React.Component<Props, State> {
                       .map((tumor, i) => {
                         return { ...tumor, distance: tumorDistances[i] };
                       })
-                      .filter(
-                        (tumor) =>
-                          [
-                            ...getValidSelectedPoints(
-                              lassoOrBoxSelectedPts,
-                              sidePanelSelectedPts,
-                              selectedPoints
-                            ),
-                          ].includes(tumor.pointIndex) ||
-                          (lassoOrBoxSelectedPts.size === 0 &&
-                            sidePanelSelectedPts.size === 0)
-                      )
-                  : tumors.filter(
-                      (tumor) =>
-                        [
-                          ...getValidSelectedPoints(
-                            lassoOrBoxSelectedPts,
-                            sidePanelSelectedPts,
-                            selectedPoints
-                          ),
-                        ].includes(tumor.pointIndex) ||
-                        (lassoOrBoxSelectedPts.size === 0 &&
-                          sidePanelSelectedPts.size === 0)
-                    )
+                      .filter((tumor) => isRowVisible(tumor.pointIndex))
+                  : tumors.filter((tumor) => isRowVisible(tumor.pointIndex))
               }
               columns={tumorsForCellLinesColumns}
               sorted={[{ id: "distance", desc: true }]}

@@ -385,7 +385,7 @@ export default function useWaterfallPlotData(
     let title = "";
 
     // dataset_label is legitimately absent for "primary" metadata datasets
-    // (see isPrimaryMetatadata in breadboxMethods.ts) — must be appended
+    // (see isPrimaryMetatadata in standardPlot.ts) — must be appended
     // conditionally, not interpolated unconditionally, or a real `undefined`
     // bakes into the string as the literal text "undefined". Mirrors
     // PlotLegend.tsx's SliceDescription, which already gets this right.

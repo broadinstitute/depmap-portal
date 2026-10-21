@@ -20,6 +20,7 @@ from breadbox.io.filestore_crud import (
 from breadbox.service import metadata as metadata_service
 from breadbox.service import dataset as dataset_service
 from breadbox.utils.asserts import index_error_msg
+from breadbox.utils.profiling import new_span
 
 from breadbox.depmap_compute_embed.slice import SliceQuery
 from breadbox.crud.dimension_ids import (
@@ -265,7 +266,9 @@ def get_slice_data(
                 "`indices` may not be combined with `reindex_through`: the IDs would "
                 "be ambiguous between the root and leaf of the chain."
             )
-        return _resolve_reindex_chain(db, filestore_location, slice_query)
+
+        with new_span("get_slice_data._resolve_reindex_chain"):
+            return _resolve_reindex_chain(db, filestore_location, slice_query)
 
     dataset_id = slice_query.dataset_id
     dataset = dataset_crud.get_dataset(db=db, user=db.user, dataset_id=dataset_id)
@@ -282,17 +285,18 @@ def get_slice_data(
             indices=indices,
             identifier=FeatureSampleIdentifier.id if indices is not None else None,
         )
-        slice_data = dataset_service.get_subsetted_tabular_dataset_df(
-            db=db,
-            user=db.user,
-            dataset=dataset,
-            tabular_dimensions_info=tabular_dimension_info,
-            strict=True,
-            # A requested index the dataset has no row for is a coverage hole, not an
-            # error -- the caller's IDs come from the dimension type, which is a
-            # superset of any one dataset's rows. The column check stays strict.
-            strict_indices=False,
-        )
+        with new_span("get_slice_data.get_subsetted_tabular_dataset_df"):
+            slice_data = dataset_service.get_subsetted_tabular_dataset_df(
+                db=db,
+                user=db.user,
+                dataset=dataset,
+                tabular_dimensions_info=tabular_dimension_info,
+                strict=True,
+                # A requested index the dataset has no row for is a coverage hole, not an
+                # error -- the caller's IDs come from the dimension type, which is a
+                # superset of any one dataset's rows. The column check stays strict.
+                strict_indices=False,
+            )
 
     elif dataset.format == "tabular_dataset":
         # Ideally, you could load a row of tabular data by specifying a row identifier.
@@ -302,32 +306,36 @@ def get_slice_data(
         )
 
     elif slice_query.identifier_type == "feature_id":
-        feature = get_dataset_feature_by_given_id(
-            db, dataset_id, feature_given_id=slice_query.identifier
-        )
-        assert feature.index is not None, index_error_msg(feature)
-        slice_data = get_feature_slice(dataset, [feature.index], filestore_location)
+        with new_span("get_slice_data.get_dataset_feature_by_given_id"):
+            feature = get_dataset_feature_by_given_id(
+                db, dataset_id, feature_given_id=slice_query.identifier
+            )
+            assert feature.index is not None, index_error_msg(feature)
+            slice_data = get_feature_slice(dataset, [feature.index], filestore_location)
 
     elif slice_query.identifier_type == "feature_label":
-        feature = metadata_service.get_dataset_feature_by_label(
-            db, dataset_id, feature_label=slice_query.identifier,
-        )
-        assert feature.index is not None, index_error_msg(feature)
-        slice_data = get_feature_slice(dataset, [feature.index], filestore_location)
+        with new_span("get_slice_data.get_dataset_feature_by_label"):
+            feature = metadata_service.get_dataset_feature_by_label(
+                db, dataset_id, feature_label=slice_query.identifier,
+            )
+            assert feature.index is not None, index_error_msg(feature)
+            slice_data = get_feature_slice(dataset, [feature.index], filestore_location)
 
     elif slice_query.identifier_type == "sample_id":
-        sample = get_dataset_sample_by_given_id(
-            db, dataset_id, sample_given_id=slice_query.identifier
-        )
-        assert sample.index is not None, index_error_msg(sample)
-        slice_data = get_sample_slice(dataset, [sample.index], filestore_location)
+        with new_span("get_slice_data.get_dataset_sample_by_given_id"):
+            sample = get_dataset_sample_by_given_id(
+                db, dataset_id, sample_given_id=slice_query.identifier
+            )
+            assert sample.index is not None, index_error_msg(sample)
+            slice_data = get_sample_slice(dataset, [sample.index], filestore_location)
 
     elif slice_query.identifier_type == "sample_label":
-        sample = metadata_service.get_dataset_sample_by_label(
-            db, dataset_id, sample_label=slice_query.identifier
-        )
-        assert sample.index is not None, index_error_msg(sample)
-        slice_data = get_sample_slice(dataset, [sample.index], filestore_location)
+        with new_span("get_slice_data.get_dataset_sample_by_label"):
+            sample = metadata_service.get_dataset_sample_by_label(
+                db, dataset_id, sample_label=slice_query.identifier
+            )
+            assert sample.index is not None, index_error_msg(sample)
+            slice_data = get_sample_slice(dataset, [sample.index], filestore_location)
 
     else:
         raise ResourceNotFoundError(

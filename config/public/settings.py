@@ -73,7 +73,6 @@ class ExternalStagingConfig(ExternalConfig):
     )
     APPLICATION_ROOT = "/depmap-xstaging"
     GOOGLE_ANALYTICS_UA = "UA-52456999-8"
-    TURNSTILE_SITE_KEY = None # Remove this once a proper cookie is set
 
 
 class ExternalProdConfig(ExternalConfig):

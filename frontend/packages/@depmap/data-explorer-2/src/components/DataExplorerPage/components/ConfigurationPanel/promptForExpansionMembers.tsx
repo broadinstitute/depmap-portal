@@ -25,7 +25,8 @@ import {
   loadRememberedColumns,
   rememberColumns,
 } from "../../../../utils/rememberedTableColumns";
-import { getDimensionTypeLabel, pluralize } from "../../../../utils/misc";
+import { getDimensionTypeLabel } from "../../../../utils/misc";
+import { pluralize } from "../../../../utils/dimensionHelpers";
 import HelpTip from "../HelpTip";
 import styles from "../../styles/ConfigurationPanel.scss";
 
@@ -213,7 +214,7 @@ function MembersTable({
       csvHeader,
       header: () =>
         help ? (
-          <span onClick={(e) => e.stopPropagation()} role="presentation">
+          <span role="presentation">
             {label}
             {help}
           </span>

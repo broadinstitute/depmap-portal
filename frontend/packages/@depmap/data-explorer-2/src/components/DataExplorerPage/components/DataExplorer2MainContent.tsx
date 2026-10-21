@@ -60,21 +60,37 @@ function DataExplorer2MainContent({
   const setPlot = (nextPlot: DataExplorerPlotConfig) =>
     dispatchPlotAction({ type: "set_plot", payload: nextPlot });
 
+  // DimensionSelectV2's known double-dispatch (see its own comments) fires
+  // two calls here for one click, both closing over the same stale `plot`
+  // and so computing the same `nextPlot`. Without this queue, both calls'
+  // `readPlotFromQueryString` reads race each other and can both see the
+  // pre-push URL, so both decide they differ from it and both push —
+  // one real history entry plus a redundant duplicate. Chaining onto the
+  // previous call's promise instead of running concurrently guarantees the
+  // second call's read happens after the first call's pushState (if any),
+  // so it correctly finds nothing left to push.
+  const historyQueueRef = useRef<Promise<void>>(Promise.resolve());
+
   const dispatchPlotActionAndUpdateHistory = useCallback(
-    async (action: PlotConfigReducerAction) => {
+    (action: PlotConfigReducerAction) => {
       dispatchPlotAction(action);
       const nextPlot = plotConfigReducer(plot, action);
       logReducerTransform(action, plot, nextPlot);
 
-      if (isCompletePlot(nextPlot)) {
-        setIsInitialPageLoad(false);
+      if (!isCompletePlot(nextPlot)) {
+        return;
+      }
+
+      setIsInitialPageLoad(false);
+
+      historyQueueRef.current = historyQueueRef.current.then(async () => {
         const prevPlot = await readPlotFromQueryString();
 
         if (!plotsAreEquivalentWhenSerialized(prevPlot, nextPlot)) {
           const queryString = await plotToQueryString(nextPlot);
           window.history.pushState(null, "", queryString);
         }
-      }
+      });
     },
     [plot]
   );

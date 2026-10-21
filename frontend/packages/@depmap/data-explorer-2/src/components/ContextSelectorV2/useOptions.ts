@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
 import {
-  isContextAll,
   isNegatedContext,
   loadContextsFromLocalStorage,
 } from "../../utils/context";
+import { isContextAll } from "../../utils/contextExpr";
 import {
   getExpansionRoutes,
   getRouteHeading,

@@ -176,6 +176,8 @@ def get_datasets(
 # parameters of its own.
 _ID_CHUNK_SIZE = 900
 
+from breadbox.utils.profiling import profiled_region
+
 
 def count_dataset_coverage(
     db: SessionWithUser,
@@ -221,43 +223,47 @@ def count_dataset_coverage(
         if dimension_type.axis == "feature"
         else {"sample_type": dimension_type_name}
     )
-    visible_dataset_ids = {
-        dataset.id
-        for dataset in get_datasets(db, user, **axis_kwarg)  # pyright: ignore
-        if isinstance(dataset, MatrixDataset)
-        and (not public_only or is_public_dataset(dataset))
-    }
+    with profiled_region("count_dataset_coverage: get_datasets"):
+        visible_dataset_ids = {
+            dataset.id
+            for dataset in get_datasets(db, user, **axis_kwarg)  # pyright: ignore
+            if isinstance(dataset, MatrixDataset)
+            and (not public_only or is_public_dataset(dataset))
+        }
 
-    if not visible_dataset_ids or not given_ids:
-        return {}
+        if not visible_dataset_ids or not given_ids:
+            return {}
 
-    dimension_model = (
-        DatasetFeature if dimension_type.axis == "feature" else DatasetSample
-    )
-
-    counts: Dict[str, int] = defaultdict(int)
-
-    for start in range(0, len(given_ids), _ID_CHUNK_SIZE):
-        chunk = given_ids[start : start + _ID_CHUNK_SIZE]
-
-        # `with_entities` rather than passing both columns to `query`:
-        # SessionWithUser.query takes a single entity, because it wraps every
-        # query with the caller's readable-group execution options. Narrowing
-        # afterwards keeps that wrapper rather than going around it.
-        rows = (
-            db.query(dimension_model)
-            .with_entities(
-                dimension_model.dataset_id,
-                func.count(distinct(dimension_model.given_id)),
-            )
-            .filter(dimension_model.given_id.in_(chunk))
-            .filter(dimension_model.dataset_id.in_(visible_dataset_ids))
-            .group_by(dimension_model.dataset_id)
-            .all()
+        dimension_model = (
+            DatasetFeature if dimension_type.axis == "feature" else DatasetSample
         )
 
-        for dataset_id, count in rows:
-            counts[dataset_id] += count
+        counts: Dict[str, int] = defaultdict(int)
+
+    with profiled_region(
+        f"count_dataset_coverage: db.query (len(given_ids)={len(given_ids)})"
+    ):
+        for start in range(0, len(given_ids), _ID_CHUNK_SIZE):
+            chunk = given_ids[start : start + _ID_CHUNK_SIZE]
+
+            # `with_entities` rather than passing both columns to `query`:
+            # SessionWithUser.query takes a single entity, because it wraps every
+            # query with the caller's readable-group execution options. Narrowing
+            # afterwards keeps that wrapper rather than going around it.
+            rows = (
+                db.query(dimension_model)
+                .with_entities(
+                    dimension_model.dataset_id,
+                    func.count(distinct(dimension_model.given_id)),
+                )
+                .filter(dimension_model.given_id.in_(chunk))
+                .filter(dimension_model.dataset_id.in_(visible_dataset_ids))
+                .group_by(dimension_model.dataset_id)
+                .all()
+            )
+
+            for dataset_id, count in rows:
+                counts[dataset_id] += count
 
     return dict(counts)
 
