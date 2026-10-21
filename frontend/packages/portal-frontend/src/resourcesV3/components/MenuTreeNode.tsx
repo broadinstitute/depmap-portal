@@ -10,6 +10,7 @@ import { menuContainsPostSlug } from "src/resourcesV3/utils/menuTree";
 // than this just reuses the deepest level's indentation.
 const MAX_INDENT_DEPTH = 3;
 const INDENT_PER_DEPTH_PX = 15;
+const NAV_ITEM_BASE_PADDING_PX = 10;
 
 interface MenuTreeNodeProps {
   menu: CmsMenu;
@@ -41,7 +42,10 @@ export default function MenuTreeNode({
       }}
     >
       <Panel.Heading>
-        <Panel.Toggle componentClass="div" className={styles.panelHeading}>
+        <Panel.Toggle
+          componentClass="div"
+          className={`${styles.navRow} ${styles.panelHeading}`}
+        >
           <span
             className={styles.headingTitle}
             style={{ paddingLeft: indentPx }}
@@ -83,12 +87,14 @@ export default function MenuTreeNode({
               return (
                 <Link
                   key={postSlug}
-                  to={`?menu=${menu.slug}&post=${postSlug}`}
-                  style={{ textDecoration: "none", marginLeft: postIndentPx }}
+                  to={`/resources-v3/${postSlug}`}
+                  style={{ textDecoration: "none" }}
                 >
                   <ListGroupItem
-                    className={styles.navPostItem}
-                    style={{ borderRadius: "0px" }}
+                    className={`${styles.navRow} ${styles.navPostItem}`}
+                    style={{
+                      paddingLeft: NAV_ITEM_BASE_PADDING_PX + postIndentPx,
+                    }}
                     active={selectedPostSlug === postSlug}
                   >
                     {post.title}
