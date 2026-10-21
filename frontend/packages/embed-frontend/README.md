@@ -57,7 +57,7 @@ fetch it from a stable URL. It is copied byte for byte and is build output
 (gitignored); never edit or commit the copy. `scripts/check-mcp-build.js` fails
 the build if it is missing, differs from the source, does not start with
 `# Generating links to Data Explorer 2`, lacks `describes version N`, or if N is
-not `CURRENT_PLOT_VERSION`. The MCP server relies on that heading and phrase.
+not `CURRENT_PLOT_VERSION`. It also requires every complete plot example in the doc to carry `"version": N`. The MCP server relies on that heading and phrase.
 
 ### Building and trying it
 
