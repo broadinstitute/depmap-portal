@@ -141,6 +141,35 @@ function checkLinksDoc() {
         `CURRENT_PLOT_VERSION is ${constant[1]}: update the doc (ADR 0003)`
     );
   }
+
+  // Models copy the doc's examples far more reliably than they follow its
+  // prose, and a plot with no `version` is silently read as the pre-versioning
+  // schema (for example, a facet_by plot with every point grey). So every
+  // complete plot example (a ```json block with a "plot_type") must carry the
+  // current version.
+  if (constant) {
+    const blocks = [...text.matchAll(/```json\n([\s\S]*?)```/g)];
+    let plotExamples = 0;
+
+    blocks.forEach((block) => {
+      if (!block[1].includes('"plot_type"')) return;
+
+      plotExamples += 1;
+      const line = text.slice(0, block.index).split("\n").length;
+      const stamped = block[1].match(/"version"\s*:\s*(\d+)/);
+
+      check(
+        stamped && stamped[1] === constant[1],
+        `generating-de2-links.md: the plot example at line ${line} must ` +
+          `include "version": ${constant[1]}`
+      );
+    });
+
+    check(
+      plotExamples > 0,
+      "generating-de2-links.md: found no plot examples to check"
+    );
+  }
 }
 
 if (!process.argv[2]) {
