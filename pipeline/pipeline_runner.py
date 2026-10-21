@@ -44,6 +44,11 @@ def create_argument_parser() -> argparse.ArgumentParser:
         "--dryrun", action="store_true", help="Print commands instead of running them",
     )
     parser.add_argument(
+        "--clean-start",
+        action="store_true",
+        help="Delete this pipeline's conseq state directory before running.",
+    )
+    parser.add_argument(
         "--working-dir",
         help="The directory where the run_XXX.conseq file is contained for the pipeline you wish to run",
         required=True,
@@ -268,6 +273,10 @@ class PipelineRunner:
         log.info("Pipeline run ID: %s", self.pipeline_run_id)
 
         config = self.get_pipeline_config(args)
+
+        if args.clean_start:
+            log.info("Clean start: deleting %s", config.state_path)
+            self.subprocess_run(["rm", "-rf", config.state_path], check=True)
 
         self.handle_special_features(config)
 

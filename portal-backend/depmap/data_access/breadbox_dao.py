@@ -18,6 +18,7 @@ from depmap.data_access.models import MatrixDataset
 from depmap import extensions
 from depmap.partials.matrix.models import CellLineSeries
 import flask
+from depmap.access_control import get_current_user_for_access_control
 
 
 def _get_breadbox_datasets_with_caching() -> list[
@@ -35,15 +36,25 @@ def _get_breadbox_datasets_with_caching() -> list[
         )
     else:
         __cached_get_datasets = extensions.breadbox.client.get_datasets()
-        __cached_get_datasets_by_id = {dataset.id : dataset for dataset in __cached_get_datasets}
-        __cached_get_datasets_by_id.update({dataset.given_id: dataset for dataset in __cached_get_datasets if dataset.given_id })
+        __cached_get_datasets_by_id = {
+            dataset.id: dataset for dataset in __cached_get_datasets
+        }
+        __cached_get_datasets_by_id.update(
+            {
+                dataset.given_id: dataset
+                for dataset in __cached_get_datasets
+                if dataset.given_id
+            }
+        )
         flask.g.__cached_get_datasets_by_id = __cached_get_datasets_by_id
         flask.g.__cached_get_datasets = __cached_get_datasets
         # TODO cast appropriately?
         return __cached_get_datasets
-    
 
-def _get_breadbox_dataset_with_caching(breadbox_dataset_id: str) -> Union[MatrixDatasetResponse, TabularDatasetResponse]:
+
+def _get_breadbox_dataset_with_caching(
+    breadbox_dataset_id: str,
+) -> Union[MatrixDatasetResponse, TabularDatasetResponse]:
     """
     Load the information about a single dataset from the cache (if the cache exists).
     If not, load the information about all datasets and populate the cache.
@@ -51,7 +62,9 @@ def _get_breadbox_dataset_with_caching(breadbox_dataset_id: str) -> Union[Matrix
     # ensure cache is populated
     _get_breadbox_datasets_with_caching()
     # use cached map populated by _get_breadbox_datasets_with_caching
-    dataset = flask.g.__cached_get_datasets_by_id.get(breadbox_dataset_id) # pyright: ignore
+    dataset = flask.g.__cached_get_datasets_by_id.get(
+        breadbox_dataset_id
+    )  # pyright: ignore
     if dataset is None:
         raise BreadboxException(f"Dataset not found '{breadbox_dataset_id}'")
     return dataset
@@ -69,8 +82,7 @@ def _get_feature_data_with_caching(
 
     if hasattr(flask.g, "__cached_feature_values"):
         cached_feature_values = cast(
-            dict[tuple, CellLineSeries],
-            flask.g.__cached_feature_values,
+            dict[tuple, CellLineSeries], flask.g.__cached_feature_values,
         )
         if key_for_lookup in cached_feature_values:
             return cached_feature_values[key_for_lookup]
@@ -85,9 +97,9 @@ def _get_feature_data_with_caching(
         sample_identifier=None,
     )
     result_series = CellLineSeries(single_col_df[feature])
-    flask.g.__cached_feature_values[key_for_lookup] = result_series # pyright: ignore
+    flask.g.__cached_feature_values[key_for_lookup] = result_series  # pyright: ignore
     return result_series
-    
+
 
 def get_all_matrix_datasets() -> list[MatrixDataset]:
     """
@@ -171,10 +183,28 @@ def get_dataset_sample_type(dataset_id: str) -> Optional[str]:
     return get_matrix_dataset(dataset_id).sample_type
 
 
+@extensions.memoize_without_user_permissions()
+def _get_dataset_features_with_caching(bb_dataset_id: str, user: str):
+    """
+    10/06/2026: Adding caching of this function because it appears it takes a few seconds and yet
+    we're calling this function more than once a second. (Observed on the public portal which 
+    appears to be being overwhelmed and unable to keep up) I'd feel better if this had a clear 
+    way to evict the cache, but for the moment will need to fall back on how the cache gets
+    cleared on a restart of the portal. 
+
+    like get_dataset_feature_labels_by_id(dataset_id) but also takes user as a parameter so that it becomes 
+    part of the cache key and we avoid the risk of leaking information between users
+    """
+    features = extensions.breadbox.get_client_for_user(user).get_dataset_features(
+        bb_dataset_id
+    )
+    return {feature["id"]: feature["label"] for feature in features}
+
+
 def get_dataset_feature_labels_by_id(dataset_id) -> dict[str, str]:
     bb_dataset_id = remove_breadbox_prefix(dataset_id)
-    features = extensions.breadbox.client.get_dataset_features(bb_dataset_id)
-    return {feature["id"]: feature["label"] for feature in features}
+    user = get_current_user_for_access_control()
+    return _get_dataset_features_with_caching(bb_dataset_id, user)
 
 
 def get_dataset_sample_labels_by_id(dataset_id) -> dict[str, str]:
@@ -220,9 +250,9 @@ def get_row_of_values(
     """
     bb_dataset_id = remove_breadbox_prefix(dataset_id)
     return _get_feature_data_with_caching(
-        breadbox_dataset_id=bb_dataset_id, 
-        feature=feature, 
-        feature_identifier=feature_identifier
+        breadbox_dataset_id=bb_dataset_id,
+        feature=feature,
+        feature_identifier=feature_identifier,
     )
 
 

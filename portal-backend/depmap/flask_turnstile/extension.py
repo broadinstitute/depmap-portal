@@ -121,9 +121,13 @@ class Turnstile:
             )
 
 
-def _set_cookie(app, response):
+def sign_cookie_value(app) -> str:
     signer = TimestampSigner(app.config["SECRET_KEY"])
-    signed = signer.sign("1").decode()
+    return signer.sign("1").decode()
+
+
+def _set_cookie(app, response):
+    signed = sign_cookie_value(app)
     max_age = app.config.get("TURNSTILE_COOKIE_EXPIRY", 604800)
     response.set_cookie(
         "PROBABLY_HUMAN",

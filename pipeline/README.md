@@ -82,23 +82,25 @@ this one class — `main()` just instantiates `PipelineRunner` directly.
 | `--start-with`  | no       | A GCS path to an existing conseq export to seed the run's state from, instead of starting from scratch.                                                                                                                                       |
 | `--export-path` | no       | If set, `conseq export` is run against this path after the pipeline finishes.                                                                                                                                                                 |
 | `--dryrun`      | no       | Print the commands that would run instead of executing them (GCS deletes are also skipped).                                                                                                                                                   |
+| `--clean-start` | no       | Delete this pipeline's conseq state directory (`<working-dir>/state`) before running, so everything is recomputed. Passed by the Jenkins pipeline job when `CLEAN_START` is checked.                                                          |
 | `conseq_args`   | no       | Any remaining positional args are passed straight through to the final `conseq run` invocation.                                                                                                                                               |
 
 ### What `run()` does
 
 1. Builds a `CommonConfig` (`pipeline_config.py`) from the parsed args.
-2. If `--start-with` was given, downloads the specified conseq export from GCS (using the
+2. If `--clean-start` was given, deletes `<working-dir>/state` so every rule is re-run from scratch.
+3. If `--start-with` was given, downloads the specified conseq export from GCS (using the
    `depmap-pipeline-runner` service account) and replays it with `conseq run downloaded-export.conseq`, then runs `conseq forget --regex publish.*` so publish rules
    re-run against the new state.
-3. Resolves the conseq file to run — `<working-dir>/run_<mapped-env>.conseq` — generating a
+4. Resolves the conseq file to run — `<working-dir>/run_<mapped-env>.conseq` — generating a
    `.patched` override copy (via `create_override_conseq_file`) when `--destination` is set,
    to inject `publish_dest`/`S3_STAGING_URL` into the file.
-4. Runs `conseq gc` to clean up unused directories from past runs.
-5. Deletes everything currently under `publish_dest` in GCS and runs `conseq forget --regex publish.*`, so a stale artifact that's no longer produced by the pipeline can't survive
+5. Runs `conseq gc` to clean up unused directories from past runs.
+6. Deletes everything currently under `publish_dest` in GCS and runs `conseq forget --regex publish.*`, so a stale artifact that's no longer produced by the pipeline can't survive
    under the hood — the destination will only ever reflect what this specific run produced.
-6. Runs the main `conseq run` command (with `--no-reattach --remove-unknown-artifacts --maxfail 20`, plus `-D` overrides for `sparkles_path`, `is_dev`, `S3_STAGING_URL`, and
+7. Runs the main `conseq run` command (with `--no-reattach --remove-unknown-artifacts --maxfail 20`, plus `-D` overrides for `sparkles_path`, `is_dev`, `S3_STAGING_URL`, and
    `publish_dest`/`publish_data_prep`).
-7. Runs post-run tasks: `conseq report html`, then reads a `*-DO-NOT-EDIT-ME` file out of
+8. Runs post-run tasks: `conseq report html`, then reads a `*-DO-NOT-EDIT-ME` file out of
    `working_dir` to extract `RELEASE_TAIGA_ID` and logs it (`log_dataset_usage`) for dataset
    usage tracking; if `--export-path` was given, also runs `conseq export`.
-8. Exits with the exit status of the main `conseq run` command.
+9. Exits with the exit status of the main `conseq run` command.

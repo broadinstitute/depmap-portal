@@ -3,6 +3,7 @@ from flask import current_app
 from breadbox_client import Client
 from breadbox_facade import BBClient
 from depmap.access_control import get_current_user_for_access_control
+from typing import Optional
 
 
 class BreadboxClientExtension:
@@ -18,20 +19,13 @@ class BreadboxClientExtension:
     def init_app(self, app):
         self.app = app
 
-    @property
-    def client(self) -> BBClient:
-        # We want to reuse the breadbox client across requests, so create the
-        # client on demand, then reuse the client in all subsequent requests.
-        # This is why it is not being stored on flask.g
-        if hasattr(self.app, "__breadbox_client"):
-            client = self.app.__breadbox_client
-        else:
-            base_url = current_app.config["BREADBOX_PROXY_TARGET"]
+    def get_client_for_user(self, user: Optional[str]):
+        base_url = current_app.config["BREADBOX_PROXY_TARGET"]
+        if user is None:
             user = get_current_user_for_access_control()
-            client = BBClient(base_url=base_url, user=user)
+        client = BBClient(base_url=base_url, user=user)
         return client
 
-    @client.setter
-    def client(self, new_client: Client):
-        # used for mocking the client in tests
-        self._client = new_client
+    @property
+    def client(self) -> BBClient:
+        return self.get_client_for_user(None)
