@@ -10,15 +10,23 @@ import logging
 import os
 import pickle
 from typing import Callable, Generator
+from opentelemetry import trace
 
 _profile_stack: contextvars.ContextVar[Optional[List]] = contextvars.ContextVar(
     "profile_stack", default=None
 )
+tracer = trace.get_tracer(__name__)
 
 # control with env variable
 PRINT_PROFILE = os.environ.get("PRINT_PROFILE", "") == "1"
 
 log = logging.getLogger(__name__)
+
+
+def new_span(name):
+    # This method exists because pylint does not like the call below and it's a pain to
+    # add pyright: ignore everywhere.
+    return tracer.start_as_current_span(name)  # pyright: ignore
 
 
 @dataclass(frozen=True)
