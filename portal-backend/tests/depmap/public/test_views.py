@@ -39,3 +39,10 @@ def test_alert(app):
         resp = c.get()
         assert resp.status_code == 200
         assert message in resp.data
+
+
+def test_ccle_terms_redirects_to_terms(app):
+    with app.test_client() as c:
+        r = c.get("/ccle/terms_and_conditions")
+        assert r.status_code == 302
+        assert r.location.endswith("/terms/")
