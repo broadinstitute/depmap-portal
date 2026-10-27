@@ -3,7 +3,7 @@ from typing import Annotated, Callable, Generator, Literal
 from logging import getLogger
 from fastapi import Body, Depends, Query
 
-from breadbox.crud.dimension_ids import get_dimension_type_labels_by_id
+from breadbox.crud.dimension_ids import get_dimension_type_labels_by_id_fast
 from breadbox.api.dependencies import get_db_with_user
 from breadbox.config import Settings, get_settings
 from breadbox.schemas.custom_http_exception import UserError
@@ -25,6 +25,22 @@ log = getLogger(__name__)
 from breadbox.utils.profiling import profiled_region, warn_if_slow, new_span
 
 
+def _slice_query_key(slice_query) -> tuple:
+    """SliceQuery is an unhashable dataclass; flatten it (and any reindex_through
+    chain) into a tuple so it can key a per-request cache."""
+    chain = []
+    while slice_query is not None:
+        chain.append(
+            (
+                slice_query.dataset_id,
+                slice_query.identifier,
+                slice_query.identifier_type,
+            )
+        )
+        slice_query = slice_query.reindex_through
+    return tuple(chain)
+
+
 def _evaluate(db: SessionWithUser, settings: Settings, context: Context):
     """Resolve a context to its matching ids, with the loaders it needs.
 
@@ -33,17 +49,30 @@ def _evaluate(db: SessionWithUser, settings: Settings, context: Context):
     to module scope, and having two copies invites them to drift.
     """
 
+    # Nested contexts and repeated vars would otherwise reload the same slice or
+    # label set once per reference. The evaluator only reads what it is handed,
+    # so sharing one object across loads within a request is safe.
+    slice_cache: dict = {}
+    label_cache: dict = {}
+
     def slice_loader(slice_query):
-        with profiled_region("slice_loader"):
-            with new_span("slice_loader"):
-                return slice_service.get_slice_data(
-                    db, settings.filestore_location, slice_query
-                )
+        key = _slice_query_key(slice_query)
+        if key not in slice_cache:
+            with profiled_region("slice_loader"):
+                with new_span("slice_loader"):
+                    slice_cache[key] = slice_service.get_slice_data(
+                        db, settings.filestore_location, slice_query
+                    )
+        return slice_cache[key]
 
     def label_loader(dimension_type):
-        with profiled_region("label_loader"):
-            with new_span("label_loader"):
-                return get_dimension_type_labels_by_id(db, dimension_type)
+        if dimension_type not in label_cache:
+            with profiled_region("label_loader"):
+                with new_span("label_loader"):
+                    label_cache[dimension_type] = get_dimension_type_labels_by_id_fast(
+                        db, dimension_type
+                    )
+        return label_cache[dimension_type]
 
     with profiled_region("evaluator.evaluate()"):
         with new_span("evaluator"):
