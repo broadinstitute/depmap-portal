@@ -384,6 +384,7 @@ def get_subsetted_tabular_dataset_df(
     # Loading labels means scanning the whole dimension type's metadata, so only
     # do it when the caller is actually addressing rows by label.
     uses_labels = tabular_dimensions_info.identifier == FeatureSampleIdentifier.label
+    dataset_labels_by_id: dict[str, str] = {}
     if uses_labels:
         dataset_labels_by_id = metadata_service.get_tabular_dataset_labels_by_id(
             db, dataset

@@ -22,7 +22,7 @@ combining them (no short-circuiting), so evaluating every leaf over every row
 is exactly what the per-row path does too.
 """
 
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, cast
 
 import numpy as np
 import pandas as pd
@@ -37,7 +37,7 @@ def normalize_series(series: pd.Series) -> pd.Series:
     the last of any duplicated ids wins (as in Series.to_dict()) and an empty
     list is treated as a missing value."""
     if not series.index.is_unique:
-        series = series[~series.index.duplicated(keep="last")]
+        series = cast(pd.Series, series[~series.index.duplicated(keep="last")])
 
     if series.dtype == object and pd.api.types.infer_dtype(series, skipna=True) != (
         "string"
@@ -117,8 +117,8 @@ def make_column(series: pd.Series, candidates: pd.Index) -> Column:
         values = np.where(found, values, np.nan)
         return Column(kind, values, found & ~np.isnan(values))
 
-    values = series.to_numpy(dtype=object)[safe_pos]
-    values = np.where(found, values, None)
+    values = series.to_numpy(dtype=object)[safe_pos]  # fancy indexing: a copy
+    values[~found] = None
     return Column(kind, values, found & ~pd.isna(values))
 
 
@@ -233,6 +233,7 @@ class VectorizedEvaluator:
     ) -> Optional[Mask]:
         if col.kind != "numeric" or not _is_number(literal):
             return None
+        assert col.values is not None
         a, b = (col.values, literal) if var_left else (literal, col.values)
         with np.errstate(invalid="ignore"):
             # NaN (missing) compares False everywhere, which is what the
@@ -253,6 +254,7 @@ class VectorizedEvaluator:
             # non-list is always False.
             return np.zeros(self._n, dtype=bool) if op == "in_context" else None
 
+        assert col.values is not None
         if col.kind == "list":
             return self._overlaps(col, literal) if op == "in_context" else None
         if col.kind == "string" and all(isinstance(x, str) for x in literal):
