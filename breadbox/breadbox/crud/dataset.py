@@ -740,6 +740,13 @@ def get_subset_of_tabular_data_as_df(
     )
     query_df = pd.read_sql(query.statement, query.session.connection())
 
+    # A single column is the common case (context vars, table columns), and pivoting
+    # it is just a slow way of sorting by row id.
+    if column_names is not None and len(column_names) == 1 and not query_df.empty:
+        single = query_df.set_index("dimension_given_id")[["value"]].sort_index()
+        single.columns = pd.Index([column_names[0]], name="given_id")
+        return single
+
     # Pivot table so that the indices are the index of the df and the given columns are the columns of the df
     # NOTE: resulting df will have columns as multi index ("value", "given_id") so will need to index df by "value" to get final df
     pivot_df = query_df.pivot(index="dimension_given_id", columns="given_id")

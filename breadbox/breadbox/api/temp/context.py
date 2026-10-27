@@ -3,7 +3,7 @@ from typing import Annotated, Callable, Generator, Literal
 from logging import getLogger
 from fastapi import Body, Depends, Query
 
-from breadbox.crud.dimension_ids import get_dimension_type_labels_by_id
+from breadbox.crud.dimension_ids import get_dimension_type_labels_by_id_fast
 from breadbox.api.dependencies import get_db_with_user
 from breadbox.config import Settings, get_settings
 from breadbox.schemas.custom_http_exception import UserError
@@ -69,7 +69,7 @@ def _evaluate(db: SessionWithUser, settings: Settings, context: Context):
         if dimension_type not in label_cache:
             with profiled_region("label_loader"):
                 with new_span("label_loader"):
-                    label_cache[dimension_type] = get_dimension_type_labels_by_id(
+                    label_cache[dimension_type] = get_dimension_type_labels_by_id_fast(
                         db, dimension_type
                     )
         return label_cache[dimension_type]
