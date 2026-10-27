@@ -380,15 +380,11 @@ def get_subsetted_tabular_dataset_df(
     """
     dataset_crud.assert_user_has_access_to_dataset(dataset, user)
 
-    # If labels were given as the filter, get the corresponding set of given ids.
-    # Loading labels means scanning the whole dimension type's metadata, so only
-    # do it when the caller is actually addressing rows by label.
-    uses_labels = tabular_dimensions_info.identifier == FeatureSampleIdentifier.label
-    dataset_labels_by_id: dict[str, str] = {}
-    if uses_labels:
-        dataset_labels_by_id = metadata_service.get_tabular_dataset_labels_by_id(
-            db, dataset
-        )
+    # If labels were given as the filter, get the corresponding set of given ids
+    dataset_labels_by_id = metadata_service.get_tabular_dataset_labels_by_id(
+        db, dataset
+    )
+    if tabular_dimensions_info.identifier == FeatureSampleIdentifier.label:
         if tabular_dimensions_info.indices is None:
             user_specified_given_ids = None
         else:
@@ -410,7 +406,7 @@ def get_subsetted_tabular_dataset_df(
         index_given_ids=user_specified_given_ids,
     )
 
-    if uses_labels:
+    if tabular_dimensions_info.identifier == FeatureSampleIdentifier.label:
         # Rename the resulting column with dimension ids to their labels
         tabular_subset_df = tabular_subset_df.rename(index=dataset_labels_by_id)
 

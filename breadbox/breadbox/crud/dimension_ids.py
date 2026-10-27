@@ -4,16 +4,14 @@ from typing import Any, Dict, Optional, List, Type, Union, Tuple, Set, Collectio
 import warnings
 from typing import Dict, List, Literal, Optional, Type, Union
 from breadbox.models.dataset import DimensionTypeLabel
-from .dimension_types import get_dimension_type, get_dimension_type_metadata_col
+from .dimension_types import get_dimension_type_metadata_col
 
 import pandas as pd
 from sqlalchemy import and_, func, or_, select, true
 
 from breadbox.db.session import SessionWithUser
-from breadbox.db.util import fetch_columns_in_one_step
 
 from ..schemas.custom_http_exception import (
-    DimensionTypeNotFoundError,
     ResourceNotFoundError,
     DatasetNotFoundError,
     FeatureNotFoundError,
@@ -95,41 +93,6 @@ def get_dimension_type_labels_by_id(
     return get_dimension_type_metadata_col(
         db, dimension_type_name, col_name="label", limit=limit
     )
-
-
-def get_dimension_type_labels_by_id_fast(
-    db: SessionWithUser, dimension_type_name: str
-) -> dict[str, str]:
-    """
-    Same answer as get_dimension_type_labels_by_id, read from the precomputed
-    DimensionTypeLabel rows instead of joining the metadata cells. For a large type
-    that is the difference between a cheap scan and a join over every cell.
-
-    That table is not group-filtered, so visibility of the metadata dataset is checked
-    explicitly. A type whose labels have not been precomputed yet falls back to the
-    join.
-    """
-    dimension_type = get_dimension_type(db=db, name=dimension_type_name)
-    if dimension_type is None:
-        raise DimensionTypeNotFoundError(
-            f"Dimension type '{dimension_type_name}' not found. "
-        )
-    if dimension_type.dataset_id is None:
-        return {}
-    if get_dataset(db, db.user, dimension_type.dataset_id) is None:
-        return {}
-
-    # Core rather than the ORM: no entity per row, and we have done the access check.
-    ids, labels_ = fetch_columns_in_one_step(
-        db.connection(),
-        select(DimensionTypeLabel.given_id, DimensionTypeLabel.label)
-        .where(DimensionTypeLabel.dimension_type_name == dimension_type_name)
-        .order_by(DimensionTypeLabel.id),
-    )
-    labels = dict(zip(ids, labels_))
-    if not labels:
-        return get_dimension_type_labels_by_id(db, dimension_type_name)
-    return labels
 
 
 def _populate_dimension_type_labels(db: SessionWithUser, dimension_type_name: str):

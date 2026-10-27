@@ -5,17 +5,10 @@ from dataclasses import dataclass
 # but it serves as a good reference for patching operators:
 # https://github.com/panzi/panzi-json-logic
 from json_logic import jsonLogic, operations  # type: ignore
-import numpy as np
 import pandas as pd
 from typing import Callable
 
 from breadbox.depmap_compute_embed.slice import SliceQuery
-from breadbox.depmap_compute_embed.vectorized_context import (
-    Column,
-    VectorizedEvaluator,
-    make_column,
-    normalize_series,
-)
 
 
 def _in_context(a, b):
@@ -135,7 +128,6 @@ class ContextEvaluator:
         get_slice_data: Callable[[SliceQuery], pd.Series],
         get_labels_by_id: Callable[[str], dict[str, str]],
         max_depth: int = 5,
-        vectorized: bool = True,
     ):
         """
         A `context` dict should have:
@@ -191,19 +183,17 @@ class ContextEvaluator:
         self._get_slice_data = get_slice_data
         self._get_labels_by_id = get_labels_by_id
         self._max_depth = max_depth
-        self._vectorized = vectorized
 
-        # Eagerly load all slice data as {var_name: Series indexed by given_id}.
-        # The {given_id: value} dicts the per-row fallback needs are only built
-        # if a fallback is actually used (see _lookup).
-        self.slice_data: dict[str, pd.Series] = {}
-        self._lookups: dict[str, dict] = {}
+        # Eagerly load all slice data as {var_name: {given_id: value}} dicts
+        self.slice_data: dict[str, dict] = {}
         for var_name, raw_query in slice_query_vars.items():
             try:
                 slice_query = _dict_to_slice_query(raw_query)
-                self.slice_data[var_name] = normalize_series(
-                    get_slice_data(slice_query)
-                )
+                series_dict = get_slice_data(slice_query).to_dict()
+                self.slice_data[var_name] = {
+                    k: (None if isinstance(v, list) and len(v) == 0 else v)
+                    for k, v in series_dict.items()
+                }
             except (KeyError, TypeError, ValueError) as e:
                 raise LookupError(e) from e
 
@@ -221,80 +211,35 @@ class ContextEvaluator:
         Returns all matching IDs and labels for this context's dimension_type.
         """
         all_labels_by_id = self._get_labels_by_id(self.dimension_type)
-        matching_ids = self._matching_ids(all_labels_by_id)
+        matching_ids = []
+        matching_labels = []
+        for given_id, label in all_labels_by_id.items():
+            if self._is_match(given_id):
+                matching_ids.append(given_id)
+                matching_labels.append(label)
 
         return ContextMatch(
             ids=matching_ids,
-            labels=[all_labels_by_id[given_id] for given_id in matching_ids],
+            labels=matching_labels,
             num_candidates=len(all_labels_by_id),
         )
 
     def _evaluate_ids(self) -> list[str]:
         """Used internally for resolving nested context references."""
-        return self._matching_ids(self._get_labels_by_id(self.dimension_type))
+        all_labels_by_id = self._get_labels_by_id(self.dimension_type)
+        return [cid for cid in all_labels_by_id if self._is_match(cid)]
 
-    def _matching_ids(self, labels_by_id: dict[str, str]) -> list[str]:
-        candidate_ids = list(labels_by_id)
-        if not self._vectorized:
-            return [cid for cid in candidate_ids if self._is_match(cid)]
-
-        candidates = pd.Index(candidate_ids)
-        columns: dict[str, Column] = {}
-
-        def get_column(name: str):
-            if name not in columns:
-                if name == "given_id":
-                    ids = np.array(candidate_ids, dtype=object)
-                    columns[name] = Column("string", ids, np.ones(len(ids), bool))
-                elif name in self.slice_data:
-                    columns[name] = make_column(self.slice_data[name], candidates)
-                else:
-                    return None
-            return columns[name]
-
-        def fallback(node) -> np.ndarray:
-            var_names = self._vars_needed_by(node)
-            return np.array(
-                [self._is_match(cid, node, var_names) for cid in candidate_ids],
-                dtype=bool,
-            )
-
-        mask = VectorizedEvaluator(candidate_ids, get_column, fallback).mask(self.expr)
-        return [candidate_ids[i] for i in np.flatnonzero(mask)]
-
-    def _lookup(self, var_name: str) -> dict:
-        """The {given_id: value} dict for a var, as the per-row path sees it."""
-        if var_name not in self._lookups:
-            self._lookups[var_name] = self.slice_data[var_name].to_dict()
-        return self._lookups[var_name]
-
-    def _vars_needed_by(self, expr) -> list[str]:
-        """The vars a subtree can read. `missing` inspects the whole data dict,
-        and a var reference we can't parse might name anything, so those get
-        everything."""
-        try:
-            if _contains_op(expr, {"missing", "missing_some"}):
-                return list(self.slice_data)
-            return [v for v in _collect_vars(expr) if v in self.slice_data]
-        except TypeError:
-            return list(self.slice_data)
-
-    def _is_match(self, given_id: str, expr=None, var_names=None) -> bool:
+    def _is_match(self, given_id: str) -> bool:
         """
-        Evaluates `expr` (default: the whole expression) for a `given_id`.
-        Missing slice values are passed as None, letting JsonLogic handle them
-        according to operator semantics.
+        Evaluates `expr` for a `given_id`. Missing slice values are passed
+        as None, letting JsonLogic handle them according to operator semantics.
         """
-        if expr is None:
-            expr = self.expr
-        if var_names is None:
-            var_names = list(self.slice_data)
         data: dict = {"given_id": given_id}
-        for var_name in var_names:
-            data[var_name] = self._lookup(var_name).get(given_id)
+        for var_name, slice_values in self.slice_data.items():
+            data[var_name] = slice_values.get(given_id)
 
         try:
-            return bool(jsonLogic(expr, data))
+            return bool(jsonLogic(self.expr, data))
         except (ValueError, TypeError) as e:
             raise ValueError(
                 f"{e} (while evaluating given_id={given_id!r} with data={data!r})"
@@ -375,14 +320,6 @@ def _collect_vars(expr) -> set[str]:
     if isinstance(expr, list):
         return set().union(*(_collect_vars(x) for x in expr), set())
     return set()
-
-
-def _contains_op(expr, ops: set[str]) -> bool:
-    if isinstance(expr, dict):
-        return any(k in ops or _contains_op(v, ops) for k, v in expr.items())
-    if isinstance(expr, list):
-        return any(_contains_op(x, ops) for x in expr)
-    return False
 
 
 def _validate_var_refs(expr, slice_data: dict):
