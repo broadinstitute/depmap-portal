@@ -11,7 +11,7 @@ from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.orm import aliased, with_polymorphic
 
 from breadbox.db.session import SessionWithUser
-from breadbox.db.util import fetch_raw_rows
+from breadbox.db.util import fetch_columns_in_one_step
 from ..io.data_validation import dimension_label_df_schema
 from ..schemas.dataset import (
     DimensionSearchIndexResponse,
@@ -739,24 +739,22 @@ def get_subset_of_tabular_data_as_df(
 
     # A single column is the common case (context vars, table columns). Pivoting it is
     # just a slow way of sorting by row id, so read the two columns we need straight off
-    # the cursor. No rows falls through, so the empty result keeps its usual shape.
+    # SQLite. No rows falls through, so the empty result keeps its usual shape.
     #
     # Rows are sorted below rather than with an ORDER BY: through the dimension join
     # SQLite has to build a temp b-tree for it, and every execution of that query then
     # left roughly the result's size behind in the process, which adds up in a server.
     if column_names is not None and len(column_names) == 1:
-        rows = fetch_raw_rows(
+        ids, values = fetch_columns_in_one_step(
             base_query.session.connection(),
             base_query.with_entities(
                 TabularCell.dimension_given_id, TabularCell.value
             ).statement,
         )
-        if rows:
-            single = (
-                pd.DataFrame(rows, columns=["dimension_given_id", "value"])
-                .set_index("dimension_given_id")
-                .sort_index()
-            )
+        if ids:
+            single = pd.DataFrame(
+                {"value": values}, index=pd.Index(ids, name="dimension_given_id")
+            ).sort_index()
             single.columns = pd.Index([column_names[0]], name="given_id")
             return single
 

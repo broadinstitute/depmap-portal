@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from sqlalchemy import select
+from sqlalchemy import literal, null, select
 
 from breadbox.crud import dataset as dataset_crud
 from breadbox.crud.dimension_ids import (
@@ -8,7 +8,7 @@ from breadbox.crud.dimension_ids import (
     get_dimension_type_labels_by_id_fast,
 )
 from breadbox.db.session import SessionWithUser
-from breadbox.db.util import fetch_raw_rows
+from breadbox.db.util import fetch_columns_in_one_step
 from breadbox.models.dataset import (
     Dimension,
     DimensionTypeLabel,
@@ -141,18 +141,67 @@ def test_single_column_read_with_no_matching_rows(
     assert result.empty
 
 
-def test_fetch_raw_rows_returns_plain_tuples(
+def test_fetch_columns_in_one_step_returns_columns_in_row_order(
     minimal_db: SessionWithUser, labelled_type
 ):
-    rows = fetch_raw_rows(
+    ids, labels = fetch_columns_in_one_step(
         minimal_db.connection(),
         select(DimensionTypeLabel.given_id, DimensionTypeLabel.label)
         .where(DimensionTypeLabel.dimension_type_name == labelled_type)
         .order_by(DimensionTypeLabel.id),
     )
-    assert len(rows) == 3
-    assert all(type(row) is tuple for row in rows)
-    assert dict(rows) == get_dimension_type_labels_by_id(minimal_db, labelled_type)
+    assert dict(zip(ids, labels)) == get_dimension_type_labels_by_id(
+        minimal_db, labelled_type
+    )
+    assert ids == list(get_dimension_type_labels_by_id(minimal_db, labelled_type))
+
+
+def test_fetch_columns_in_one_step_round_trips_awkward_values(
+    minimal_db: SessionWithUser,
+):
+    values = [
+        ('quote"s', None),
+        ("new\nline\ttab", "caf\u00e9 \u2603"),
+        ("back\\slash", ""),
+        ("1", "2.50"),  # numeric-looking text must stay text
+    ]
+    minimal_db.add_all(
+        DimensionTypeLabel(
+            dimension_type_name="depmap_model", given_id=g, label=l or "x"
+        )
+        for g, l in values
+    )
+    minimal_db.flush()
+    ids, labels = fetch_columns_in_one_step(
+        minimal_db.connection(),
+        select(DimensionTypeLabel.given_id, DimensionTypeLabel.label)
+        .where(DimensionTypeLabel.given_id.in_([g for g, _ in values]))
+        .order_by(DimensionTypeLabel.id),
+    )
+    assert ids == [g for g, _ in values]
+    assert labels == [l or "x" for _, l in values]
+
+
+def test_fetch_columns_in_one_step_keeps_nulls_aligned(minimal_db: SessionWithUser):
+    rows = select(literal("a").label("id"), literal("present").label("note")).union_all(
+        select(literal("b"), null()), select(literal("c"), literal("present"))
+    )
+    ids, notes = fetch_columns_in_one_step(minimal_db.connection(), rows)
+
+    assert ids == ["a", "b", "c"]
+    assert notes == ["present", None, "present"]
+
+
+def test_fetch_columns_in_one_step_empty_result(
+    minimal_db: SessionWithUser, labelled_type
+):
+    ids, labels = fetch_columns_in_one_step(
+        minimal_db.connection(),
+        select(DimensionTypeLabel.given_id, DimensionTypeLabel.label).where(
+            DimensionTypeLabel.dimension_type_name == "no-such-type"
+        ),
+    )
+    assert ids == [] and labels == []
 
 
 def test_single_column_read_matches_pivot_with_nulls_and_row_subset(
