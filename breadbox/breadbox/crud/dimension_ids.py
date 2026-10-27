@@ -10,6 +10,7 @@ import pandas as pd
 from sqlalchemy import and_, func, or_, select, true
 
 from breadbox.db.session import SessionWithUser
+from breadbox.db.util import fetch_raw_rows
 
 from ..schemas.custom_http_exception import (
     DimensionTypeNotFoundError,
@@ -119,12 +120,13 @@ def get_dimension_type_labels_by_id_fast(
         return {}
 
     # Core rather than the ORM: no entity per row, and we have done the access check.
-    rows = db.connection().execute(
+    rows = fetch_raw_rows(
+        db.connection(),
         select(DimensionTypeLabel.given_id, DimensionTypeLabel.label)
         .where(DimensionTypeLabel.dimension_type_name == dimension_type_name)
-        .order_by(DimensionTypeLabel.id)
+        .order_by(DimensionTypeLabel.id),
     )
-    labels = dict(rows.all())
+    labels = dict(rows)
     if not labels:
         return get_dimension_type_labels_by_id(db, dimension_type_name)
     return labels

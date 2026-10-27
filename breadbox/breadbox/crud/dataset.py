@@ -11,6 +11,7 @@ from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.orm import aliased, with_polymorphic
 
 from breadbox.db.session import SessionWithUser
+from breadbox.db.util import fetch_raw_rows
 from ..io.data_validation import dimension_label_df_schema
 from ..schemas.dataset import (
     DimensionSearchIndexResponse,
@@ -730,22 +731,35 @@ def get_subset_of_tabular_data_as_df(
         filter_statements.append(TabularColumn.given_id.in_(column_names))
     if index_given_ids is not None:
         filter_statements.append(TabularCell.dimension_given_id.in_(index_given_ids))
-    query = (
+    base_query = (
         db.query(TabularColumn)
         .join(TabularCell)
         .filter(and_(true(), *filter_statements))
-        .with_entities(
-            TabularCell.value, TabularCell.dimension_given_id, TabularColumn.given_id,
+    )
+
+    # A single column is the common case (context vars, table columns). Pivoting it is
+    # just a slow way of sorting by row id, so read the two columns we need straight off
+    # the cursor. No rows falls through, so the empty result keeps its usual shape.
+    if column_names is not None and len(column_names) == 1:
+        rows = fetch_raw_rows(
+            base_query.session.connection(),
+            base_query.with_entities(TabularCell.dimension_given_id, TabularCell.value)
+            .order_by(TabularCell.dimension_given_id)
+            .statement,
         )
+        if rows:
+            single = (
+                pd.DataFrame(rows, columns=["dimension_given_id", "value"])
+                .set_index("dimension_given_id")
+                .sort_index()
+            )
+            single.columns = pd.Index([column_names[0]], name="given_id")
+            return single
+
+    query = base_query.with_entities(
+        TabularCell.value, TabularCell.dimension_given_id, TabularColumn.given_id,
     )
     query_df = pd.read_sql(query.statement, query.session.connection())
-
-    # A single column is the common case (context vars, table columns), and pivoting
-    # it is just a slow way of sorting by row id.
-    if column_names is not None and len(column_names) == 1 and not query_df.empty:
-        single = query_df.set_index("dimension_given_id")[["value"]].sort_index()
-        single.columns = pd.Index([column_names[0]], name="given_id")
-        return single
 
     # Pivot table so that the indices are the index of the df and the given columns are the columns of the df
     # NOTE: resulting df will have columns as multi index ("value", "given_id") so will need to index df by "value" to get final df

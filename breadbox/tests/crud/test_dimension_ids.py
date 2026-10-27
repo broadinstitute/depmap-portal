@@ -1,5 +1,6 @@
 import pandas as pd
 import pytest
+from sqlalchemy import select
 
 from breadbox.crud import dataset as dataset_crud
 from breadbox.crud.dimension_ids import (
@@ -7,6 +8,7 @@ from breadbox.crud.dimension_ids import (
     get_dimension_type_labels_by_id_fast,
 )
 from breadbox.db.session import SessionWithUser
+from breadbox.db.util import fetch_raw_rows
 from breadbox.models.dataset import (
     Dimension,
     DimensionTypeLabel,
@@ -137,3 +139,53 @@ def test_single_column_read_with_no_matching_rows(
         minimal_db, dataset, column_names=["group"], index_given_ids=["nope"]
     )
     assert result.empty
+
+
+def test_fetch_raw_rows_returns_plain_tuples(
+    minimal_db: SessionWithUser, labelled_type
+):
+    rows = fetch_raw_rows(
+        minimal_db.connection(),
+        select(DimensionTypeLabel.given_id, DimensionTypeLabel.label)
+        .where(DimensionTypeLabel.dimension_type_name == labelled_type)
+        .order_by(DimensionTypeLabel.id),
+    )
+    assert len(rows) == 3
+    assert all(type(row) is tuple for row in rows)
+    assert dict(rows) == get_dimension_type_labels_by_id(minimal_db, labelled_type)
+
+
+def test_single_column_read_matches_pivot_with_nulls_and_row_subset(
+    minimal_db: SessionWithUser, settings
+):
+    add_dimension_type(
+        minimal_db,
+        settings,
+        user=settings.admin_users[0],
+        name="gappy",
+        id_column="ID",
+        annotation_type_mapping={
+            "ID": AnnotationType.text,
+            "label": AnnotationType.text,
+            "note": AnnotationType.text,
+        },
+        axis="feature",
+        metadata_df=pd.DataFrame(
+            {
+                "ID": ["z", "a", "m", "b"],
+                "label": ["Z", "A", "M", "B"],
+                "note": ["n1", None, "n3", "n4"],
+            }
+        ),
+    )
+    dataset = minimal_db.query(TabularDataset).filter_by(index_type_name="gappy").one()
+
+    for ids in (None, ["m", "z", "nope"]):
+        both = dataset_crud.get_subset_of_tabular_data_as_df(
+            minimal_db, dataset, column_names=["label", "note"], index_given_ids=ids
+        )
+        single = dataset_crud.get_subset_of_tabular_data_as_df(
+            minimal_db, dataset, column_names=["note"], index_given_ids=ids
+        )
+        pd.testing.assert_frame_equal(single, both[["note"]])
+        assert list(single.index) == sorted(single.index)
