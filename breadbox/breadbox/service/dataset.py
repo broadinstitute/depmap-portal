@@ -657,6 +657,10 @@ def add_dimension_type(
     id_column: str = "label",
     axis: Literal["feature", "sample"] = "feature",
     display_name: Optional[str] = None,
+    # The fields below are deprecated and should not be used in production 
+    # because this implementation is much less performant than the newer method. 
+    # Instead, call this function to define an empty dimension type,
+    # then call update_dimension_type to attach a data file.
     metadata_df: Optional[pd.DataFrame] = None,
     annotation_type_mapping: Optional[Dict[str, AnnotationType]] = None,
     reference_column_mappings: Optional[Dict[str, str]] = None,
