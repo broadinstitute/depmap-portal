@@ -527,7 +527,12 @@ def get_dimension_data(
     if parsed_slice_query.reindex_through is not None:
         label_query = _get_root_query(parsed_slice_query)
 
-    labels_by_id = metadata_service.get_labels_for_slice_type(db, label_query)
+    # When the caller asked for specific rows, only those rows need labels.
+    labels_by_id = metadata_service.get_labels_for_slice_type(
+        db,
+        label_query,
+        given_ids=slice_values_by_id.index.to_list() if indices is not None else None,
+    )
 
     # Only the values which have corresponding metadata should be returned
     all_dataset_given_ids = slice_values_by_id.index.to_list()
