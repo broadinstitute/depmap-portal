@@ -55,6 +55,7 @@ from depmap.extensions import (
     cache,
     in_memory_cache,
     cansar,
+    compress,
     csrf_protect,
     db,
     debug_toolbar,
@@ -250,6 +251,7 @@ def register_extensions(app: Flask):
     in_memory_cache.init_app(app, config={"CACHE_TYPE": "simple"})
     db.init_app(app)
     csrf_protect.init_app(app)
+    compress.init_app(app)
     debug_toolbar.init_app(app)
     methylation_db.init_app(app)
     cansar.init_app(app)

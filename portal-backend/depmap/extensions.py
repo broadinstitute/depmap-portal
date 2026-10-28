@@ -3,6 +3,7 @@
 import contextvars
 from flask_bcrypt import Bcrypt
 from flask_caching import Cache
+from flask_compress import Compress
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_humanize import Humanize
 from flask_sqlalchemy import SQLAlchemy
@@ -22,6 +23,7 @@ bcrypt = Bcrypt()
 csrf_protect = CSRFProtect()
 db = SQLAlchemy()
 cache = Cache()
+compress = Compress()
 in_memory_cache = Cache()
 debug_toolbar = DebugToolbarExtension()
 exception_reporter = ExceptionReporter()
