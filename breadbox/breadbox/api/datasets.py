@@ -546,15 +546,19 @@ def get_dimension_data(
         given_ids=slice_values_by_id.index.to_list() if indices is not None else None,
     )
 
-    # Only the values which have corresponding metadata should be returned
-    all_dataset_given_ids = slice_values_by_id.index.to_list()
-    result_given_ids: list[str] = [
-        id for id in all_dataset_given_ids if id in labels_by_id
-    ]
-
-    # Ensure the values and labels are similarly filtered and ordered
-    result_values = [slice_values_by_id[id] for id in result_given_ids]
-    result_labels = [labels_by_id[id] for id in result_given_ids]
+    # Only the values which have corresponding metadata should be returned. The ids,
+    # values and labels are collected together in one positional pass; looking each
+    # id up in the Series by label is several times slower for large dimension types.
+    result_given_ids: list[str] = []
+    result_values: list = []
+    result_labels: list[str] = []
+    for given_id, value in zip(
+        slice_values_by_id.index.to_list(), slice_values_by_id.to_list()
+    ):
+        if given_id in labels_by_id:
+            result_given_ids.append(given_id)
+            result_values.append(value)
+            result_labels.append(labels_by_id[given_id])
 
     result = {
         "ids": result_given_ids,
