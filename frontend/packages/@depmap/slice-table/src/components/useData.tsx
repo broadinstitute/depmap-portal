@@ -58,7 +58,9 @@ interface Parameters {
 // Types for better code clarity
 export type SliceResponse = {
   ids: string[];
-  labels: string[];
+  // Not requested by SliceTable (it labels rows from the index type's label
+  // column), so a real response won't have it.
+  labels?: string[];
   values: (string | number | null)[];
 };
 type ColumnRenames = Record<string, string>;
@@ -298,7 +300,11 @@ function createDataFetchPromise(
 ): Promise<SliceResponse> {
   return cached(breadboxAPI, { persist: true }).getDimensionData(
     slice,
-    rowIds && canSubsetSlice(slice) ? rowIds : undefined
+    rowIds && canSubsetSlice(slice) ? rowIds : undefined,
+    // The per-row labels are the same for every column and SliceTable never reads
+    // them, so skip them: for a big type like `transcript` that is a third of the
+    // payload per column.
+    { fields: ["ids", "values"] }
   );
 }
 
