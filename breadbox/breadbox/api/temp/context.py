@@ -1,8 +1,9 @@
-from typing import Annotated, Literal
+from contextlib import contextmanager
+from typing import Annotated, Callable, Generator, Literal
 from logging import getLogger
 from fastapi import Body, Depends, Query
 
-from breadbox.crud.dimension_ids import get_dimension_type_labels_by_id
+from breadbox.crud.dimension_ids import get_dimension_type_labels_by_id_fast
 from breadbox.api.dependencies import get_db_with_user
 from breadbox.config import Settings, get_settings
 from breadbox.schemas.custom_http_exception import UserError
@@ -16,10 +17,28 @@ from breadbox.schemas.context import (
 from breadbox.service import slice as slice_service
 
 from breadbox.depmap_compute_embed.context import ContextEvaluator
-
 from .router import router
+import time
 
 log = getLogger(__name__)
+
+from breadbox.utils.profiling import profiled_region, warn_if_slow, new_span
+
+
+def _slice_query_key(slice_query) -> tuple:
+    """SliceQuery is an unhashable dataclass; flatten it (and any reindex_through
+    chain) into a tuple so it can key a per-request cache."""
+    chain = []
+    while slice_query is not None:
+        chain.append(
+            (
+                slice_query.dataset_id,
+                slice_query.identifier,
+                slice_query.identifier_type,
+            )
+        )
+        slice_query = slice_query.reindex_through
+    return tuple(chain)
 
 
 def _evaluate(db: SessionWithUser, settings: Settings, context: Context):
@@ -30,26 +49,45 @@ def _evaluate(db: SessionWithUser, settings: Settings, context: Context):
     to module scope, and having two copies invites them to drift.
     """
 
+    # Nested contexts and repeated vars would otherwise reload the same slice or
+    # label set once per reference. The evaluator only reads what it is handed,
+    # so sharing one object across loads within a request is safe.
+    slice_cache: dict = {}
+    label_cache: dict = {}
+
     def slice_loader(slice_query):
-        return slice_service.get_slice_data(
-            db, settings.filestore_location, slice_query
-        )
+        key = _slice_query_key(slice_query)
+        if key not in slice_cache:
+            with profiled_region("slice_loader"):
+                with new_span("slice_loader"):
+                    slice_cache[key] = slice_service.get_slice_data(
+                        db, settings.filestore_location, slice_query
+                    )
+        return slice_cache[key]
 
     def label_loader(dimension_type):
-        return get_dimension_type_labels_by_id(db, dimension_type)
+        if dimension_type not in label_cache:
+            with profiled_region("label_loader"):
+                with new_span("label_loader"):
+                    label_cache[dimension_type] = get_dimension_type_labels_by_id_fast(
+                        db, dimension_type
+                    )
+        return label_cache[dimension_type]
 
-    try:
-        evaluator = ContextEvaluator(context.dict(), slice_loader, label_loader)
-        return evaluator.evaluate()
-    except LookupError as e:
-        raise UserError(f"Encountered lookup error: {e}") from e
-    except (ValueError, TypeError) as e:
-        log.error(
-            "Context evaluation failed: %s\nContext: %s",
-            e,
-            context.model_dump_json(indent=2),
-        )
-        raise UserError(f"Context evaluation error: {e}") from e
+    with profiled_region("evaluator.evaluate()"):
+        with new_span("evaluator"):
+            try:
+                evaluator = ContextEvaluator(context.dict(), slice_loader, label_loader)
+                return evaluator.evaluate()
+            except LookupError as e:
+                raise UserError(f"Encountered lookup error: {e}") from e
+            except (ValueError, TypeError) as e:
+                log.error(
+                    "Context evaluation failed: %s\nContext: %s",
+                    e,
+                    context.model_dump_json(indent=2),
+                )
+                raise UserError(f"Context evaluation error: {e}") from e
 
 
 @router.post(
@@ -70,11 +108,12 @@ def evaluate_context(
     Also get the total number of "candidate" records (all records with labels belonging to the dimension type).
     Requests must be in the version 2 context format.
     """
-    result = _evaluate(db, settings, context)
+    with warn_if_slow("evaluate_context", lambda: f"context={context}"):
+        result = _evaluate(db, settings, context)
 
-    return ContextMatchResponse(
-        ids=result.ids, labels=result.labels, num_candidates=result.num_candidates,
-    )
+        return ContextMatchResponse(
+            ids=result.ids, labels=result.labels, num_candidates=result.num_candidates,
+        )
 
 
 @router.post(
@@ -122,14 +161,20 @@ def get_context_dataset_coverage(
     information about its private datasets to get that, which is a trade only
     it can make -- hence a parameter rather than a server-side policy.
     """
-    result = _evaluate(db, settings, context)
+    with profiled_region("get_context_dataset_coverage"):
+        with warn_if_slow(
+            "get_context_dataset_coverage", lambda: f"scope={scope} context={context}",
+        ):
+            with new_span("_evaluate"):  # noqa
+                result = _evaluate(db, settings, context)
 
-    counts = dataset_crud.count_dataset_coverage(
-        db,
-        db.user,
-        context.dimension_type,
-        result.ids,
-        public_only=(scope == "public"),
-    )
+            with new_span("count_dataset_coverage"):
+                counts = dataset_crud.count_dataset_coverage(
+                    db,
+                    db.user,
+                    context.dimension_type,
+                    result.ids,
+                    public_only=(scope == "public"),
+                )
 
-    return ContextDatasetCoverageResponse(counts=counts, total=len(result.ids))
+            return ContextDatasetCoverageResponse(counts=counts, total=len(result.ids))

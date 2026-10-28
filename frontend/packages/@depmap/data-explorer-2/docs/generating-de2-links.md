@@ -1,6 +1,6 @@
 # Generating links to Data Explorer 2
 
-This document describes how to create URLs that open [Data Explorer 2](https://cds.team/depmap/data_explorer_2/) to a desired plot. It is written for humans, but primarily as a reference for agents (e.g. the DepMap Delphi MCP app) that generate these links programmatically.
+This document describes how to create URLs that open [Data Explorer 2](https://cds.team/depmap/data_explorer_2/) to a desired plot. It is a reference for agents (e.g. the DepMap Delphi MCP app) that generate these links, or the equivalent plot configs, programmatically.
 
 ## Available formats
 
@@ -14,7 +14,7 @@ A few different formats are supported.
 
 ### Required fields
 
-At minimum, a plot must contain a `plot_type`, an `index_type`, and `dimensions` to be considered valid.
+At minimum, a plot must contain a `plot_type`, an `index_type`, and `dimensions` to be considered valid. **When you generate a plot, also always include `"version": 2`** (see [Schema version](#schema-version)): a payload without it is read as the oldest schema, which changes what several omitted fields mean. Most visibly, a plot with `facet_by` and no `color_by` comes out with every point grey instead of colored.
 
 #### plot_type [string]
 
@@ -58,24 +58,24 @@ Note that `given_id` has no corresponding entry in `vars`. That's what makes it 
 
 ## Schema version
 
-DE2 payloads carry an optional top-level `version` field that declares which revision of this schema the payload conforms to.
+DE2 payloads carry a top-level `version` field that declares which revision of this schema the payload conforms to. **Always include it when you generate a plot.**
 
-### version [number] (recommended)
+### version [number] (always include)
 
-`version` is a sibling of `plot_type`, `index_type`, and `dimensions`. It lives in the JSON itself, so it applies to both the `?plot=` and `?p=` formats. **This document describes version 2.** Links you generate today should include:
+`version` is a sibling of `plot_type`, `index_type`, and `dimensions`. It lives in the JSON itself, so it applies to both the `?plot=` and `?p=` formats. **This document describes version 2.** Every plot you generate should include:
 
 ```json
 "version": 2
 ```
 
-It is technically optional — a payload with no `version` is interpreted as the oldest, pre-versioning schema — but **including it is recommended.** DE2 uses `version` to interpret your payload against the correct schema. The schema will evolve, and some changes (like the one that produced version 2) alter what an _omitted_ field means. Stamping the version you generated against guarantees your link keeps rendering as intended instead of silently adopting a new default.
+A payload with no `version` is not assumed to be current. It is interpreted as the oldest, pre-versioning schema, and nothing reports an error when that is not what you meant. The clearest case is the `color_by` change described [below](#the-version-2-default-flip-color_by-and-facet_by): with `"version": 2`, a plot that sets `facet_by` and omits `color_by` is colored by the facet, but the same JSON without `version` is treated as version 1 and renders every point grey. DE2 uses `version` to interpret your payload against the correct schema. The schema will evolve, and some changes (like the one that produced version 2) alter what an _omitted_ field means, so stamping the version you generated against is what keeps your plot rendering as intended.
 
 Two things to keep in mind:
 
 - **Keep the number in sync with this document.** Whenever the version described here changes, emit the new number. A payload's `version` should match the version of the document it was built from.
 - **Declaring `version: 2` is a promise that the payload uses the current canonical schema** — Breadbox `given_id`s for `dataset_id` (not legacy Portal IDs), canonical field names, and V2-format contexts (as described throughout this document). Following this document satisfies that promise automatically.
 
-The examples below omit `version` for brevity and because absent-version payloads still resolve; when generating links, add `"version": 2` as a top-level field.
+Every complete plot example below includes `"version": 2`. Keep it when you adapt one.
 
 #### The version 2 default flip: `color_by` and `facet_by`
 
@@ -92,10 +92,11 @@ A version-1 payload (`"version": 1`, or no `version` field at all) with no `colo
 
 ### Plotting a single gene
 
-A density plot of the gene TP53 from the CRISPR dataset. ([Open](https://cds.team/depmap/data_explorer_2/?plot=ewogICJwbG90X3R5cGUiOiAiZGVuc2l0eV8xZCIsCiAgImluZGV4X3R5cGUiOiAiZGVwbWFwX21vZGVsIiwKICAiZGltZW5zaW9ucyI6IHsKICAgICJ4IjogewogICAgICAiYXhpc190eXBlIjogInJhd19zbGljZSIsCiAgICAgICJkYXRhc2V0X2lkIjogIkNocm9ub3NfQ29tYmluZWQiLAogICAgICAic2xpY2VfdHlwZSI6ICJnZW5lIiwKICAgICAgImFnZ3JlZ2F0aW9uIjogImZpcnN0IiwKICAgICAgImNvbnRleHQiOiB7CiAgICAgICAgImRpbWVuc2lvbl90eXBlIjogImdlbmUiLAogICAgICAgICJuYW1lIjogIlRQNTMiLAogICAgICAgICJleHByIjogeyAiPT0iOiBbIHsgInZhciI6ICJnaXZlbl9pZCIgfSwgIjcxNTciIF0gfSwKICAgICAgICAidmFycyI6IHt9CiAgICAgIH0KICAgIH0KICB9Cn0K))
+A density plot of the gene TP53 from the CRISPR dataset.
 
 ```json
 {
+  "version": 2,
   "plot_type": "density_1d",
   "index_type": "depmap_model",
   "dimensions": {
@@ -122,14 +123,15 @@ A density plot of the gene TP53 from the CRISPR dataset. ([Open](https://cds.tea
 }
 ```
 
-If you plug that JSON into a [Base64 encoder](https://emn178.github.io/online-tools/base64_encode.html?input=%7B%0A%20%20%22plot_type%22%3A%20%22density_1d%22%2C%0A%20%20%22index_type%22%3A%20%22depmap_model%22%2C%0A%20%20%22dimensions%22%3A%20%7B%0A%20%20%20%20%22x%22%3A%20%7B%0A%20%20%20%20%20%20%22axis_type%22%3A%20%22raw_slice%22%2C%0A%20%20%20%20%20%20%22dataset_id%22%3A%20%22Chronos_Combined%22%2C%0A%20%20%20%20%20%20%22slice_type%22%3A%20%22gene%22%2C%0A%20%20%20%20%20%20%22aggregation%22%3A%20%22first%22%2C%0A%20%20%20%20%20%20%22context%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22dimension_type%22%3A%20%22gene%22%2C%0A%20%20%20%20%20%20%20%20%22name%22%3A%20%22TP53%22%2C%0A%20%20%20%20%20%20%20%20%22expr%22%3A%20%7B%20%22%3D%3D%22%3A%20%5B%20%7B%20%22var%22%3A%20%22given_id%22%20%7D%2C%20%227157%22%20%5D%20%7D%2C%0A%20%20%20%20%20%20%20%20%22vars%22%3A%20%7B%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A&input_type=utf-8&format=rfc_4648), you get a `?plot=...` link.
+If you plug that JSON into a [Base64 encoder](https://emn178.github.io/online-tools/base64_encode.html?input=%7B%0A%20%20%22version%22%3A%202%2C%0A%20%20%22plot_type%22%3A%20%22density_1d%22%2C%0A%20%20%22index_type%22%3A%20%22depmap_model%22%2C%0A%20%20%22dimensions%22%3A%20%7B%0A%20%20%20%20%22x%22%3A%20%7B%0A%20%20%20%20%20%20%22axis_type%22%3A%20%22raw_slice%22%2C%0A%20%20%20%20%20%20%22dataset_id%22%3A%20%22Chronos_Combined%22%2C%0A%20%20%20%20%20%20%22slice_type%22%3A%20%22gene%22%2C%0A%20%20%20%20%20%20%22aggregation%22%3A%20%22first%22%2C%0A%20%20%20%20%20%20%22context%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22dimension_type%22%3A%20%22gene%22%2C%0A%20%20%20%20%20%20%20%20%22name%22%3A%20%22TP53%22%2C%0A%20%20%20%20%20%20%20%20%22expr%22%3A%20%7B%20%22%3D%3D%22%3A%20%5B%20%7B%20%22var%22%3A%20%22given_id%22%20%7D%2C%20%227157%22%20%5D%20%7D%2C%0A%20%20%20%20%20%20%20%20%22vars%22%3A%20%7B%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A&input_type=utf-8&format=rfc_4648), you get a `?plot=...` link.
 
 ### Feature type as index
 
-Demonstrates that the index can be a feature type instead of a sample type. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJkZW5zaXR5XzFkIiwiaW5kZXhfdHlwZSI6ImdlbmUiLCJkaW1lbnNpb25zIjp7IngiOnsiYXhpc190eXBlIjoicmF3X3NsaWNlIiwiYWdncmVnYXRpb24iOiJmaXJzdCIsInNsaWNlX3R5cGUiOiJkZXBtYXBfbW9kZWwiLCJkYXRhc2V0X2lkIjoiQ2hyb25vc19Db21iaW5lZCIsImNvbnRleHQiOnsibmFtZSI6IlVBQ0MtNjIiLCJkaW1lbnNpb25fdHlwZSI6ImRlcG1hcF9tb2RlbCIsImV4cHIiOnsiPT0iOlt7InZhciI6ImdpdmVuX2lkIn0sIkFDSC0wMDA0MjUiXX0sInZhcnMiOnt9fX19fQ==))
+Demonstrates that the index can be a feature type instead of a sample type.
 
 ```json
 {
+  "version": 2,
   "plot_type": "density_1d",
   "index_type": "gene",
   "dimensions": {
@@ -158,10 +160,11 @@ Demonstrates that the index can be a feature type instead of a sample type. ([Op
 
 ### Aggregation
 
-Demonstrates plotting an aggregated slice. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJkZW5zaXR5XzFkIiwiaW5kZXhfdHlwZSI6ImdlbmUiLCJkaW1lbnNpb25zIjp7IngiOnsiYXhpc190eXBlIjoiYWdncmVnYXRlZF9zbGljZSIsImFnZ3JlZ2F0aW9uIjoibWVhbiIsInNsaWNlX3R5cGUiOiJkZXBtYXBfbW9kZWwiLCJkYXRhc2V0X2lkIjoiQ2hyb25vc19Db21iaW5lZCIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJkZXBtYXBfbW9kZWwiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiIwIn0sIkJyZWFzdCJdfSwibmFtZSI6IkJyZWFzdCIsInZhcnMiOnsiMCI6eyJkYXRhc2V0X2lkIjoiZGVwbWFwX21vZGVsX21ldGFkYXRhIiwiaWRlbnRpZmllciI6Ik9uY290cmVlTGluZWFnZSIsImlkZW50aWZpZXJfdHlwZSI6ImNvbHVtbiIsInNvdXJjZSI6InByb3BlcnR5In19fX19fQ==))
+Demonstrates plotting an aggregated slice.
 
 ```json
 {
+  "version": 2,
   "plot_type": "density_1d",
   "index_type": "gene",
   "dimensions": {
@@ -197,10 +200,11 @@ Demonstrates plotting an aggregated slice. ([Open](https://cds.team/depmap/data_
 
 ### Scatterplot
 
-Takes the previous example a step further by turning it into a scatterplot. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJzY2F0dGVyIiwiaW5kZXhfdHlwZSI6ImdlbmUiLCJkaW1lbnNpb25zIjp7IngiOnsiYXhpc190eXBlIjoiYWdncmVnYXRlZF9zbGljZSIsImFnZ3JlZ2F0aW9uIjoibWVhbiIsInNsaWNlX3R5cGUiOiJkZXBtYXBfbW9kZWwiLCJkYXRhc2V0X2lkIjoiQ2hyb25vc19Db21iaW5lZCIsImNvbnRleHQiOnsibmFtZSI6IkJyZWFzdCIsImRpbWVuc2lvbl90eXBlIjoiZGVwbWFwX21vZGVsIiwiZXhwciI6eyI9PSI6W3sidmFyIjoiMCJ9LCJCcmVhc3QiXX0sInZhcnMiOnsiMCI6eyJkYXRhc2V0X2lkIjoiZGVwbWFwX21vZGVsX21ldGFkYXRhIiwiaWRlbnRpZmllciI6Ik9uY290cmVlTGluZWFnZSIsImlkZW50aWZpZXJfdHlwZSI6ImNvbHVtbiIsInNvdXJjZSI6InByb3BlcnR5In19fX0sInkiOnsiYXhpc190eXBlIjoiYWdncmVnYXRlZF9zbGljZSIsImFnZ3JlZ2F0aW9uIjoibWVhbiIsInNsaWNlX3R5cGUiOiJkZXBtYXBfbW9kZWwiLCJkYXRhc2V0X2lkIjoiQ2hyb25vc19Db21iaW5lZCIsImNvbnRleHQiOnsibmFtZSI6Ik5vdCBCcmVhc3QiLCJkaW1lbnNpb25fdHlwZSI6ImRlcG1hcF9tb2RlbCIsImV4cHIiOnsiISI6eyI9PSI6W3sidmFyIjoiMCJ9LCJCcmVhc3QiXX19LCJ2YXJzIjp7IjAiOnsiZGF0YXNldF9pZCI6ImRlcG1hcF9tb2RlbF9tZXRhZGF0YSIsImlkZW50aWZpZXIiOiJPbmNvdHJlZUxpbmVhZ2UiLCJpZGVudGlmaWVyX3R5cGUiOiJjb2x1bW4iLCJzb3VyY2UiOiJwcm9wZXJ0eSJ9fX19fX0=)) Note the use of the `!` (logical-not) operator to negate the logic and define the "Not Breast" out-group. (The Data Explorer UI recognizes such a negation and treats the context as an out-group: when saved through the UI it reuses the in-group definition rather than creating a separate entry.)
+Takes the previous example a step further by turning it into a scatterplot. Note the use of the `!` (logical-not) operator to negate the logic and define the "Not Breast" out-group. (The Data Explorer UI recognizes such a negation and treats the context as an out-group: when saved through the UI it reuses the in-group definition rather than creating a separate entry.)
 
 ```json
 {
+  "version": 2,
   "plot_type": "scatter",
   "index_type": "gene",
   "dimensions": {
@@ -264,10 +268,11 @@ Takes the previous example a step further by turning it into a scatterplot. ([Op
 
 ### Correlation heatmap
 
-The `correlation_heatmap` plot type is unusual. You specify a single `"x"` dimension, but its context isn't used for aggregating (though you should still set `"aggregation"` to `"correlation"`). Instead, the context is the set of features (or samples) from which pairwise comparisons are drawn. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJjb3JyZWxhdGlvbl9oZWF0bWFwIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJhZ2dyZWdhdGVkX3NsaWNlIiwiYWdncmVnYXRpb24iOiJjb3JyZWxhdGlvbiIsImRhdGFzZXRfaWQiOiJDaHJvbm9zX0NvbWJpbmVkIiwic2xpY2VfdHlwZSI6ImdlbmUiLCJjb250ZXh0Ijp7Im5hbWUiOiJEZU5vdm9QeXJpbWlkaW5lIiwiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwiZXhwciI6eyJpbiI6W3sidmFyIjoiZ2VuZSBsYWJlbCJ9LFsiQ0FEIiwiQ01QSzEiLCJDTVBLMiIsIkNUUFMxIiwiQ1RQUzIiLCJESE9ESCIsIk5NRTEiLCJOTUUyIiwiTk1FMS1OTUUyIiwiTk1FNCIsIk5NRTYiLCJVTVBTIl1dfSwidmFycyI6eyJnZW5lIGxhYmVsIjp7ImRhdGFzZXRfaWQiOiJnZW5lX21ldGFkYXRhIiwiaWRlbnRpZmllciI6ImxhYmVsIiwiaWRlbnRpZmllcl90eXBlIjoiY29sdW1uIn19fX19fQ==))
+The `correlation_heatmap` plot type is unusual. You specify a single `"x"` dimension, but its context isn't used for aggregating (though you should still set `"aggregation"` to `"correlation"`). Instead, the context is the set of features (or samples) from which pairwise comparisons are drawn.
 
 ```json
 {
+  "version": 2,
   "plot_type": "correlation_heatmap",
   "index_type": "depmap_model",
   "dimensions": {
@@ -317,10 +322,11 @@ The `correlation_heatmap` plot type is unusual. You specify a single `"x"` dimen
 
 ### Correlation heatmap with "distinguish"
 
-The "distinguish" feature pre-filters the entities of type `index_type` before computing correlations, to show how that differentially affects the results. Applying a single distinguish operation doesn't make much sense (though it's supported); you would usually define both `filters.distinguish1` and `filters.distinguish2`. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJjb3JyZWxhdGlvbl9oZWF0bWFwIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJhZ2dyZWdhdGVkX3NsaWNlIiwiYWdncmVnYXRpb24iOiJjb3JyZWxhdGlvbiIsImRhdGFzZXRfaWQiOiJDaHJvbm9zX0NvbWJpbmVkIiwic2xpY2VfdHlwZSI6ImdlbmUiLCJjb250ZXh0Ijp7Im5hbWUiOiJEZU5vdm9QeXJpbWlkaW5lIiwiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwiZXhwciI6eyJpbiI6W3sidmFyIjoiZW50aXR5X2xhYmVsIn0sWyJDQUQiLCJDTVBLMSIsIkNNUEsyIiwiQ1RQUzEiLCJDVFBTMiIsIkRIT0RIIiwiTk1FMSIsIk5NRTIiLCJOTUUxLU5NRTIiLCJOTUU0IiwiTk1FNiIsIlVNUFMiXV19LCJ2YXJzIjp7ImVudGl0eV9sYWJlbCI6eyJkYXRhc2V0X2lkIjoiZ2VuZV9tZXRhZGF0YSIsImlkZW50aWZpZXIiOiJsYWJlbCIsImlkZW50aWZpZXJfdHlwZSI6ImNvbHVtbiJ9fX19fSwiZmlsdGVycyI6eyJkaXN0aW5ndWlzaDEiOnsibmFtZSI6Ikx1bmciLCJkaW1lbnNpb25fdHlwZSI6ImRlcG1hcF9tb2RlbCIsImV4cHIiOnsiPT0iOlt7InZhciI6IjAifSwiTHVuZyJdfSwidmFycyI6eyIwIjp7ImRhdGFzZXRfaWQiOiJkZXBtYXBfbW9kZWxfbWV0YWRhdGEiLCJpZGVudGlmaWVyIjoiT25jb3RyZWVMaW5lYWdlIiwiaWRlbnRpZmllcl90eXBlIjoiY29sdW1uIn19fSwiZGlzdGluZ3Vpc2gyIjp7Im5hbWUiOiJOb3QgTHVuZyIsImRpbWVuc2lvbl90eXBlIjoiZGVwbWFwX21vZGVsIiwiZXhwciI6eyJjb21wbGVtZW50Ijp7Ij09IjpbeyJ2YXIiOiIwIn0sIkx1bmciXX19LCJ2YXJzIjp7IjAiOnsiZGF0YXNldF9pZCI6ImRlcG1hcF9tb2RlbF9tZXRhZGF0YSIsImlkZW50aWZpZXIiOiJPbmNvdHJlZUxpbmVhZ2UiLCJpZGVudGlmaWVyX3R5cGUiOiJjb2x1bW4ifX19fX0=))
+The "distinguish" feature pre-filters the entities of type `index_type` before computing correlations, to show how that differentially affects the results. Applying a single distinguish operation doesn't make much sense (though it's supported); you would usually define both `filters.distinguish1` and `filters.distinguish2`.
 
 ```json
 {
+  "version": 2,
   "plot_type": "correlation_heatmap",
   "index_type": "depmap_model",
   "dimensions": {
@@ -412,10 +418,11 @@ This produces two heatmaps on the same page: the first is the correlation of the
 
 ### Faceted scatterplot (small multiples)
 
-Setting `facet_by` on a `scatter` plot is the most visually distinctive case: instead of one panel, DE2 renders one small-multiples panel per facet, each with its own regression line (if `show_regression_line` is set — or one line per color, with [show_regression_line_per_color](#show_regression_line_per_color-boolean)) and identity line. This example facets the same TP53-CRISPR-vs-TP53-expression scatterplot from the [basic scatterplot example](#scatterplot) above by `OncotreeLineage`, producing one panel per lineage. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJzY2F0dGVyIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19LCJ5Ijp7ImF4aXNfdHlwZSI6InJhd19zbGljZSIsImFnZ3JlZ2F0aW9uIjoiZmlyc3QiLCJkYXRhc2V0X2lkIjoiZXhwcmVzc2lvbiIsInNsaWNlX3R5cGUiOiJnZW5lIiwiY29udGV4dCI6eyJkaW1lbnNpb25fdHlwZSI6ImdlbmUiLCJuYW1lIjoiVFA1MyIsImV4cHIiOnsiPT0iOlt7InZhciI6ImdpdmVuX2lkIn0sIjcxNTciXX0sInZhcnMiOnt9fX19LCJmYWNldF9ieSI6InByb3BlcnR5IiwibWV0YWRhdGEiOnsiZmFjZXRfcHJvcGVydHkiOnsiaWRlbnRpZmllcl90eXBlIjoiY29sdW1uIiwiZGF0YXNldF9pZCI6ImRlcG1hcF9tb2RlbF9tZXRhZGF0YSIsImlkZW50aWZpZXIiOiJPbmNvdHJlZUxpbmVhZ2UifX19))
+Setting `facet_by` on a `scatter` plot is the most visually distinctive case: instead of one panel, DE2 renders one small-multiples panel per facet, each with its own regression line (if `show_regression_line` is set — or one line per color, with [show_regression_line_per_color](#show_regression_line_per_color-boolean)) and identity line. This example facets the same TP53-CRISPR-vs-TP53-expression scatterplot from the [basic scatterplot example](#scatterplot) above by `OncotreeLineage`, producing one panel per lineage.
 
 ```json
 {
+  "version": 2,
   "plot_type": "scatter",
   "index_type": "depmap_model",
   "dimensions": {
@@ -487,6 +494,8 @@ The same applies to the `color1`/`color2` [shorthand URL parameters](#available-
 
 See [Faceted scatterplot (small multiples)](#faceted-scatterplot-small-multiples) and the [facet_by](#facet_by-string) `property` example below.
 
+If the request is for only _some_ of a high-cardinality property's categories ("just the top 5 lineages"), see [Showing only some categories](#showing-only-some-categories).
+
 ### color_by [string]
 
 Specifies how the plot should be colored. There are several strategies: some map directly to values (continuous or categorical), while others map to membership of an arbitrary facet. The supported values are `"raw_slice"`, `"aggregated_slice"`, `"property"`, `"custom"`, `"facet"`, and `"uniform"`.
@@ -497,10 +506,11 @@ Note that `color_by` cannot be used with the `correlation_heatmap` plot type.
 
 #### raw_slice
 
-Assigns a color to a single sample or feature. `filters.color1` (and optionally `filters.color2`) should be set to a context that resolves to that slice. They should have a `dimension_type` matching the `index_type`. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJkZW5zaXR5XzFkIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19fSwiY29sb3JfYnkiOiJyYXdfc2xpY2UiLCJmaWx0ZXJzIjp7ImNvbG9yMSI6eyJuYW1lIjoiVUFDQy02MiIsImRpbWVuc2lvbl90eXBlIjoiZGVwbWFwX21vZGVsIiwiZXhwciI6eyI9PSI6W3sidmFyIjoiZ2l2ZW5faWQifSwiQUNILTAwMDQyNSJdfSwidmFycyI6e319LCJjb2xvcjIiOnsibmFtZSI6IlVBQ0MtMjU3IiwiZGltZW5zaW9uX3R5cGUiOiJkZXBtYXBfbW9kZWwiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCJBQ0gtMDAwNTc5Il19LCJ2YXJzIjp7fX19fQ==))
+Assigns a color to a single sample or feature. `filters.color1` (and optionally `filters.color2`) should be set to a context that resolves to that slice. They should have a `dimension_type` matching the `index_type`.
 
 ```json
 {
+  "version": 2,
   "plot_type": "density_1d",
   "index_type": "depmap_model",
   "dimensions": {
@@ -558,10 +568,11 @@ Assigns a color to a single sample or feature. `filters.color1` (and optionally 
 
 #### aggregated_slice
 
-Works like `raw_slice`, but the context(s) should resolve to multiple features/samples. Any overlap between the two contexts is visualized as a third color. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJkZW5zaXR5XzFkIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19fSwiY29sb3JfYnkiOiJhZ2dyZWdhdGVkX3NsaWNlIiwiZmlsdGVycyI6eyJjb2xvcjEiOnsiZGltZW5zaW9uX3R5cGUiOiJkZXBtYXBfbW9kZWwiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiIwIn0sIkJyZWFzdCJdfSwibmFtZSI6IkJyZWFzdCIsInZhcnMiOnsiMCI6eyJkYXRhc2V0X2lkIjoiZGVwbWFwX21vZGVsX21ldGFkYXRhIiwiaWRlbnRpZmllciI6Ik9uY290cmVlTGluZWFnZSIsImlkZW50aWZpZXJfdHlwZSI6ImNvbHVtbiJ9fX0sImNvbG9yMiI6eyJuYW1lIjoiT3JnYW5vaWQiLCJkaW1lbnNpb25fdHlwZSI6ImRlcG1hcF9tb2RlbCIsImV4cHIiOnsiPT0iOlt7InZhciI6IjAifSwiT3JnYW5vaWQiXX0sInZhcnMiOnsiMCI6eyJkYXRhc2V0X2lkIjoiZGVwbWFwX21vZGVsX21ldGFkYXRhIiwiaWRlbnRpZmllcl90eXBlIjoiY29sdW1uIiwiaWRlbnRpZmllciI6Ik1vZGVsVHlwZSJ9fX19fQ==))
+Works like `raw_slice`, but the context(s) should resolve to multiple features/samples. Any overlap between the two contexts is visualized as a third color.
 
 ```json
 {
+  "version": 2,
   "plot_type": "density_1d",
   "index_type": "depmap_model",
   "dimensions": {
@@ -631,10 +642,11 @@ Works like `raw_slice`, but the context(s) should resolve to multiple features/s
 
 #### property
 
-Set `color_by` to `"property"` to map a set of categorical values to colors. `metadata.color_property` should be set to a SliceQuery referring to a column with a `col_type` of `"categorical"` or `"text"` (in practice we mostly use the latter). ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJkZW5zaXR5XzFkIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19fSwiY29sb3JfYnkiOiJwcm9wZXJ0eSIsIm1ldGFkYXRhIjp7ImNvbG9yX3Byb3BlcnR5Ijp7ImlkZW50aWZpZXJfdHlwZSI6ImNvbHVtbiIsImRhdGFzZXRfaWQiOiJkZXBtYXBfbW9kZWxfbWV0YWRhdGEiLCJpZGVudGlmaWVyIjoiT25jb3RyZWVMaW5lYWdlIn19fQ==))
+Set `color_by` to `"property"` to map a set of categorical values to colors. `metadata.color_property` should be set to a SliceQuery referring to a column with a `col_type` of `"categorical"` or `"text"` (in practice we mostly use the latter).
 
 ```json
 {
+  "version": 2,
   "plot_type": "density_1d",
   "index_type": "depmap_model",
   "dimensions": {
@@ -671,10 +683,11 @@ Set `color_by` to `"property"` to map a set of categorical values to colors. `me
 
 #### custom
 
-Set `color_by` to `"custom"` to use a continuous color scheme keyed on numeric values. `dimensions.color` should be set to a raw or aggregated continuous slice. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJkZW5zaXR5XzFkIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19LCJjb2xvciI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6ImV4cHJlc3Npb24iLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19fSwiY29sb3JfYnkiOiJjdXN0b20ifQ==))
+Set `color_by` to `"custom"` to use a continuous color scheme keyed on numeric values. `dimensions.color` should be set to a raw or aggregated continuous slice.
 
 ```json
 {
+  "version": 2,
   "plot_type": "density_1d",
   "index_type": "depmap_model",
   "dimensions": {
@@ -733,6 +746,7 @@ Set `color_by` to `"uniform"` to explicitly request no coloring, regardless of w
 
 ```json
 {
+  "version": 2,
   "plot_type": "density_1d",
   "index_type": "depmap_model",
   "dimensions": {
@@ -778,10 +792,11 @@ Note that `facet_by` cannot be used with the `correlation_heatmap` plot type.
 
 #### raw_slice / aggregated_slice
 
-Backed by `filters.facet1` (and optionally `filters.facet2`), exactly like `color_by`'s `filters.color1`/`color2` — a context per facet, an automatic "Other" cluster for points in neither, and a "Both" cluster for the overlap when two groups are given. On a `density_1d` plot this draws one violin track per facet; on `waterfall`, one x-axis cluster per facet; on `scatter`, one small-multiples panel per facet. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJkZW5zaXR5XzFkIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19fSwiZmFjZXRfYnkiOiJyYXdfc2xpY2UiLCJmaWx0ZXJzIjp7ImZhY2V0MSI6eyJuYW1lIjoiVUFDQy02MiIsImRpbWVuc2lvbl90eXBlIjoiZGVwbWFwX21vZGVsIiwiZXhwciI6eyI9PSI6W3sidmFyIjoiZ2l2ZW5faWQifSwiQUNILTAwMDQyNSJdfSwidmFycyI6e319LCJmYWNldDIiOnsibmFtZSI6IlVBQ0MtMjU3IiwiZGltZW5zaW9uX3R5cGUiOiJkZXBtYXBfbW9kZWwiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCJBQ0gtMDAwNTc5Il19LCJ2YXJzIjp7fX19fQ==))
+Backed by `filters.facet1` (and optionally `filters.facet2`; **there is no `facet3`, so two groups is the maximum**; for three or more groups use the `property` facet below), exactly like `color_by`'s `filters.color1`/`color2` — a context per facet, an automatic "Other" cluster for points in neither, and a "Both" cluster for the overlap when two groups are given. On a `density_1d` plot this draws one violin track per facet; on `waterfall`, one x-axis cluster per facet; on `scatter`, one small-multiples panel per facet.
 
 ```json
 {
+  "version": 2,
   "plot_type": "density_1d",
   "index_type": "depmap_model",
   "dimensions": {
@@ -841,10 +856,11 @@ Since `color_by` is omitted here, this also colors the plot to match — one col
 
 #### property
 
-Backed by `metadata.facet_property`, a SliceQuery referring to a categorical/text column — exactly like `color_by`'s `metadata.color_property`. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJkZW5zaXR5XzFkIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19fSwiZmFjZXRfYnkiOiJwcm9wZXJ0eSIsIm1ldGFkYXRhIjp7ImZhY2V0X3Byb3BlcnR5Ijp7ImlkZW50aWZpZXJfdHlwZSI6ImNvbHVtbiIsImRhdGFzZXRfaWQiOiJkZXBtYXBfbW9kZWxfbWV0YWRhdGEiLCJpZGVudGlmaWVyIjoiT25jb3RyZWVMaW5lYWdlIn19fQ==))
+Backed by `metadata.facet_property`, a SliceQuery referring to a categorical/text column — exactly like `color_by`'s `metadata.color_property`.
 
 ```json
 {
+  "version": 2,
   "plot_type": "density_1d",
   "index_type": "depmap_model",
   "dimensions": {
@@ -883,10 +899,11 @@ A `facet_property` (or `dimensions.facet`, below) that resolves to a **continuou
 
 #### custom
 
-Backed by `dimensions.facet`, mirroring `dimensions.color` — a raw or aggregated slice, continuous or categorical. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJkZW5zaXR5XzFkIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19LCJmYWNldCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6ImV4cHJlc3Npb24iLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19fSwiZmFjZXRfYnkiOiJjdXN0b20ifQ==))
+Backed by `dimensions.facet`, mirroring `dimensions.color` — a raw or aggregated slice, continuous or categorical.
 
 ```json
 {
+  "version": 2,
   "plot_type": "density_1d",
   "index_type": "depmap_model",
   "dimensions": {
@@ -979,6 +996,7 @@ Older links may also carry `limit` and `offset` — a page size and a window, fr
 
 ```json
 {
+  "version": 2,
   "plot_type": "density_1d",
   "index_type": "depmap_model",
   "dimensions": {
@@ -1034,10 +1052,11 @@ Three rules govern this, and all of them hold whether one axis expands or two:
 
 ### filters
 
-Apply a filter with `filters.visible`, using a context to restrict which points are shown. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJkZW5zaXR5XzFkIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19fSwiZmlsdGVycyI6eyJ2aXNpYmxlIjp7Im5hbWUiOiJTa2luIiwiZGltZW5zaW9uX3R5cGUiOiJkZXBtYXBfbW9kZWwiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiIwIn0sIlNraW4iXX0sInZhcnMiOnsiMCI6eyJkYXRhc2V0X2lkIjoiZGVwbWFwX21vZGVsX21ldGFkYXRhIiwiaWRlbnRpZmllciI6Ik9uY290cmVlTGluZWFnZSIsImlkZW50aWZpZXJfdHlwZSI6ImNvbHVtbiJ9fX19fQ==))
+Apply a filter with `filters.visible`, using a context to restrict which points are shown.
 
 ```json
 {
+  "version": 2,
   "plot_type": "density_1d",
   "index_type": "depmap_model",
   "dimensions": {
@@ -1085,12 +1104,69 @@ Apply a filter with `filters.visible`, using a context to restrict which points 
 }
 ```
 
-### metadata
+### Showing only some categories
 
-Augments the information shown when hovering over a point. `metadata` is an object, but the keys aren't meaningful — you can use anything except `"color_property"`, which is reserved. The values are SliceQueries. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJkZW5zaXR5XzFkIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19fSwibWV0YWRhdGEiOnsiYW5ub3RhdGlvbiAxIjp7ImlkZW50aWZpZXJfdHlwZSI6ImNvbHVtbiIsImRhdGFzZXRfaWQiOiJkZXBtYXBfbW9kZWxfbWV0YWRhdGEiLCJpZGVudGlmaWVyIjoiTW9kZWxUeXBlIn0sImFubm90YXRpb24gMiI6eyJpZGVudGlmaWVyX3R5cGUiOiJjb2x1bW4iLCJkYXRhc2V0X2lkIjoiZGVwbWFwX21vZGVsX21ldGFkYXRhIiwiaWRlbnRpZmllciI6IlNleCJ9LCJhbm5vdGF0aW9uIDMiOnsiaWRlbnRpZmllcl90eXBlIjoiY29sdW1uIiwiZGF0YXNldF9pZCI6ImRlcG1hcF9tb2RlbF9tZXRhZGF0YSIsImlkZW50aWZpZXIiOiJQYXRpZW50VHJlYXRtZW50U3RhdHVzIn19fQ==))
+When a user asks for a handful of categories out of a high-cardinality property ("the top 5 lineages", "just Lung and Skin"), facet by the property and choose how the remaining categories are treated. Do not reach for `facet_by: "aggregated_slice"` with `facet1`/`facet2`: it supports at most two groups.
+
+**Default: `filters.visible`.** Facet with `facet_by: "property"` and restrict the plot to the wanted categories with an `in` expression. Every other point is removed, so the plot contains exactly the categories that were asked for, with no "Other" panel. Use this unless the user wants the rest kept as context.
 
 ```json
 {
+  "version": 2,
+  "plot_type": "scatter",
+  "index_type": "depmap_model",
+  "dimensions": { "x": "...", "y": "..." },
+  "facet_by": "property",
+  "metadata": {
+    "facet_property": {
+      "dataset_id": "depmap_model_metadata",
+      "identifier": "OncotreeLineage",
+      "identifier_type": "column"
+    }
+  },
+  "filters": {
+    "visible": {
+      "name": "Top 5 Lineages",
+      "dimension_type": "depmap_model",
+      "expr": {
+        "in": [
+          { "var": "0" },
+          ["Lymphoid", "Lung", "CNS/Brain", "Esophagus/Stomach", "Skin"]
+        ]
+      },
+      "vars": {
+        "0": {
+          "dataset_id": "depmap_model_metadata",
+          "identifier": "OncotreeLineage",
+          "identifier_type": "column"
+        }
+      }
+    }
+  }
+}
+```
+
+**Alternative: `facet_categories`.** A list of category names that get their own panel (or track, or cluster). Points in every other category are _not_ removed: they are collapsed into a single "Other" bucket. Use this when the user wants to highlight some categories while keeping the rest of the data on the plot for comparison.
+
+```json
+"facet_by": "property",
+"facet_categories": ["Lymphoid", "Lung", "CNS/Brain", "Esophagus/Stomach", "Skin"]
+```
+
+Notes:
+
+- `facet_categories` overrides the default ranking, which otherwise picks the categories whose points sit somewhere distinctive on the plotted axes. Omit it to get that ranking.
+- At most 40 categories are drawn. Names that aren't in the data are ignored; if none match, the plot falls back to the default ranking rather than rendering empty.
+- `color_categories` is the equivalent for `color_by`. When `color_by` is omitted or `"facet"`, `facet_categories` governs the colors too.
+- Because "top N" is a judgment call, say which categories you chose and by what criterion (for example, number of cell lines) so the user can correct it.
+
+### metadata
+
+Augments the information shown when hovering over a point. `metadata` is an object, but the keys aren't meaningful — you can use anything except `"color_property"`, which is reserved. The values are SliceQueries.
+
+```json
+{
+  "version": 2,
   "plot_type": "density_1d",
   "index_type": "depmap_model",
   "dimensions": {
@@ -1136,10 +1212,11 @@ Augments the information shown when hovering over a point. `metadata` is an obje
 
 ### show_regression_line [boolean]
 
-Only works with the `scatter` plot type. Toggles the optional linear regression line. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJzY2F0dGVyIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19LCJ5Ijp7ImF4aXNfdHlwZSI6InJhd19zbGljZSIsImFnZ3JlZ2F0aW9uIjoiZmlyc3QiLCJkYXRhc2V0X2lkIjoiZXhwcmVzc2lvbiIsInNsaWNlX3R5cGUiOiJnZW5lIiwiY29udGV4dCI6eyJkaW1lbnNpb25fdHlwZSI6ImdlbmUiLCJuYW1lIjoiVFA1MyIsImV4cHIiOnsiPT0iOlt7InZhciI6ImdpdmVuX2lkIn0sIjcxNTciXX0sInZhcnMiOnt9fX19LCJzaG93X3JlZ3Jlc3Npb25fbGluZSI6dHJ1ZX0=))
+Only works with the `scatter` plot type. Toggles the optional linear regression line.
 
 ```json
 {
+  "version": 2,
   "plot_type": "scatter",
   "index_type": "depmap_model",
   "dimensions": {
@@ -1186,6 +1263,23 @@ Only works with the `scatter` plot type. Toggles the optional linear regression 
 }
 ```
 
+#### When to show a regression line
+
+Treat it as a default to lean toward, not a requirement.
+
+**Include it** when the user is asking whether x and y are related ("correlate", "track", "predict", "does X depend on Y"), and on faceted scatterplots with a modest number of panels (roughly 8 or fewer), where comparing per-panel slopes is the point of faceting.
+
+**Omit it** when:
+
+- The user is looking for outliers or structure rather than a trend.
+- x and y measure the same quantity (replicates, two releases of one dataset). The identity line is the useful reference there.
+- There are many panels (say 30+), where a fit per small panel is clutter and invites over-reading.
+- The points fall into distinct clusters that the plot isn't already faceted or colored by. A single line through separated groups (for example TP53 mutant vs. wild-type) suggests a relationship that is really just group separation.
+
+When a plot is colored by a different partition than it is faceted by, a pooled line can mislead in the same way. Consider [show_regression_line_per_color](#show_regression_line_per_color-boolean).
+
+If it's a close call, include it. A line the user doesn't want is easy to toggle off; one that is missing is easy to overlook.
+
 ### show_regression_line_per_color [boolean]
 
 A sub-option of `show_regression_line`, and only meaningful on a **faceted** `scatter` plot whose `color_by` shows a _different_ partition than its `facet_by`.
@@ -1201,10 +1295,9 @@ It is ignored (and dropped from the plot config) unless all of the following hol
 - `color_by` is set and complete, and is not `"facet"` or `"uniform"`
 - `color_by` and `facet_by` do not resolve to the same annotation
 
-([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJzY2F0dGVyIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19LCJ5Ijp7ImF4aXNfdHlwZSI6InJhd19zbGljZSIsImFnZ3JlZ2F0aW9uIjoiZmlyc3QiLCJkYXRhc2V0X2lkIjoiZXhwcmVzc2lvbiIsInNsaWNlX3R5cGUiOiJnZW5lIiwiY29udGV4dCI6eyJkaW1lbnNpb25fdHlwZSI6ImdlbmUiLCJuYW1lIjoiVFA1MyIsImV4cHIiOnsiPT0iOlt7InZhciI6ImdpdmVuX2lkIn0sIjcxNTciXX0sInZhcnMiOnt9fX19LCJmYWNldF9ieSI6InByb3BlcnR5IiwiY29sb3JfYnkiOiJwcm9wZXJ0eSIsIm1ldGFkYXRhIjp7ImZhY2V0X3Byb3BlcnR5Ijp7ImlkZW50aWZpZXJfdHlwZSI6ImNvbHVtbiIsImRhdGFzZXRfaWQiOiJkZXBtYXBfbW9kZWxfbWV0YWRhdGEiLCJpZGVudGlmaWVyIjoiT25jb3RyZWVMaW5lYWdlIn0sImNvbG9yX3Byb3BlcnR5Ijp7ImlkZW50aWZpZXJfdHlwZSI6ImNvbHVtbiIsImRhdGFzZXRfaWQiOiJkZXBtYXBfbW9kZWxfbWV0YWRhdGEiLCJpZGVudGlmaWVyIjoiUHJpbWFyeU9yTWV0YXN0YXNpcyJ9fSwic2hvd19yZWdyZXNzaW9uX2xpbmUiOnRydWUsInNob3dfcmVncmVzc2lvbl9saW5lX3Blcl9jb2xvciI6dHJ1ZX0=))
-
 ```json
 {
+  "version": 2,
   "plot_type": "scatter",
   "index_type": "depmap_model",
   "dimensions": {

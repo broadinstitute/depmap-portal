@@ -1,24 +1,16 @@
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { PanelGroup } from "react-bootstrap";
-import { useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Markdown, Spinner } from "@depmap/common-components";
 import { breadboxAPI, cached } from "@depmap/api";
 import { CmsMenu, CmsPost, CmsPostSummary } from "@depmap/types";
 import styles from "src/resourcesV3/styles/ResourcesV3Page.scss";
 import MenuTreeNode from "./MenuTreeNode";
 
-// A custom hook that builds on useLocation to parse
-// the query string for you. (See: https://v5.reactrouter.com/web/example/query-parameters)
-function useQuery() {
-  const { search } = useLocation();
-
-  return useMemo(() => new URLSearchParams(search), [search]);
-}
-
 export default function ResourcesV3Page() {
-  const query = useQuery();
-  const selectedPostSlug = query.get("post");
+  const { postSlug } = useParams<{ postSlug?: string }>();
+  const selectedPostSlug = postSlug || null;
 
   const [menus, setMenus] = useState<CmsMenu[] | null>(null);
   const [postSummaries, setPostSummaries] = useState<CmsPostSummary[] | null>(
@@ -97,9 +89,24 @@ export default function ResourcesV3Page() {
     ? postCache[selectedPostSummary.id]
     : undefined;
 
+  const selectedPostTitle = selectedPostSummary?.title;
+
+  useEffect(() => {
+    if (!selectedPostTitle) {
+      return undefined;
+    }
+
+    const originalTitle = document.title;
+    document.title = selectedPostTitle;
+
+    return () => {
+      document.title = originalTitle;
+    };
+  }, [selectedPostTitle]);
+
   if (error) {
     return (
-      <div className={styles.ResourcesV3PageContainer}>
+      <div className={`container ${styles.ResourcesV3PageContainer}`}>
         <p>Sorry, there was a problem loading resources.</p>
       </div>
     );
@@ -110,43 +117,55 @@ export default function ResourcesV3Page() {
   }
 
   return (
-    <div className={styles.ResourcesV3PageContainer}>
+    <div className={`container ${styles.ResourcesV3PageContainer}`}>
       <div className={styles.resourcesPageHeader}>
-        <h1>Depmap Resources</h1>
+        <h1>DepMap Resources</h1>
         <h3>
           Browse resource categories for information and frequently asked
           questions
         </h3>
       </div>
 
-      <section className={styles.postsNavList}>
-        <PanelGroup>
-          {menus.map((menu) => (
-            <MenuTreeNode
-              key={menu.slug}
-              menu={menu}
-              slugToPostSummary={slugToPostSummary}
-              selectedPostSlug={selectedPostSlug}
-            />
-          ))}
-        </PanelGroup>
-      </section>
-      <section className={styles.postContentContainer}>
-        {selectedPostSummary && (
-          <div className={styles.postContent}>
-            <div className={styles.postDate}>
-              <p>Posted: {selectedPostSummary.created_at}</p>
-              <p>Updated: {selectedPostSummary.updated_at}</p>
+      <div className="row">
+        <section className={`col-md-3 ${styles.postsNavList}`}>
+          <PanelGroup>
+            {menus.map((menu) => (
+              <MenuTreeNode
+                key={menu.slug}
+                menu={menu}
+                slugToPostSummary={slugToPostSummary}
+                selectedPostSlug={selectedPostSlug}
+              />
+            ))}
+          </PanelGroup>
+        </section>
+        <section className={`col-md-9 ${styles.postContentContainer}`}>
+          {selectedPostSummary && (
+            <div className={styles.postContent}>
+              <h1 className={styles.postTitle}>{selectedPostSummary.title}</h1>
+              {selectedPostSummary.updated_at && (
+                <div className={styles.postDate}>
+                  <p>
+                    Updated:{" "}
+                    {new Date(
+                      selectedPostSummary.updated_at
+                    ).toLocaleDateString("en-US", {
+                      month: "2-digit",
+                      day: "2-digit",
+                      year: "numeric",
+                    })}
+                  </p>
+                </div>
+              )}
+              {selectedPost ? (
+                <Markdown>{selectedPost.content}</Markdown>
+              ) : (
+                selectedPostContentLoading && <Spinner />
+              )}
             </div>
-            <h2>{selectedPostSummary.title}</h2>
-            {selectedPost ? (
-              <Markdown>{selectedPost.content}</Markdown>
-            ) : (
-              selectedPostContentLoading && <Spinner />
-            )}
-          </div>
-        )}
-      </section>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

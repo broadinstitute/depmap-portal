@@ -34,6 +34,7 @@ module.exports = merge(common, {
             "../../../",
             "breadbox/breadbox/static/elara/static"
           ),
+          noErrorOnMissing: true,
         },
       ],
     }),

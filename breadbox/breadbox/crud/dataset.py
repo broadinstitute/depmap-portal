@@ -11,6 +11,7 @@ from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.orm import aliased, with_polymorphic
 
 from breadbox.db.session import SessionWithUser
+from breadbox.db.util import fetch_columns_in_one_step
 from ..io.data_validation import dimension_label_df_schema
 from ..schemas.dataset import (
     DimensionSearchIndexResponse,
@@ -176,6 +177,8 @@ def get_datasets(
 # parameters of its own.
 _ID_CHUNK_SIZE = 900
 
+from breadbox.utils.profiling import profiled_region
+
 
 def count_dataset_coverage(
     db: SessionWithUser,
@@ -221,43 +224,47 @@ def count_dataset_coverage(
         if dimension_type.axis == "feature"
         else {"sample_type": dimension_type_name}
     )
-    visible_dataset_ids = {
-        dataset.id
-        for dataset in get_datasets(db, user, **axis_kwarg)  # pyright: ignore
-        if isinstance(dataset, MatrixDataset)
-        and (not public_only or is_public_dataset(dataset))
-    }
+    with profiled_region("count_dataset_coverage: get_datasets"):
+        visible_dataset_ids = {
+            dataset.id
+            for dataset in get_datasets(db, user, **axis_kwarg)  # pyright: ignore
+            if isinstance(dataset, MatrixDataset)
+            and (not public_only or is_public_dataset(dataset))
+        }
 
-    if not visible_dataset_ids or not given_ids:
-        return {}
+        if not visible_dataset_ids or not given_ids:
+            return {}
 
-    dimension_model = (
-        DatasetFeature if dimension_type.axis == "feature" else DatasetSample
-    )
-
-    counts: Dict[str, int] = defaultdict(int)
-
-    for start in range(0, len(given_ids), _ID_CHUNK_SIZE):
-        chunk = given_ids[start : start + _ID_CHUNK_SIZE]
-
-        # `with_entities` rather than passing both columns to `query`:
-        # SessionWithUser.query takes a single entity, because it wraps every
-        # query with the caller's readable-group execution options. Narrowing
-        # afterwards keeps that wrapper rather than going around it.
-        rows = (
-            db.query(dimension_model)
-            .with_entities(
-                dimension_model.dataset_id,
-                func.count(distinct(dimension_model.given_id)),
-            )
-            .filter(dimension_model.given_id.in_(chunk))
-            .filter(dimension_model.dataset_id.in_(visible_dataset_ids))
-            .group_by(dimension_model.dataset_id)
-            .all()
+        dimension_model = (
+            DatasetFeature if dimension_type.axis == "feature" else DatasetSample
         )
 
-        for dataset_id, count in rows:
-            counts[dataset_id] += count
+        counts: Dict[str, int] = defaultdict(int)
+
+    with profiled_region(
+        f"count_dataset_coverage: db.query (len(given_ids)={len(given_ids)})"
+    ):
+        for start in range(0, len(given_ids), _ID_CHUNK_SIZE):
+            chunk = given_ids[start : start + _ID_CHUNK_SIZE]
+
+            # `with_entities` rather than passing both columns to `query`:
+            # SessionWithUser.query takes a single entity, because it wraps every
+            # query with the caller's readable-group execution options. Narrowing
+            # afterwards keeps that wrapper rather than going around it.
+            rows = (
+                db.query(dimension_model)
+                .with_entities(
+                    dimension_model.dataset_id,
+                    func.count(distinct(dimension_model.given_id)),
+                )
+                .filter(dimension_model.given_id.in_(chunk))
+                .filter(dimension_model.dataset_id.in_(visible_dataset_ids))
+                .group_by(dimension_model.dataset_id)
+                .all()
+            )
+
+            for dataset_id, count in rows:
+                counts[dataset_id] += count
 
     return dict(counts)
 
@@ -713,13 +720,35 @@ def get_subset_of_tabular_data_as_df(
         filter_statements.append(TabularColumn.given_id.in_(column_names))
     if index_given_ids is not None:
         filter_statements.append(TabularCell.dimension_given_id.in_(index_given_ids))
-    query = (
+    base_query = (
         db.query(TabularColumn)
         .join(TabularCell)
         .filter(and_(true(), *filter_statements))
-        .with_entities(
-            TabularCell.value, TabularCell.dimension_given_id, TabularColumn.given_id,
+    )
+
+    # A single column is the common case (context vars, table columns). Pivoting it is
+    # just a slow way of sorting by row id, so read the two columns we need straight off
+    # SQLite. No rows falls through, so the empty result keeps its usual shape.
+    #
+    # Rows are sorted below rather than with an ORDER BY: through the dimension join
+    # SQLite has to build a temp b-tree for it, and every execution of that query then
+    # left roughly the result's size behind in the process, which adds up in a server.
+    if column_names is not None and len(column_names) == 1:
+        ids, values = fetch_columns_in_one_step(
+            base_query.session.connection(),
+            base_query.with_entities(
+                TabularCell.dimension_given_id, TabularCell.value
+            ).statement,
         )
+        if ids:
+            single = pd.DataFrame(
+                {"value": values}, index=pd.Index(ids, name="dimension_given_id")
+            ).sort_index()
+            single.columns = pd.Index([column_names[0]], name="given_id")
+            return single
+
+    query = base_query.with_entities(
+        TabularCell.value, TabularCell.dimension_given_id, TabularColumn.given_id,
     )
     query_df = pd.read_sql(query.statement, query.session.connection())
 

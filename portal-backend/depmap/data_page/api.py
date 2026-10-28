@@ -12,6 +12,7 @@ from depmap.interactive import interactive_utils
 from flask_restx import Namespace, Resource
 from flask import current_app, request
 import pandas as pd
+from depmap import extensions
 
 namespace = Namespace("data_page", description="View data availability in the portal")
 
@@ -181,6 +182,15 @@ def _format_data_availability_summary_dict(summary_df: pd.DataFrame):
     return summary
 
 
+@extensions.memoize_without_user_permissions()
+def _get_data_availability():
+    all_data_df = _get_all_data_avail_df()
+    formatted_df = _get_formatted_all_data_avail_df(all_data_df)
+    all_data_dict = _format_data_availability_summary_dict(formatted_df)
+
+    return all_data_dict
+
+
 @namespace.route("/data_availability")
 class DataAvailability(
     Resource
@@ -191,11 +201,7 @@ class DataAvailability(
         """
         Data availability for the current release and across all of the portal
         """
-        all_data_df = _get_all_data_avail_df()
-        formatted_df = _get_formatted_all_data_avail_df(all_data_df)
-        all_data_dict = _format_data_availability_summary_dict(formatted_df)
-
-        return all_data_dict
+        return _get_data_availability()
 
 
 def _format_lineage_availability_summary_dict(summary_df: pd.DataFrame, data_type: str):
@@ -252,7 +258,10 @@ def _get_legacy_db_mirrors_breadbox_issues() -> List[str]:
             legacy_taiga_id = interactive_utils.get_taiga_id(legacy_dataset_id)
             breadbox_taiga_id = breadbox_dao.get_dataset_taiga_id(legacy_dataset_id)
 
-            if legacy_taiga_id != breadbox_taiga_id and "placeholder" not in legacy_taiga_id:
+            if (
+                legacy_taiga_id != breadbox_taiga_id
+                and "placeholder" not in legacy_taiga_id
+            ):
                 issues.append(
                     "Mismatch in taiga IDs for dataset '{}': legacy db taiga ID is '{}', breadbox taiga ID is '{}'".format(
                         legacy_dataset_id, legacy_taiga_id, breadbox_taiga_id
