@@ -313,8 +313,11 @@ def get_tabular_dataset_index_given_ids(
     assert dimension_type is not None
 
     id_col_name = dimension_type.id_column
-    cells_in_id_column = (
-        db.query(TabularCell)
+    # Select the one column rather than whole TabularCell entities: hydrating an
+    # ORM object per row dominates the cost for datasets with hundreds of thousands
+    # of rows.
+    given_ids = (
+        db.query(TabularCell.dimension_given_id)
         .join(TabularColumn)
         .filter(
             and_(
@@ -324,7 +327,7 @@ def get_tabular_dataset_index_given_ids(
         )
         .all()
     )
-    return [cell.dimension_given_id for cell in cells_in_id_column]
+    return [given_id for (given_id,) in given_ids]
 
 
 def get_matching_feature_metadata_labels(
