@@ -853,7 +853,7 @@ def update_dimension_type_metadata(
         # a list.
         if properties_to_index is None:
             properties_to_index = [
-                x.property for x in dimension_type.dataset.properties_to_index
+                x.property for x in dimension_type.properties_to_index
             ]
 
         # Delete dataset; cascade deletes annotation dimensions which then deletes all annotation values
