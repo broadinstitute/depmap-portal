@@ -1,4 +1,4 @@
-from typing import List, Optional, Set, Annotated
+from typing import List, Literal, Optional, Set, Annotated
 from logging import getLogger
 from ..db.util import transaction
 from breadbox.utils.asserts import index_error_msg
@@ -465,6 +465,7 @@ def get_dimensions(
     "/dimension/data/",
     operation_id="get_dimension_data",
     response_model=DimensionDataResponse,
+    response_model_exclude_unset=True,
 )
 def get_dimension_data(
     # TODO: This endpoint inlines the SliceQuery fields as individual Body() params
@@ -500,6 +501,17 @@ def get_dimension_data(
                 "Optional dimension IDs to restrict the result to. Only supported for "
                 "tabular columns, and not in combination with `reindex_through`. IDs "
                 "the dataset has no row for are omitted rather than treated as an error."
+            )
+        ),
+    ] = None,
+    fields: Annotated[
+        Optional[List[Literal["ids", "labels", "values"]]],
+        Body(
+            description=(
+                "Optional subset of response fields to return. When omitted, `ids`, "
+                "`labels` and `values` are all returned. Fields that are not listed "
+                "are left out of the response, which is useful when a caller already "
+                "has the labels or only needs the IDs."
             )
         ),
     ] = None,
@@ -544,11 +556,16 @@ def get_dimension_data(
     result_values = [slice_values_by_id[id] for id in result_given_ids]
     result_labels = [labels_by_id[id] for id in result_given_ids]
 
-    return {
+    result = {
         "ids": result_given_ids,
         "labels": result_labels,
         "values": result_values,
     }
+    if fields is not None:
+        # Rows are still filtered by label availability above, so the IDs a caller
+        # gets do not depend on which fields it asked for.
+        result = {key: value for key, value in result.items() if key in fields}
+    return result
 
 
 @router.patch(
