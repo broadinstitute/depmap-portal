@@ -3448,6 +3448,10 @@ export function calcPlotIndicatorLineShapes(
 export interface LegendInfo {
   title: string;
   items: { name: string; hexColor: string }[];
+  // True when the legend's only possible entry is LEGEND_ALL (nothing is
+  // colored by), so it says nothing a viewer could use. The export modal
+  // forces such a legend hidden and doesn't offer to show it.
+  isTrivial?: boolean;
 }
 
 // Export-only (see ExportImageModal's legend editor). `itemLabels` is
