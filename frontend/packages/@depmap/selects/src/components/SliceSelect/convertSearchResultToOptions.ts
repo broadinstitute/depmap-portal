@@ -232,11 +232,14 @@ async function convertSearchResultToOptions(
         return labelA < labelB ? -1 : 1;
       }
 
-      const indexA = tokens.reduce(
+      // The labels are lowercased above, so the tokens must be too.
+      const lowercaseTokens = tokens.map((token) => token.toLowerCase());
+
+      const indexA = lowercaseTokens.reduce(
         (sum, token) => labelA.indexOf(token) + sum,
         0
       );
-      const indexB = tokens.reduce(
+      const indexB = lowercaseTokens.reduce(
         (sum, token) => labelB.indexOf(token) + sum,
         0
       );
