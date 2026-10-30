@@ -106,17 +106,23 @@ rule process_mutations_matrices:
                   {{ inputs.hgnc.dataset_id }} out.csv"""
     run "python {{ inputs.hdf5_script.filename }} to_hdf5 out.csv csv out.hdf5"
 
-rule create_fusions_matrix:
-    inputs: fusions={'type': 'other-taiga-dataset', 
-                'category': 'fusions'},
-            script=fileref("scripts/make_fusions_matrix.py", copy_to="make_fusions_matrix.py"),
-            hgnc={"type": "hgnc-snapshot"},
-            hdf5_script=fileref("scripts/hdf5_utils.py"),
-            omics_utils=fileref('scripts/omics_preprocessing_utils.py', copy_to='omics_preprocessing_utils.py')
-    outputs: {'type': 'biomarker-matrix', 
-                'category': 'fusions', 
-                'filename': {"$filename": "fusions.hdf5"}, 
+# The fusions matrix is computed by the data-prep-pipeline (see
+# data-prep-pipeline/scripts/fusions/transform_fusions_matrix.py) and published back into the
+# release as "PortalFusionsMatrix", so here we only need to download it.
+rule download_fusions_matrix:
+    inputs: fusions={'type': 'fusions-matrix-raw'},
+            hdf5_script=fileref("scripts/hdf5_utils.py")
+    outputs: {'type': 'biomarker-matrix',
+                'category': 'fusions',
+                'filename': {"$filename": "fusions.hdf5"},
                 'source_dataset_id': '{{inputs.fusions.dataset_id}}'}
-    run """python make_fusions_matrix.py {{ inputs.fusions.dataset_id }} \
-                  {{ inputs.hgnc.dataset_id }} out.csv"""
-    run "python {{ inputs.hdf5_script.filename }} to_hdf5 out.csv csv fusions.hdf5"
+    run "python3" with """
+        from taigapy import create_taiga_client_v3
+
+        tc = create_taiga_client_v3()
+        df = tc.get("{{inputs.fusions.dataset_id}}")
+        df.to_csv("out.csv")
+    """
+    # PortalFusionsMatrix has one row per model, but biomarker-matrix hdf5 files are
+    # expected to have the cell lines as columns, so transpose on the way in.
+    run "python {{ inputs.hdf5_script.filename }} to_hdf5 out.csv csv fusions.hdf5 --transpose"
