@@ -1,4 +1,4 @@
-from typing import List, Optional, Set, Annotated
+from typing import List, Literal, Optional, Set, Annotated
 from logging import getLogger
 from ..db.util import transaction
 from breadbox.utils.asserts import index_error_msg
@@ -465,6 +465,7 @@ def get_dimensions(
     "/dimension/data/",
     operation_id="get_dimension_data",
     response_model=DimensionDataResponse,
+    response_model_exclude_unset=True,
 )
 def get_dimension_data(
     # TODO: This endpoint inlines the SliceQuery fields as individual Body() params
@@ -503,6 +504,17 @@ def get_dimension_data(
             )
         ),
     ] = None,
+    fields: Annotated[
+        Optional[List[Literal["ids", "labels", "values"]]],
+        Body(
+            description=(
+                "Optional subset of response fields to return. When omitted, `ids`, "
+                "`labels` and `values` are all returned. Fields that are not listed "
+                "are left out of the response, which is useful when a caller already "
+                "has the labels or only needs the IDs."
+            )
+        ),
+    ] = None,
     db: SessionWithUser = Depends(get_db_with_user),
     settings: Settings = Depends(get_settings),
 ):
@@ -527,23 +539,37 @@ def get_dimension_data(
     if parsed_slice_query.reindex_through is not None:
         label_query = _get_root_query(parsed_slice_query)
 
-    labels_by_id = metadata_service.get_labels_for_slice_type(db, label_query)
+    # When the caller asked for specific rows, only those rows need labels.
+    labels_by_id = metadata_service.get_labels_for_slice_type(
+        db,
+        label_query,
+        given_ids=slice_values_by_id.index.to_list() if indices is not None else None,
+    )
 
-    # Only the values which have corresponding metadata should be returned
-    all_dataset_given_ids = slice_values_by_id.index.to_list()
-    result_given_ids: list[str] = [
-        id for id in all_dataset_given_ids if id in labels_by_id
-    ]
+    # Only the values which have corresponding metadata should be returned. The ids,
+    # values and labels are collected together in one positional pass; looking each
+    # id up in the Series by label is several times slower for large dimension types.
+    result_given_ids: list[str] = []
+    result_values: list = []
+    result_labels: list[str] = []
+    for given_id, value in zip(
+        slice_values_by_id.index.to_list(), slice_values_by_id.to_list()
+    ):
+        if given_id in labels_by_id:
+            result_given_ids.append(given_id)
+            result_values.append(value)
+            result_labels.append(labels_by_id[given_id])
 
-    # Ensure the values and labels are similarly filtered and ordered
-    result_values = [slice_values_by_id[id] for id in result_given_ids]
-    result_labels = [labels_by_id[id] for id in result_given_ids]
-
-    return {
+    result = {
         "ids": result_given_ids,
         "labels": result_labels,
         "values": result_values,
     }
+    if fields is not None:
+        # Rows are still filtered by label availability above, so the IDs a caller
+        # gets do not depend on which fields it asked for.
+        result = {key: value for key, value in result.items() if key in fields}
+    return result
 
 
 @router.patch(

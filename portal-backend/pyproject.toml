@@ -114,6 +114,8 @@ pytest-split = "^0.10"
 multidict = "^6.1.0"
 html-sanitizer = "^2.3.0"
 httpx = "^0.28.1"
+flask-compress = "^1.15"
+brotli = "^1.1"
 
 
 [tool.poetry.group.dev.dependencies]

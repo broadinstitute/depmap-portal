@@ -1044,6 +1044,57 @@ def test_get_dimension_data_with_indices(
     assert content["values"] == ["MKV", "GGP"]
 
 
+def test_get_dimension_data_fields_narrows_the_response(
+    client: TestClient, minimal_db: SessionWithUser, public_group, settings,
+):
+    _tabular_dataset_for_indices(minimal_db, settings)
+    body = {
+        "dataset_id": "transcript_annotations",
+        "identifier": "sequence",
+        "identifier_type": "column",
+    }
+    headers = {"X-Forwarded-User": "some-public-user"}
+
+    full = client.post("/datasets/dimension/data", json=body, headers=headers)
+    assert_status_ok(full)
+
+    narrowed = client.post(
+        "/datasets/dimension/data",
+        json={**body, "fields": ["ids", "values"]},
+        headers=headers,
+    )
+    assert_status_ok(narrowed)
+    content = narrowed.json()
+    assert set(content) == {"ids", "values"}
+    # Same rows, same order, as the default response.
+    assert content["ids"] == full.json()["ids"]
+    assert content["values"] == full.json()["values"]
+
+    ids_only = client.post(
+        "/datasets/dimension/data", json={**body, "fields": ["ids"]}, headers=headers,
+    )
+    assert_status_ok(ids_only)
+    assert ids_only.json() == {"ids": full.json()["ids"]}
+
+
+def test_get_dimension_data_rejects_unknown_fields(
+    client: TestClient, minimal_db: SessionWithUser, public_group, settings,
+):
+    _tabular_dataset_for_indices(minimal_db, settings)
+
+    response = client.post(
+        "/datasets/dimension/data",
+        json={
+            "dataset_id": "transcript_annotations",
+            "identifier": "sequence",
+            "identifier_type": "column",
+            "fields": ["nope"],
+        },
+        headers={"X-Forwarded-User": "some-public-user"},
+    )
+    assert response.status_code == 422
+
+
 def test_get_dimension_data_with_indices_tolerates_missing_rows(
     client: TestClient, minimal_db: SessionWithUser, public_group, settings,
 ):
