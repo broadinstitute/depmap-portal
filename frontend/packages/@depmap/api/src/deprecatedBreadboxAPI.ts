@@ -7,7 +7,7 @@ import {
 } from "@depmap/types";
 import createJsonClient from "./createJsonClient";
 
-const { getJson, deleteJson, patchMultipart, postMultipart } = createJsonClient(
+const { getJson, deleteJson, patchMultipart } = createJsonClient(
   `${getUrlPrefix()}${isPortal ? "/breadbox" : ""}`
 );
 
@@ -15,14 +15,13 @@ function getSampleTypes() {
   return getJson<SampleType[]>("/types/sample");
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function postSampleType(sampleTypeArgs: any) {
-  const args = { ...sampleTypeArgs };
-
-  if ("annotation_type_mapping" in args) {
-    args.annotation_type_mapping = JSON.stringify(args.annotation_type_mapping);
-  }
-  return postMultipart<SampleType>("/types/sample", args);
+// NOTE: The implementation of the old POST /types/sample/ endpoint has been
+// removed from Breadbox. Use POST /types/dimensions instead.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+function postSampleType(_args: any): Promise<SampleType> {
+  throw new Error(
+    "Not implemented: POST /types/sample/ has been removed. Use POST /types/dimensions instead."
+  );
 }
 
 function updateSampleType(sampleTypeArgs: Readonly<SampleTypeUpdateArgs>) {
@@ -42,14 +41,13 @@ function getFeatureTypes() {
   return getJson<FeatureType[]>("/types/feature");
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function postFeatureType(featureTypeArgs: any) {
-  const args = { ...featureTypeArgs };
-
-  if ("annotation_type_mapping" in args) {
-    args.annotation_type_mapping = JSON.stringify(args.annotation_type_mapping);
-  }
-  return postMultipart<FeatureType>("/types/feature", args);
+// NOTE: The implementation of the old POST /types/feature/ endpoint has been
+// removed from Breadbox. Use POST /types/dimensions instead.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+function postFeatureType(_args: any): Promise<FeatureType> {
+  throw new Error(
+    "Not implemented: POST /types/feature/ has been removed. Use POST /types/dimensions instead."
+  );
 }
 
 function updateFeatureType(featureTypeArgs: Readonly<FeatureTypeUpdateArgs>) {
