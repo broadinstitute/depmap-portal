@@ -12,7 +12,6 @@ on:
       - "dmc*"
       - "external*"
       - "test-*"
-      - "docker-upgrade-26q3"
     paths:
       - "portal-backend/**"
       - "frontend/**"
