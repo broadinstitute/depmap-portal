@@ -11,6 +11,10 @@ export const getDatasetLabelFromId = (datasetId: string) => {
     return "OncRef Seq";
   }
 
+  if (datasetId === "Prism_oncology_unified_AUC") {
+    return "OncRef Unified";
+  }
+
   return "Unknown";
 };
 
@@ -27,11 +31,16 @@ export const getDatasetIdFromLabel = (datasetLabel: string) => {
     return "Prism_oncology_AUC";
   }
 
+  if (datasetLabel === "OncRef Unified") {
+    return "Prism_oncology_unified_AUC";
+  }
+
   return "Unknown";
 };
 
 export const COMPOUND_DASHBOARD_DATASET_IDS = [
-  "Rep_all_single_pt",
-  "Prism_oncology_AUC",
+  "Prism_oncology_unified_AUC",
   "Prism_oncology_seq_AUC",
+  "Prism_oncology_AUC",
+  "Rep_all_single_pt",
 ];

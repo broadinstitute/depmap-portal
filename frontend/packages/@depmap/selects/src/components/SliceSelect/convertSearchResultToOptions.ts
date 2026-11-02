@@ -6,19 +6,20 @@ import {
   fetchDatasetName,
 } from "./api-helpers";
 
-async function fetchDataTypeCompatibleIds(
+export async function fetchDataTypeCompatibleIds(
   slice_type: string,
   dataType: string | null
 ) {
-  const ids = await fetchDimensionIdentifiers(
-    slice_type,
-    dataType || undefined
-  );
+  let ids = await fetchDimensionIdentifiers(slice_type, dataType);
+
+  if (ids.length === 0) {
+    ids = await fetchDimensionIdentifiers(slice_type);
+  }
 
   return new Set(ids.map(({ id }) => id));
 }
 
-async function fetchDataVersionCompatibleIds(
+export async function fetchDataVersionCompatibleIds(
   slice_type: string,
   dataset_id: string | null
 ) {
@@ -31,6 +32,94 @@ async function fetchDataVersionCompatibleIds(
 }
 
 const chainLength = (str: string) => str.split(".").length;
+
+function computeDisabledState(
+  id: string,
+  dataTypeCompatibleIds: Set<string>,
+  dataVersionCompatibleIds: Set<string> | null,
+  dataType: string | null,
+  dimensionTypeDisplayName: string,
+  datasetName: string
+) {
+  if (!dataTypeCompatibleIds.has(id)) {
+    return {
+      isDisabled: true,
+      disabledReason: [
+        `The data type "${dataType}"`,
+        "has no data versions with this",
+        dimensionTypeDisplayName,
+      ].join(" "),
+    };
+  }
+
+  if (dataVersionCompatibleIds && !dataVersionCompatibleIds.has(id)) {
+    return {
+      isDisabled: true,
+      disabledReason: [
+        "The data version",
+        `"${datasetName}"`,
+        "doesn’t include this",
+        dimensionTypeDisplayName,
+      ].join(" "),
+    };
+  }
+
+  return { isDisabled: false, disabledReason: "" };
+}
+
+/**
+ * Determines whether a single, already-known identifier (typically the
+ * component's current `value`) is compatible with the given data type /
+ * dataset. Unlike `convertSearchResultToOptions`, this doesn't require the
+ * identifier to be present in a (possibly truncated) options list, so it's
+ * safe to use for validating a value even when `defaultOptions` only
+ * contains a small sample of all identifiers.
+ */
+export async function checkValueCompatibility(
+  id: string,
+  slice_type: string,
+  dataType: string | null,
+  dataset_id: string | null
+) {
+  const [
+    dataTypeCompatibleIds,
+    dataVersionCompatibleIds,
+    dimensionTypeDisplayName,
+    datasetName,
+    allIdentifiers,
+  ] = await Promise.all([
+    fetchDataTypeCompatibleIds(slice_type, dataType),
+    fetchDataVersionCompatibleIds(slice_type, dataset_id),
+    fetchDimensionTypeDisplayName(slice_type),
+    fetchDatasetName(dataset_id),
+    fetchDimensionIdentifiers(slice_type),
+  ]);
+
+  // A context may identify a slice by something other than its given ID (for
+  // example `entity_label` mapped to a "label" metadata column). In that case
+  // `id` is really a label, so resolve it to the actual identifier before
+  // checking compatibility.
+  let resolvedId = id;
+
+  if (!allIdentifiers.some((identifier) => identifier.id === id)) {
+    const labelMatches = allIdentifiers.filter(
+      (identifier) => identifier.label === id
+    );
+
+    if (labelMatches.length === 1) {
+      resolvedId = labelMatches[0].id;
+    }
+  }
+
+  return computeDisabledState(
+    resolvedId,
+    dataTypeCompatibleIds,
+    dataVersionCompatibleIds,
+    dataType,
+    dimensionTypeDisplayName,
+    datasetName
+  );
+}
 
 async function convertSearchResultToOptions(
   tokens: string[],
@@ -63,30 +152,14 @@ async function convertSearchResultToOptions(
 
   return result
     .map(({ id, label, matching_properties }) => {
-      let isDisabled = false;
-      let disabledReason = "";
-
-      if (!dataTypeCompatibleIds.has(id)) {
-        isDisabled = true;
-
-        disabledReason = [
-          `The data type "${dataType}"`,
-          "has no data versions with this",
-          dimensionTypeDisplayName,
-        ].join(" ");
-      } else if (
-        dataVersionCompatibleIds &&
-        !dataVersionCompatibleIds.has(id)
-      ) {
-        isDisabled = true;
-
-        disabledReason = [
-          "The data version",
-          `"${datasetName}"`,
-          "doesn’t include this",
-          dimensionTypeDisplayName,
-        ].join(" ");
-      }
+      const { isDisabled, disabledReason } = computeDisabledState(
+        id,
+        dataTypeCompatibleIds,
+        dataVersionCompatibleIds,
+        dataType,
+        dimensionTypeDisplayName,
+        datasetName
+      );
 
       const groupedProps: Record<string, Set<string>> = {};
 
@@ -159,11 +232,14 @@ async function convertSearchResultToOptions(
         return labelA < labelB ? -1 : 1;
       }
 
-      const indexA = tokens.reduce(
+      // The labels are lowercased above, so the tokens must be too.
+      const lowercaseTokens = tokens.map((token) => token.toLowerCase());
+
+      const indexA = lowercaseTokens.reduce(
         (sum, token) => labelA.indexOf(token) + sum,
         0
       );
-      const indexB = tokens.reduce(
+      const indexB = lowercaseTokens.reduce(
         (sum, token) => labelB.indexOf(token) + sum,
         0
       );

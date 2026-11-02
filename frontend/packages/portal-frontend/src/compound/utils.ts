@@ -126,28 +126,6 @@ export function getFullUrlPrefix(): string {
   return `${window.location.protocol}//${window.location.host}${relativePrefix}`;
 }
 
-/**
- * Generates a color based on correlation value (-1 to 1).
- * Positive: Light red to Dark red. Negative: Light blue to Dark blue.
- */
-export const getCorrelationColor = (val: number): string => {
-  const clamp = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
-
-  if (val >= 0) {
-    return `rgb(${clamp(255 - 105 * val)}, ${clamp(200 - 200 * val)}, ${clamp(
-      200 - 200 * val
-    )})`;
-  }
-
-  // Linear interpolation between Light Blue and Dark Blue
-  const factor = -val;
-  const r = 189 + (0 - 189) * factor;
-  const g = 216 + (117 - 216) * factor;
-  const b = 246 + (250 - 246) * factor;
-
-  return `rgba(${clamp(r)}, ${clamp(g)}, ${clamp(b)}, 1)`;
-};
-
 export function groupBy(
   array: Array<CurvePlotPoints>,
   prop: keyof CurvePlotPoints

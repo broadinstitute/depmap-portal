@@ -42,7 +42,11 @@ check_bad_names(mat.index)
 print(np.sum(mat.isna().values))  # Print the total count of NaN values in the matrix
 
 print("Transposing")
+print("before t Columns in ds: ", set(mat.dtypes))
 mat = mat.transpose()
+print("after t Columns in ds: ", set(mat.dtypes))
+mat = mat.astype("float")
+print("after t Columns in ds: ", set(mat.dtypes))
 
 # Sanity check we've got approximately the right number of genes left
 if not (15000 < len(mat) < 31000):

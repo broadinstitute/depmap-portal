@@ -354,10 +354,25 @@ export function TableCell<T>({
     let renderedContent: React.ReactNode;
 
     if (typeof columnDef.cell === "function") {
-      // Invoke the cell renderer function directly to get the actual elements
-      renderedContent = columnDef.cell(cellContext);
+      // Invoke the cell renderer function directly to get the actual elements.
+      // `columnStats` is passed alongside the usual context so a renderer can
+      // draw its value at a scale shared with the rest of the column -- the
+      // same aggregate the magnitude bars use, and the only way a cell can
+      // know anything about its neighbours.
+      // Built as a variable rather than passed inline: an object literal at
+      // the call site is "fresh", and TypeScript rejects the extra property
+      // against ReactTable's CellContext. Widening the context type upstream
+      // is not ours to do, and a cast would hide a real mismatch if that type
+      // ever changes.
+      const contextWithStats = { ...cellContext, columnStats: colStats };
+
+      renderedContent = columnDef.cell(contextWithStats);
     } else {
-      renderedContent = flexRender(columnDef.cell, cellContext);
+      // No custom `cell` (see useTableInstance's `defaultColumn`, which
+      // deliberately suppresses TanStack's own default renderer here so
+      // `columnDef.cell` reliably means "this column renders itself").
+      // Replicate that suppressed default: plain stringified value.
+      renderedContent = rawValue == null ? null : String(rawValue);
     }
 
     // If we should highlight, recursively walk the rendered content
@@ -373,10 +388,19 @@ export function TableCell<T>({
     return renderedContent;
   };
 
+  // The truncation tooltip shows the cell's RAW VALUE, which is only the right
+  // thing to show when the cell is displaying that value as text and ran out of
+  // room. A column that renders its value as something else entirely -- a
+  // graphic, say -- opts out here, because for it the tooltip would reveal a
+  // string the user never saw and never wanted to see.
+  const suppressValueTooltip = Boolean(
+    (cell.column.columnDef.meta as any)?.suppressValueTooltip
+  );
+
   return (
     <CellTooltipWrapper
       cell={cell}
-      shouldShow={isTruncated}
+      shouldShow={isTruncated && !suppressValueTooltip}
       searchQuery={searchQuery}
       isCurrentMatch={highlightStatus.isCurrentMatch}
     >

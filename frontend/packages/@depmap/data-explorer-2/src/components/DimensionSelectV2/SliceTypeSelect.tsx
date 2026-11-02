@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Tooltip, WordBreaker } from "@depmap/common-components";
-import {
-  isSampleTypeSync,
-  pluralize,
-  useDimensionType,
-} from "../../utils/misc";
+import { isSampleTypeSync, useDimensionType } from "../../utils/misc";
+import { pluralize } from "../../utils/dimensionHelpers";
 import {
   State,
   SLICE_TYPE_NULL,

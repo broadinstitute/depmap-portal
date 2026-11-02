@@ -21,7 +21,16 @@ const OncogenicAlterationsTile = ({
   const hasSomeAcquiredAlterations =
     acquiredAlterations && acquiredAlterations.size > 0;
 
-  const tableRows = oncogenicAlterations.map((alteration) => {
+  const dedupedAlterations = Array.from(
+    oncogenicAlterations
+      .reduce((acc, alteration) => {
+        acc.set(altKey(alteration), alteration);
+        return acc;
+      }, new Map())
+      .values()
+  );
+
+  const tableRows = dedupedAlterations.map((alteration) => {
     const key = altKey(alteration);
     const isAcquired = acquiredAlterations?.has(key) ?? false;
 

@@ -9,6 +9,12 @@ import { isPortal, toPortalLink } from "@depmap/globals";
 import { serializeSliceQuery } from "@depmap/selects";
 import Papa from "papaparse";
 import type { Dataset, DimensionType, SliceQuery } from "@depmap/types";
+import {
+  getProteinStripScale,
+  proteinStripCell,
+  proteinStripHeader,
+  PROTEIN_STRIP_COLUMN_WIDTH,
+} from "./ProteinStrip";
 
 export interface ColumnDisplayOptions {
   header?: ({
@@ -18,7 +24,13 @@ export interface ColumnDisplayOptions {
     label: string;
     defaultElement: React.ReactNode;
   }) => React.ReactNode;
-  cell?: ({ getValue }: { getValue: () => unknown }) => React.ReactNode;
+  // `columnStats` is supplied by the table, not the row -- the same aggregate
+  // the magnitude bars use. A renderer that draws its value at a scale shared
+  // with the rest of the column reads it; everything else ignores it.
+  cell?: (args: {
+    getValue: () => unknown;
+    columnStats?: { min: number; max: number; maxLength?: number };
+  }) => React.ReactNode;
   numericPrecision?: number;
   width?: number;
 }
@@ -27,15 +39,28 @@ interface Parameters {
   index_type_name: string;
   slices: SliceQuery[]; // Make sure to memoize this!
   viewOnlySlices?: Set<SliceQuery>; // Make sure to memoize this!
+  // The table's universe of rows, when the caller already knows it. Scopes every
+  // fetch instead of pulling whole columns and discarding most of them — the
+  // per-residue annotation columns run to tens of megabytes each, and a table
+  // over one gene wants a handful of rows out of them.
+  rowIds?: Set<string>; // Make sure to memoize this!
   getColumnDisplayOptions?: (
     sliceQuery: SliceQuery
   ) => ColumnDisplayOptions | null;
+  // Bumped by SliceTable's "Try again" button. It's a dependency of the fetch
+  // effect and nothing else, which is what makes a retry refetch even when the
+  // request is identical to the one that just failed — the common case, since a
+  // caller whose slices are a stable array (an imported JSON list, say) gives
+  // this hook nothing else that changes.
+  retryToken?: number;
 }
 
 // Types for better code clarity
 export type SliceResponse = {
   ids: string[];
-  labels: string[];
+  // Not requested by SliceTable (it labels rows from the index type's label
+  // column), so a real response won't have it.
+  labels?: string[];
   values: (string | number | null)[];
 };
 type ColumnRenames = Record<string, string>;
@@ -71,6 +96,7 @@ interface AlignedData {
       isViewable: boolean;
       loadFailure?: SliceLoadFailure;
       numericPrecision?: number;
+      suppressValueTooltip?: boolean;
       headerMenuItems?: (
         | {
             label: string;
@@ -86,6 +112,10 @@ interface AlignedData {
   }>;
   data: Record<string, string | number | undefined>[];
   loading: boolean;
+  // Non-null only while this hook's own fetch is in flight, so a consumer can
+  // tell it apart from loading for some other reason. `total` counts the
+  // slices being fetched, including the label slice at index 0.
+  progress: { loaded: number; total: number } | null;
   error: string | null;
   entityLabel: string;
   exportToCsv: (options?: {
@@ -252,9 +282,30 @@ function buildSlicesToFetch(
  * This handles all slice types uniformly — tabular columns, matrix
  * features/samples, and reindex_through chains — by delegating to
  * the backend's dimension data endpoint.
+ *
+ * `rowIds` scopes the request to a caller-supplied row set (see `rowIds` in
+ * SliceTable's props). It only applies to plain tabular columns: the backend
+ * rejects indices alongside `reindex_through`, since the IDs would be ambiguous
+ * between the root and the leaf of the chain, and matrix slices are addressed by
+ * dimension rather than by row. Those keep fetching whole, which is what they did
+ * before this existed.
  */
-function createDataFetchPromise(slice: SliceQuery): Promise<SliceResponse> {
-  return cached(breadboxAPI, { persist: true }).getDimensionData(slice);
+function canSubsetSlice(slice: SliceQuery): boolean {
+  return slice.identifier_type === "column" && !slice.reindex_through;
+}
+
+function createDataFetchPromise(
+  slice: SliceQuery,
+  rowIds?: string[]
+): Promise<SliceResponse> {
+  return cached(breadboxAPI, { persist: true }).getDimensionData(
+    slice,
+    rowIds && canSubsetSlice(slice) ? rowIds : undefined,
+    // The per-row labels are the same for every column and SliceTable never reads
+    // them, so skip them: for a big type like `transcript` that is a third of the
+    // payload per column.
+    { fields: ["ids", "values"] }
+  );
 }
 
 /**
@@ -377,7 +428,10 @@ export function transformToTableData(
   getColumnDisplayOptions?: Parameters["getColumnDisplayOptions"],
   // Aligned with `slices`. A failed slice gets a stub column (header names
   // the problem, cells stay empty) rather than failing the whole table.
-  failures?: (SliceLoadFailure | null)[]
+  failures?: (SliceLoadFailure | null)[],
+  // True when the caller scoped the table with `rowIds`. Only narrows which
+  // slices get the foreign-ID diagnostic below — dropping is unchanged.
+  isScoped = false
 ) {
   // Step 1: Create unique column keys, validate IDs, and key data by ID.
   //
@@ -389,6 +443,14 @@ export function transformToTableData(
   // coherent) and log loudly so the bug isn't invisible. This usually
   // means a slice that should have been wrapped in `reindex_through`
   // wasn't, or the backend returned IDs in the wrong space.
+  //
+  // Except for the slices a scoped table could not narrow. Under `rowIds` only
+  // plain tabular columns come back subsetted; a matrix slice or a
+  // reindex_through chain still returns the whole dimension type, so every row
+  // outside the scope is "foreign" by this test. Those are dropped exactly as
+  // before — they are outside the table's universe — but they are expected, not
+  // a bug, and the diagnostic would be pure noise. A slice that *was* subsetted
+  // is still checked: if that one comes back out of scope, something is wrong.
   const columnKeys = slices.map(createUniqueColumnKey);
   const labelIds = new Set(dataResponses[0].ids);
   const columnData: Record<string, Record<string, string | number | null>> = {};
@@ -398,7 +460,7 @@ export function transformToTableData(
     const uniqueKey = columnKeys[index];
     const keyed: Record<string, string | number | null> = {};
 
-    if (index > 0) {
+    if (index > 0 && (!isScoped || canSubsetSlice(slices[index]))) {
       const foreign = response.ids.filter((id) => !labelIds.has(id));
       if (foreign.length > 0) {
         const slice = slices[index];
@@ -584,9 +646,18 @@ export function transformToTableData(
       ? getColumnDisplayOptions(slice)
       : null;
 
+    // Non-null for the handful of columns that hold one character per residue,
+    // which are unreadable as text and render as a colored band instead. Looked
+    // up here rather than left to each consumer so that every SliceTable gets
+    // it -- the columns are addable from the "Add Column" menu of any table
+    // over the right index type, and a band that only appeared in the one table
+    // that remembered to wire it up would be the odd behaviour to explain.
+    const stripScale = getProteinStripScale(slice);
+
     return {
       size:
         displayOptions?.width ??
+        (stripScale ? PROTEIN_STRIP_COLUMN_WIDTH : undefined) ??
         (columnKey === "label" ? ID_AND_LABEL_COLUMN_SIZE : undefined),
       id: columnKey,
       meta: {
@@ -600,6 +671,11 @@ export function transformToTableData(
           .filter(Boolean)
           .join(" | "),
         sliceQuery: slice,
+        // The band replaces the value rather than abbreviating it, so the
+        // table's truncation tooltip has nothing useful to say -- it would pop
+        // up the several-hundred-character string the band exists to spare the
+        // reader.
+        ...(stripScale && { suppressValueTooltip: true }),
         ...(displayOptions?.numericPrecision != null && {
           numericPrecision: displayOptions.numericPrecision,
         }),
@@ -618,18 +694,33 @@ export function transformToTableData(
           </div>
         );
 
-        return displayOptions?.header
-          ? displayOptions.header({
-              label: displayLabel,
-              defaultElement,
-            })
-          : defaultElement;
+        if (displayOptions?.header) {
+          return displayOptions.header({
+            label: displayLabel,
+            defaultElement,
+          });
+        }
+
+        // The band needs its key in the header, since some of its colors are
+        // too low-contrast to carry meaning on their own.
+        if (stripScale) {
+          return proteinStripHeader(stripScale)({ defaultElement });
+        }
+
+        return defaultElement;
       },
       // Custom cell renderer from getColumnDisplayOptions takes highest priority.
       // When provided, it fully overrides the cell (magnitude bars won't apply).
       ...(displayOptions?.cell && {
         cell: displayOptions.cell,
       }),
+      // Built-in cell renderer for per-residue strings (only if no custom
+      // cell). Ahead of the others because a column that qualifies is never
+      // also a reference or a string list.
+      ...(!displayOptions?.cell &&
+        stripScale && {
+          cell: proteinStripCell(stripScale),
+        }),
       // Built-in cell renderer for linkable references (only if no custom cell).
       ...(!displayOptions?.cell &&
         isLinkable(references) && {
@@ -669,6 +760,71 @@ export function transformToTableData(
   };
 }
 
+type TableRow = Record<string, string | number | undefined>;
+
+/**
+ * Fold a freshly built row set into the previous one when the two describe the
+ * same rows, returning the PREVIOUS array so its identity is preserved.
+ *
+ * TanStack memoizes its row model on the `data` array's identity, and building
+ * that model costs roughly 4.7us per row — 1.4s for a 300K-row table, which is
+ * 87% of what adding a column used to cost. Adding or removing a column does
+ * not change which rows exist, only what each one holds, so returning a new
+ * array makes TanStack discard 300K `Row` objects and rebuild identical ones.
+ *
+ * Every value is rewritten, not just the columns that appear to have changed.
+ * Rewriting all of them costs 41ms against the 1.4s rebuild it avoids, and it
+ * means a slice whose values really did change cannot leave a stale cell
+ * behind. Keys belonging to removed columns are deleted, so consumers that
+ * enumerate a row (`hideIncompleteRows` walks `Object.entries`) don't see a
+ * column that is no longer displayed.
+ *
+ * Any difference in the row set at all — a different index type, an added or
+ * removed row, a reordering — falls back to the new array, since then the row
+ * model genuinely does have to be rebuilt.
+ *
+ * One caveat, and the reason this is safe here specifically: a reused `Row`
+ * keeps TanStack's `_valuesCache`, so a cell that was already rendered would
+ * keep its old value if the underlying response changed. Breadbox responses
+ * are immutable at their dataset address — the same invariant the persistent
+ * API cache is built on (see persistentApiCache.ts) — so within a session the
+ * same slice cannot come back with different values.
+ */
+export function reconcileRows(
+  prev: TableRow[] | null,
+  next: TableRow[]
+): TableRow[] {
+  if (!prev || prev.length === 0 || prev.length !== next.length) {
+    return next;
+  }
+
+  for (let i = 0; i < next.length; i += 1) {
+    if (prev[i].id !== next[i].id) {
+      return next;
+    }
+  }
+
+  // Every row carries every column key (transformToTableData assigns
+  // `undefined` rather than skipping), so one row is a faithful sample.
+  const nextKeys = Object.keys(next[0]);
+  const staleKeys = Object.keys(prev[0]).filter((k) => !nextKeys.includes(k));
+
+  for (let i = 0; i < prev.length; i += 1) {
+    const target = prev[i];
+    const source = next[i];
+
+    for (let k = 0; k < nextKeys.length; k += 1) {
+      target[nextKeys[k]] = source[nextKeys[k]];
+    }
+
+    for (let k = 0; k < staleKeys.length; k += 1) {
+      delete target[staleKeys[k]];
+    }
+  }
+
+  return prev;
+}
+
 /**
  * Custom hook for aligning disparate data slices to a shared index.
  *
@@ -686,7 +842,9 @@ export default function useAlignedData({
   index_type_name,
   slices,
   viewOnlySlices = undefined,
+  rowIds = undefined,
   getColumnDisplayOptions = undefined,
+  retryToken = 0,
 }: Parameters): AlignedData {
   const [state, setState] = useState<AlignedData>({
     columns: [],
@@ -697,6 +855,7 @@ export default function useAlignedData({
     // invisible when every load took a network round trip; with persistent-
     // cache hits it can be most of what the user sees.
     loading: true,
+    progress: null,
     error: null,
     entityLabel: "",
     exportToCsv: () => "",
@@ -705,6 +864,10 @@ export default function useAlignedData({
   // Use refs to store metadata that triggers the data fetch effect
   const indexTypeRef = useRef<DimensionType | null>(null);
   const idColumnDisplayNameRef = useRef<string>("");
+
+  // The row array handed to the table last time, so a column change can reuse
+  // it instead of forcing a full row-model rebuild. See `reconcileRows`.
+  const prevRowsRef = useRef<TableRow[] | null>(null);
 
   // Create CSV export callback that has access to current state.
   // Accepts an optional rowFilter to export only visible rows, or
@@ -720,7 +883,7 @@ export default function useAlignedData({
         selectedRowIds?: Set<string>;
         columns?: {
           id: string;
-          meta: { csvHeader: string };
+          meta: { csvHeader: string; numericPrecision?: number };
           accessorFn: (
             row: Record<string, string | number | undefined>
           ) => unknown;
@@ -787,6 +950,13 @@ export default function useAlignedData({
           if (value === null || value === undefined) {
             return "";
           }
+          // Match what's shown on screen (see TableCell's formatNumber).
+          if (
+            typeof value === "number" &&
+            column.meta.numericPrecision != null
+          ) {
+            return value.toFixed(column.meta.numericPrecision);
+          }
           return String(value);
         });
 
@@ -814,7 +984,12 @@ export default function useAlignedData({
     let isCancelled = false;
 
     const loadData = async () => {
-      setState((prev) => ({ ...prev, loading: true, error: null }));
+      setState((prev) => ({
+        ...prev,
+        loading: true,
+        progress: null,
+        error: null,
+      }));
 
       try {
         // Step 1: Load index type metadata
@@ -873,45 +1048,85 @@ export default function useAlignedData({
           values: [],
         };
 
-        // Step 3: Load data. A single slice's failure degrades to a stub
-        // column rather than rejecting the whole table.
-        const dataResponses = await Promise.all(
-          slicesToFetch.map((slice, i) => {
-            if (failures[i]) {
-              return Promise.resolve(EMPTY_RESPONSE);
-            }
+        setState((prev) => ({
+          ...prev,
+          progress: { loaded: 0, total: slicesToFetch.length },
+        }));
 
-            if (i === 0) {
-              return createDataFetchPromise(slice);
-            }
+        // Materialized once rather than per slice: `indices` lands in the request
+        // body, which is the persistent cache key, so a stable order across slices
+        // (and across reloads) is what makes those keys hit.
+        const indices = rowIds ? Array.from(rowIds).sort() : undefined;
 
-            return createDataFetchPromise(slice).catch((e) => {
-              window.console.warn(
-                "[SliceTable] failed to load slice",
+        let loaded = 0;
+        const onSliceSettled = () => {
+          loaded += 1;
+
+          if (isCancelled) {
+            return;
+          }
+
+          setState((prev) =>
+            prev.progress
+              ? { ...prev, progress: { ...prev.progress, loaded } }
+              : prev
+          );
+        };
+
+        // Step 3: Load each slice's data and its display label together. A
+        // single slice's failure degrades to a stub column rather than
+        // rejecting the whole table.
+        //
+        // The two run concurrently rather than as sequential passes, since
+        // label resolution costs a request for matrix feature/sample slices
+        // and used to start only after every column's data had landed.
+        const settled = await Promise.all(
+          slicesToFetch.map(
+            (slice, i): Promise<[SliceResponse, string]> => {
+              if (failures[i]) {
+                onSliceSettled();
+                return Promise.resolve([
+                  EMPTY_RESPONSE,
+                  fallbackDisplayLabel(slice),
+                ]);
+              }
+
+              // Index 0 is the label slice: without it there are no rows, so it
+              // keeps no `.catch` and fails the whole table via the outer try.
+              const dataPromise =
+                i === 0
+                  ? createDataFetchPromise(slice, indices)
+                  : createDataFetchPromise(slice, indices).catch((e) => {
+                      window.console.warn(
+                        "[SliceTable] failed to load slice",
+                        slice,
+                        e
+                      );
+                      failures[i] = "fetch_failed";
+                      return EMPTY_RESPONSE;
+                    });
+
+              const labelPromise = resolveDisplayLabel(
                 slice,
-                e
+                indexType
+              ).catch(() => fallbackDisplayLabel(slice));
+
+              return Promise.all([dataPromise, labelPromise]).finally(
+                onSliceSettled
               );
-              failures[i] = "fetch_failed";
-              return EMPTY_RESPONSE;
-            });
-          })
-        );
-
-        if (isCancelled) return;
-
-        // Resolve display labels for each slice. Failed slices fall back to
-        // their raw identifiers rather than issuing more doomed requests.
-        const displayLabels = await Promise.all(
-          slicesToFetch.map((slice, i) =>
-            failures[i]
-              ? Promise.resolve(fallbackDisplayLabel(slice))
-              : resolveDisplayLabel(slice, indexType).catch(() =>
-                  fallbackDisplayLabel(slice)
-                )
+            }
           )
         );
 
         if (isCancelled) return;
+
+        const dataResponses = settled.map(([response]) => response);
+
+        // A slice that failed after its label resolution was already under way
+        // still reports raw identifiers, matching the stub column's header.
+        const displayLabels = settled.map(([, label], i) =>
+          failures[i] ? fallbackDisplayLabel(slicesToFetch[i]) : label
+        );
 
         // Grab the sample/feature labels for any referenced types
         const idToLabelMappings = {} as Record<string, Record<string, string>>;
@@ -956,15 +1171,20 @@ export default function useAlignedData({
           labelColumnDisplayName,
           idToLabelMappings,
           getColumnDisplayOptions,
-          failures
+          failures,
+          rowIds !== undefined
         );
+
+        const reconciledData = reconcileRows(prevRowsRef.current, data);
+        prevRowsRef.current = reconciledData;
 
         setState((prev) => ({
           ...prev,
-          data,
+          data: reconciledData,
           columns,
           entityLabel: indexType.display_name || indexType.name,
           loading: false,
+          progress: null,
           error: null,
         }));
       } catch (error) {
@@ -976,6 +1196,7 @@ export default function useAlignedData({
           setState((prev) => ({
             ...prev,
             loading: false,
+            progress: null,
             error: `Failed to load data: ${errorMessage}`,
           }));
         }
@@ -987,12 +1208,22 @@ export default function useAlignedData({
     return () => {
       isCancelled = true;
     };
-  }, [getColumnDisplayOptions, index_type_name, slices, viewOnlySlices]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    getColumnDisplayOptions,
+    index_type_name,
+    slices,
+    viewOnlySlices,
+    rowIds,
+    // Not read by `loadData` — see `retryToken`'s comment above.
+    retryToken,
+  ]);
 
   return {
     columns: state.columns,
     data: state.data,
     loading: state.loading,
+    progress: state.progress,
     error: state.error,
     entityLabel: state.entityLabel,
     exportToCsv,

@@ -1,0 +1,12 @@
+// Flagged from the pixel value the export would actually use, not from the
+// browser's own validity — see the component's comment on why `:invalid` is
+// the wrong test here.
+.outOfRange {
+  border-color: #a94442;
+  background-color: #fdf7f7;
+
+  &:focus {
+    border-color: #843534;
+    outline-color: #a94442;
+  }
+}

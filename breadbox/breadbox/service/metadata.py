@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional
+from typing import Any, Collection, Optional
 
 from breadbox.crud import dataset as dataset_crud
 from breadbox.crud import dimension_types as types_crud
@@ -36,17 +36,30 @@ log = logging.getLogger(__name__)
 
 
 def get_tabular_dataset_metadata_annotations(
-    db: SessionWithUser, dataset: TabularDataset, metadata_col_name: str,
+    db: SessionWithUser,
+    dataset: TabularDataset,
+    metadata_col_name: str,
+    given_ids: Optional[Collection[str]] = None,
 ) -> dict[str, Any]:
     """
     For the given tabular dataset, load a column from the associated metadata.
     Return a dictionary of values keyed by given id.
     Note: this should work regardless of whether or not the given dataset IS metadata
     or HAS metadata.
+    If `given_ids` is provided, only those ids are looked up (and, as always, only
+    ids belonging to this dataset are returned), which avoids scanning the whole
+    metadata column.
     """
     full_metadata_col = types_crud.get_dimension_type_metadata_col(
-        db, dimension_type_name=dataset.index_type_name, col_name=metadata_col_name
+        db,
+        dimension_type_name=dataset.index_type_name,
+        col_name=metadata_col_name,
+        given_ids=given_ids,
     )
+    if given_ids is not None:
+        # The caller has already narrowed to ids present in the dataset; the
+        # whole-index scan below is only needed to intersect an unscoped column.
+        return {id: val for id, val in full_metadata_col.items() if val is not None}
     # Filter the metadata to only include the given IDs belonging to this dataset
     dataset_index_given_ids = get_tabular_dataset_index_given_ids(db, dataset)
     filtered_metadata_vals = {}
@@ -109,30 +122,42 @@ def get_matrix_dataset_sample_labels_by_id(
 
 
 def get_tabular_dataset_labels_by_id(
-    db: SessionWithUser, dataset: TabularDataset,
+    db: SessionWithUser,
+    dataset: TabularDataset,
+    given_ids: Optional[Collection[str]] = None,
 ) -> dict[str, str]:
     """
     For the index (rows) of a tabular dataset, load the relevant labels from metadata.
     This should only include the labels that overlap between the dataset and its metadata.
     If there are no labels in the metadata or there is no metadata, then just return the given IDs as labels.
+
+    `given_ids` optionally scopes the lookup to ids the caller knows belong to the
+    dataset (e.g. the rows of an already-loaded slice).
     """
     metadata_labels = get_tabular_dataset_metadata_annotations(
-        db=db, dataset=dataset, metadata_col_name="label"
+        db=db, dataset=dataset, metadata_col_name="label", given_ids=given_ids
     )
     if metadata_labels:
         return metadata_labels
+    if given_ids is not None:
+        # None of the requested ids has a label. Whether the dataset falls back to
+        # given ids depends on the whole dataset, so defer to the unscoped lookup.
+        return get_tabular_dataset_labels_by_id(db, dataset)
     else:
         dataset_index_given_ids = get_tabular_dataset_index_given_ids(db, dataset)
         return {given_id: given_id for given_id in dataset_index_given_ids}
 
 
 def get_labels_for_slice_type(
-    db: SessionWithUser, slice_query: SliceQuery
+    db: SessionWithUser,
+    slice_query: SliceQuery,
+    given_ids: Optional[Collection[str]] = None,
 ) -> dict[str, str]:
     """
     For the given slice query identifier type, get a dictionary of all the dataset labels and IDs
     that should be used to index the resulting slice.
     If the identifier type does not have labels, return None.
+    `given_ids` optionally scopes tabular lookups to ids known to be in the dataset.
     """
     dataset = dataset_crud.get_dataset(db, db.user, slice_query.dataset_id)
     if dataset is None:
@@ -143,7 +168,7 @@ def get_labels_for_slice_type(
     elif slice_query.identifier_type in {"sample_label", "sample_id"}:
         return get_matrix_dataset_feature_labels_by_id(db, db.user, dataset)
     elif slice_query.identifier_type == "column":
-        return get_tabular_dataset_labels_by_id(db, dataset)
+        return get_tabular_dataset_labels_by_id(db, dataset, given_ids)
     else:
         raise ResourceNotFoundError(
             f"Unknown identifier type: '{slice_query.identifier_type}'"

@@ -260,11 +260,23 @@ change to either as a change to both.**
 
 ### Coverage is an optional input, deliberately
 
-Ranking Data Version options by how much of the context a dataset actually contains needs
-Breadbox's `POST /temp/context/dataset-coverage`. `fetchContextCoverage` catches and returns
-null, so a Breadbox without that endpoint degrades to the old priority-only ordering rather
-than breaking dataset selection. That is what makes the deploy order not matter — keep it
-that way.
+Knowing how much of the context a dataset actually contains needs Breadbox's
+`POST /temp/context/dataset-coverage`. `fetchContextCoverage` returns null for both a thrown
+error and an empty result, so a Breadbox without that endpoint degrades to plain `priority`
+ordering rather than breaking dataset selection. That is what makes the deploy order not
+matter — keep it that way.
+
+Both halves of that null are load-bearing. `getContextDatasetCoverage` answers a failure with
+`{ counts: {}, total: 0 }` rather than throwing, so catching alone is not enough: read
+literally, a zero total says every dataset covers none of the context, which disables every
+version and strands the user. Treating it as "no opinion" is what actually delivers the
+degradation promised above.
+
+Coverage **gates**; `priority` ranks. Coverage decides only whether a version holds enough of
+the context to answer the question at all, and a version below that floor is ordered last
+rather than removed — the distinction drawn in "A ranking may deprioritize; it must never
+disqualify" above. An earlier revision ranked by coverage outright, which overrode the curated
+order on trivial differences; don't reintroduce that.
 
 ## Related
 

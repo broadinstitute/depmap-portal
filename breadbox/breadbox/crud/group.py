@@ -9,6 +9,7 @@ from breadbox.crud.access_control import (
     user_can_view_group_contents,
     TRANSIENT_GROUP_ID,
 )
+from breadbox.crud.cache_invalidation import GET_DATASETS, invalidate_cache_keys
 from breadbox.db.session import SessionWithUser
 from breadbox.models.group import AccessType, Group, GroupEntry
 from breadbox.models.dataset import Dataset
@@ -60,6 +61,19 @@ def get_groups_with_visible_contents(db: SessionWithUser, user: str) -> list[Gro
     return [
         group for group in visible_groups if user_can_view_group_contents(group, user)
     ]
+
+
+def get_group_ids_with_visible_contents(db: SessionWithUser, user: str) -> list[str]:
+    """
+    A trivial helper wrapping get_groups_with_visible_contents so that we only return a list of IDs
+    if that's all that the caller needs. This is trivial, but I put it into it's own function
+    to make the contract explict that the caller only cares about the IDs. (We could likely make 
+    the implementation more efficient by introducing some caching, and this function would
+    be the place to do so.)
+    """
+    groups = get_groups_with_visible_contents(db, user)
+    group_ids = [group.id for group in groups]
+    return group_ids
 
 
 def get_group_by_name(
@@ -132,6 +146,8 @@ def add_group(db: SessionWithUser, user: str, group_in: GroupIn, id=None):
     db.add(group_entry)
 
     db.flush()
+    # groups and group entries control which datasets a user can see
+    invalidate_cache_keys(db, GET_DATASETS)
     return group
 
 
@@ -154,6 +170,7 @@ def delete_group(db: SessionWithUser, user: str, group: Group):
     db.delete(group)
 
     db.flush()
+    invalidate_cache_keys(db, GET_DATASETS)
 
     return True
 
@@ -179,6 +196,7 @@ def add_group_entry(
 
     db.add(group_entry)
     db.flush()
+    invalidate_cache_keys(db, GET_DATASETS)
     return group_entry
 
 
@@ -219,4 +237,5 @@ def delete_group_entry(db: SessionWithUser, user: str, group_entry_id: str):
 
     db.query(GroupEntry).filter(GroupEntry.id == group_entry_id).delete()
     db.flush()
+    invalidate_cache_keys(db, GET_DATASETS)
     return True

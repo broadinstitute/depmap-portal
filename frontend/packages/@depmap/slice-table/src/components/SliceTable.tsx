@@ -1,5 +1,12 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import cx from "classnames";
+import type { Button } from "react-bootstrap";
 import { Spinner } from "@depmap/common-components";
 import ReactTable from "@depmap/react-table";
 import type { RowSelectionState, SortingState } from "@depmap/react-table";
@@ -8,6 +15,7 @@ import { PlotlyLoaderProvider } from "@depmap/data-explorer-2";
 import Controls from "./Controls";
 import rowSelectionChanged from "./rowSelectionChanged";
 import Actions from "./Actions";
+import LoadingProgress from "./LoadingProgress";
 import {
   useSliceTableState,
   filterPredicate,
@@ -37,6 +45,17 @@ interface Props {
     initialRowSelection?: RowSelectionState;
   };
   onChangeSlices?: (nextSlices: SliceQuery[]) => void;
+  // Called when the table fails to load outright — it couldn't even build its
+  // index — in addition to (not instead of) the error the table renders itself.
+  // A single column failing to load doesn't come through here; that degrades to
+  // a stub column and leaves the rest of the table usable.
+  //
+  // For callers that persist their column choice: a set that fails to load will
+  // keep failing to load, so this is the hook for throwing the persisted set
+  // away. The "Try again" button rendered alongside the error re-reads
+  // `getInitialState` for exactly that reason, so whatever this callback
+  // discards is gone by the time the retry starts.
+  onLoadError?: (error: string) => void;
   // Pass a predicate to make only some rows selectable — the checkbox renders
   // disabled for the rest, and "select all" skips them.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -57,6 +76,11 @@ interface Props {
   hideLabelColumn?: boolean;
   // Dataset IDs that should not appear in the "Add Column" menus.
   hiddenDatasets?: Set<string>;
+  // Whether a column of the table's own index type may offer "Create context".
+  // Turn this off where the table already lives inside a context builder: that
+  // item opens another builder, which hosts another table, and so on. Columns
+  // of a *different* type are unaffected, since they lead somewhere new.
+  allowSameTypeContextCreation?: boolean;
   // Columns the caller supplies itself, for values that aren't Breadbox slices.
   // Give an entry an `accessorFn` to make it sortable, searchable and
   // exportable; omit it for a column that only renders controls.
@@ -88,6 +112,9 @@ interface Props {
   containerClassName?: string;
   // Use this to apply custom CSS to the controls.
   controlsClassName?: string;
+  // See Controls' own comment: lets a caller for whom "Download data" is
+  // the primary action (rather than one option among several) say so.
+  downloadButtonBsStyle?: React.ComponentProps<typeof Button>["bsStyle"];
   downloadFilename?: string;
   // An implicit filter that is always applied and invisible to the end user.
   // Rows for which this returns false are excluded from the dataset entirely —
@@ -110,6 +137,20 @@ interface Props {
     label: string;
     getValue: (sliceQuery: SliceQuery) => unknown;
   }) => boolean;
+  // The table's universe of rows, when the caller already knows it. Prefer this
+  // over an `implicitFilter` that tests `id`: the result is the same, but the row
+  // set is pushed down into the fetch, so only these rows are ever transferred.
+  // That matters for the per-residue annotation columns, which are tens of
+  // megabytes each and were being pulled whole to show a handful of rows. It also
+  // sidesteps the `getValue` trap described above, since there is no predicate.
+  //
+  // Only plain tabular columns can be scoped this way; matrix slices and
+  // `reindex_through` chains still fetch whole and are filtered client-side, so
+  // this is always a display-correct filter and sometimes also a smaller request.
+  //
+  // Memoize it, and hold the table on `isLoading` until it is ready — an empty
+  // Set means "no rows", which is a different claim from "not resolved yet".
+  rowIds?: Set<string>;
   // Optional external loading state. When true, the table shows its loading
   // spinner and disables interactions until the external dependency is ready.
   // Most consumers don't need this — it's only necessary when props like
@@ -117,8 +158,11 @@ interface Props {
   // can render meaningfully.
   isLoading?: boolean;
   sliceTableRef?: React.RefObject<{
-    // Use this to force `getInitialState()` to be called.
-    forceInitialize: () => void;
+    // Use this to force `getInitialState()` to be called. By default the row
+    // order is re-derived from the new initial selection (selected rows first).
+    // Pass `preserveSortOrder` to re-seed the selection but leave the rows
+    // where they are.
+    forceInitialize: (options?: { preserveSortOrder?: boolean }) => void;
   }>;
 }
 
@@ -133,6 +177,7 @@ function SliceTable({
   PlotlyLoader,
   getInitialState = () => ({}),
   onChangeSlices = NOOP,
+  onLoadError = NOOP,
   enableRowSelection = false,
   enableMultiRowSelection = false,
   maxRowSelection = undefined,
@@ -141,6 +186,7 @@ function SliceTable({
   hideIdColumn = false,
   hideLabelColumn = false,
   hiddenDatasets = undefined,
+  allowSameTypeContextCreation = true,
   customColumns = undefined,
   customColumnPlacement = "end",
   getColumnDisplayOptions = undefined,
@@ -149,12 +195,15 @@ function SliceTable({
   hideActions = false,
   containerClassName = undefined,
   controlsClassName = undefined,
+  downloadButtonBsStyle = undefined,
   downloadFilename = "",
   implicitFilter = undefined,
+  rowIds = undefined,
   isLoading: externalLoading = false,
   sliceTableRef = undefined,
 }: Props) {
   const [revision, setRevision] = useState(1);
+  const [retryToken, setRetryToken] = useState(0);
 
   const { initialSlices, viewOnlySlices, initialRowSelection } = useMemo(() => {
     return {
@@ -169,9 +218,16 @@ function SliceTable({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revision]);
 
+  const preserveSortOrderRef = useRef(false);
+
   React.useImperativeHandle(
     sliceTableRef,
-    () => ({ forceInitialize: () => setRevision((r) => r + 1) }),
+    () => ({
+      forceInitialize: (options) => {
+        preserveSortOrderRef.current = Boolean(options?.preserveSortOrder);
+        setRevision((r) => r + 1);
+      },
+    }),
     []
   );
 
@@ -196,6 +252,7 @@ function SliceTable({
     data,
     error,
     loading,
+    progress,
     columns,
     rowFilter,
     rowSelection,
@@ -220,10 +277,36 @@ function SliceTable({
     downloadFilename,
     tableRef,
     implicitFilter,
+    rowIds,
     hiddenDatasets,
+    allowSameTypeContextCreation,
+    retryToken,
   });
 
+  // Two counters bumped together, not one. The revision re-reads
+  // `getInitialState`, which is what gives `onLoadError` a chance to have
+  // mattered — a caller that forgot its remembered columns retries with the
+  // smaller set. The token is what guarantees a refetch at all: when the caller
+  // hands back the identical slices (a stable array, or nothing persisted to
+  // forget), the revision alone changes nothing useData can see.
+  const handleClickRetry = useCallback(() => {
+    setRevision((r) => r + 1);
+    setRetryToken((t) => t + 1);
+  }, []);
+
   const combinedLoading = loading || externalLoading;
+
+  // Held in a ref so the effect below depends on the error alone. Callers pass
+  // this inline, and a new function identity every render would otherwise mean
+  // one notification per render for as long as the error is on screen.
+  const onLoadErrorRef = useRef(onLoadError);
+  onLoadErrorRef.current = onLoadError;
+
+  useEffect(() => {
+    if (error) {
+      onLoadErrorRef.current(error);
+    }
+  }, [error]);
 
   // Compared against what was last *reported*, not against the initial
   // selection. Comparing against the initial one suppressed every return to it:
@@ -238,6 +321,9 @@ function SliceTable({
   // thing.
   const lastReportedRef = useRef(initialRowSelection);
   const prevInitialRef = useRef(initialRowSelection);
+  // What the default sort orders by. Normally the initial selection, but it can
+  // be held back so that re-seeding the selection doesn't reshuffle the rows.
+  const sortSeedRef = useRef(initialRowSelection);
 
   // Adopting a new seed is an initialization, not a user action: re-baseline so
   // it isn't reported back to the consumer that supplied it. Done during render,
@@ -246,7 +332,14 @@ function SliceTable({
   if (prevInitialRef.current !== initialRowSelection) {
     prevInitialRef.current = initialRowSelection;
     lastReportedRef.current = initialRowSelection;
+
+    if (!preserveSortOrderRef.current) {
+      sortSeedRef.current = initialRowSelection;
+    }
+    preserveSortOrderRef.current = false;
   }
+
+  const sortSeed = sortSeedRef.current;
 
   useEffect(() => {
     if (rowSelectionChanged(lastReportedRef.current, rowSelection)) {
@@ -254,6 +347,53 @@ function SliceTable({
       onChangeRowSelection(rowSelection);
     }
   }, [rowSelection, onChangeRowSelection]);
+
+  // Same reason as `defaultSort` below, less severe: as an inline object this
+  // re-ran ReactTable's auto-sizing effect on every render.
+  const columnVisibility = useMemo(
+    () => ({
+      id: !hideIdColumn,
+      label: shouldShowLabelColumn && !hideLabelColumn,
+    }),
+    [hideIdColumn, shouldShowLabelColumn, hideLabelColumn]
+  );
+
+  // Memoized because its IDENTITY is load-bearing, not just its behavior.
+  // ReactTable's `sortedData` is keyed on it, that array is what
+  // `useReactTable` receives as `data`, and TanStack rebuilds every Row object
+  // when that identity changes. Inline, this comparator re-sorted the whole
+  // table and rebuilt the entire row model on every render — invisible on a
+  // few thousand rows, and about two seconds per render at 300K.
+  //
+  // It only bit on column changes: useData starts at `data: []`, so a mount's
+  // whole loading cascade renders against an empty array, while a column add
+  // keeps the previous rows in state and pays full price for every render in
+  // the cascade.
+  const defaultSort = useCallback(
+    (
+      a: Record<string, string | number | undefined>,
+      b: Record<string, string | number | undefined>
+    ) => {
+      const aId = getRowId(a);
+      const bId = getRowId(b);
+
+      const aSelected = sortSeed[aId] || false;
+      const bSelected = sortSeed[bId] || false;
+
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+
+      const aIdNum = Number(aId);
+      const bIdNum = Number(bId);
+
+      if (!Number.isNaN(aIdNum) && !Number.isNaN(bIdNum)) {
+        return aIdNum < bIdNum ? -1 : 1;
+      }
+
+      return 0;
+    },
+    [sortSeed]
+  );
 
   // Apply implicit filter before ReactTable sees the data. This shapes the
   // dataset itself — magnitude bar stats, search, and everything else will
@@ -277,6 +417,7 @@ function SliceTable({
       <div className={cx(styles.SliceTable, containerClassName)}>
         <Controls
           controlsClassName={controlsClassName}
+          downloadButtonBsStyle={downloadButtonBsStyle}
           tableRef={tableRef}
           isLoading={combinedLoading}
           hadError={Boolean(error)}
@@ -289,17 +430,39 @@ function SliceTable({
         {combinedLoading && (
           <div className={styles.loadingContainer}>
             <Spinner position="static" />
+            {/* Gated on `progress` so a caller's own `isLoading` keeps the
+                bare spinner — it has no column count behind it. */}
+            {progress && (
+              <LoadingProgress
+                loaded={progress.loaded}
+                total={progress.total}
+              />
+            )}
           </div>
         )}
-        {error && (
+        {error && !combinedLoading && (
           <div className={styles.errorContainer}>
-            <p>⚠️ Sorry, there was an error loading the table.</p>
+            <div>
+              <p>⚠️ Sorry, there was an error loading the table.</p>
+              <button
+                type="button"
+                className={cx("btn", "btn-default", styles.retryButton)}
+                onClick={handleClickRetry}
+              >
+                <span className="glyphicon glyphicon-refresh" /> Try again
+              </button>
+            </div>
             <details>{error}</details>
           </div>
         )}
         <ReactTable
           tableRef={tableRef}
-          className={combinedLoading ? styles.hidden : ""}
+          // Hidden rather than unmounted so `tableRef` stays live. An error here
+          // means the index itself couldn't be built, so the table has no rows
+          // to show and no prospect of any — leaving it visible put "There are
+          // no rows to display" under the error message, which reads as a second
+          // unrelated thing having gone wrong.
+          className={combinedLoading || error ? styles.hidden : ""}
           height="100%"
           data={filteredData}
           columns={columns}
@@ -311,31 +474,10 @@ function SliceTable({
           enableMultiRowSelection={enableMultiRowSelection}
           maxRowSelection={maxRowSelection}
           enableStickyFirstColumn
-          columnVisibility={{
-            id: !hideIdColumn,
-            label: shouldShowLabelColumn && !hideLabelColumn,
-          }}
+          columnVisibility={columnVisibility}
           enableSearch
           rowFilter={rowFilter}
-          defaultSort={(a, b) => {
-            const aId = getRowId(a);
-            const bId = getRowId(b);
-
-            const aSelected = initialRowSelection[aId] || false;
-            const bSelected = initialRowSelection[bId] || false;
-
-            if (aSelected && !bSelected) return -1;
-            if (!aSelected && bSelected) return 1;
-
-            const aIdNum = Number(aId);
-            const bIdNum = Number(bId);
-
-            if (!Number.isNaN(aIdNum) && !Number.isNaN(bIdNum)) {
-              return aIdNum < bIdNum ? -1 : 1;
-            }
-
-            return 0;
-          }}
+          defaultSort={defaultSort}
         />
         {(!hideActions || renderCustomActions) && (
           <Actions

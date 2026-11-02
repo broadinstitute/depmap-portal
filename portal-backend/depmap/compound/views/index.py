@@ -160,11 +160,24 @@ def get_heatmap_dose_curves_tab_drc_options(
     return valid_options
 
 
+# OncRef Lum and Seq are superseded by the unified OncRef dataset, so they're
+# excluded from Correlation Analysis's dataset options even if their
+# underlying datasets still exist in breadbox (e.g. for the Dose Curves tab).
+CORR_ANALYSIS_EXCLUDED_LOG_AUC_DATASET_GIVEN_IDS = {
+    "PRISMOncologyReferenceLog2AUCMatrix",  # PRISM OncRef Lum
+    "PRISMOncologyReferenceSeqLog2AUCMatrix",  # PRISM OncRef Seq
+}
+
+
 def get_corr_analysis_options(compound_label: str,) -> List[DRCCompoundDataset]:
     valid_options = []
 
     for drc_dataset in drc_compound_datasets:
-        if drc_dataset.log_auc_dataset_given_id is not None:
+        if (
+            drc_dataset.log_auc_dataset_given_id is not None
+            and drc_dataset.log_auc_dataset_given_id
+            not in CORR_ANALYSIS_EXCLUDED_LOG_AUC_DATASET_GIVEN_IDS
+        ):
 
             does_dataset_exist_with_compound = data_access.dataset_exists(
                 drc_dataset.log_auc_dataset_given_id

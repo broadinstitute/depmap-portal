@@ -29,6 +29,11 @@ from breadbox.crud.group import (
     get_transient_group,
 )
 
+from ..crud.cache_invalidation import (
+    DIMENSION_TYPES,
+    invalidate_cache_keys,
+    invalidate_for_dataset_change,
+)
 from ..crud.dataset import (
     add_tabular_dimensions,
     add_matrix_dataset_dimensions,
@@ -359,20 +364,31 @@ def get_subsetted_tabular_dataset_df(
     dataset: TabularDataset,
     tabular_dimensions_info: TabularDimensionsInfo,
     strict: bool,
+    strict_indices: bool = True,
 ) -> pd.DataFrame:
     """
     Load a dataframe containing data for the specified indices and columns.
     If the indices are specified by label, then return a result indexed by labels
     If either indices or columns are not specified, return all indices or columns
     By default, if indices and identifier not specified, then dimension ids are used as identifier
+
+    `strict_indices` only has an effect under `strict`, and lets a caller keep the
+    strict check on columns while tolerating indices the dataset has no row for. A
+    caller subsetting by a dimension type's identifiers needs this: not every entity
+    of a type appears in every tabular dataset, and those gaps are coverage holes to
+    render as blanks rather than errors.
     """
     dataset_crud.assert_user_has_access_to_dataset(dataset, user)
 
-    # If labels were given as the filter, get the corresponding set of given ids
-    dataset_labels_by_id = metadata_service.get_tabular_dataset_labels_by_id(
-        db, dataset
-    )
-    if tabular_dimensions_info.identifier == FeatureSampleIdentifier.label:
+    # If labels were given as the filter, get the corresponding set of given ids.
+    # Loading labels means scanning the whole dimension type's metadata, so only
+    # do it when the caller is actually addressing rows by label.
+    uses_labels = tabular_dimensions_info.identifier == FeatureSampleIdentifier.label
+    dataset_labels_by_id: dict[str, str] = {}
+    if uses_labels:
+        dataset_labels_by_id = metadata_service.get_tabular_dataset_labels_by_id(
+            db, dataset
+        )
         if tabular_dimensions_info.indices is None:
             user_specified_given_ids = None
         else:
@@ -394,7 +410,7 @@ def get_subsetted_tabular_dataset_df(
         index_given_ids=user_specified_given_ids,
     )
 
-    if tabular_dimensions_info.identifier == FeatureSampleIdentifier.label:
+    if uses_labels:
         # Rename the resulting column with dimension ids to their labels
         tabular_subset_df = tabular_subset_df.rename(index=dataset_labels_by_id)
 
@@ -403,8 +419,13 @@ def get_subsetted_tabular_dataset_df(
         missing_columns, missing_indices = _get_missing_tabular_columns_and_indices(
             tabular_subset_df,
             tabular_dimensions_info.columns,
-            tabular_dimensions_info.indices,
+            tabular_dimensions_info.indices if strict_indices else None,
             dataset.id,
+            # Which columns the dataset HAS, independent of which rows came back.
+            # Without this, an index subset that matches no rows yields an empty
+            # frame with no columns, and a perfectly valid column name is reported
+            # as missing -- an error about the wrong thing entirely.
+            known_columns=set(dataset.columns_metadata.keys()),
         )
         if missing_columns or missing_indices:
             raise UserError(
@@ -446,12 +467,16 @@ def _convert_subsetted_tabular_df_dtypes(
 
 
 def _get_missing_tabular_columns_and_indices(
-    df, tabular_columns, tabular_indices, dataset_id
+    df, tabular_columns, tabular_indices, dataset_id, known_columns=None
 ):
     missing_columns = set()
     missing_indices = set()
     if tabular_columns is not None:
-        missing_columns = set(tabular_columns).difference(df.columns)
+        # `known_columns`, when given, is the dataset's own column list; a column
+        # is missing only if the dataset doesn't define it. Falling back to the
+        # result frame conflates "no such column" with "no rows matched".
+        available = df.columns if known_columns is None else known_columns
+        missing_columns = set(tabular_columns).difference(available)
         if len(missing_columns) > 0:
             log.warning(
                 f"In get_subsetted_tabular_dataset_df, missing columns: {missing_columns} for dataset: {dataset_id}"
@@ -534,6 +559,7 @@ def add_tabular_dataset(
     )
     db.add(dataset)
     db.flush()
+    invalidate_for_dataset_change(db, dataset)
 
     add_tabular_dimensions(
         db, data_df, columns_metadata, dataset.id, dimension_type, group_id=group.id
@@ -605,6 +631,7 @@ def add_matrix_dataset(
     )
     db.add(dataset)
     db.flush()
+    invalidate_for_dataset_change(db, dataset)
 
     add_matrix_dataset_dimensions(
         db=db,
@@ -778,6 +805,9 @@ def update_dimension_type(
             if old_dataset is not None:
                 delete_dataset(db, user, old_dataset, filestore_location)
 
+            # the metadata dataset may have just become non-transient
+            invalidate_for_dataset_change(db, metadata_dataset)
+
         db.flush()
         if "properties_to_index" in given_updated_fields:
             set_properties_to_index(
@@ -793,6 +823,7 @@ def update_dimension_type(
         dimension_type.display_name = given_updated_fields["display_name"]
 
     db.flush()
+    invalidate_cache_keys(db, DIMENSION_TYPES)
 
 
 def update_dimension_type_metadata(
@@ -822,7 +853,7 @@ def update_dimension_type_metadata(
         # a list.
         if properties_to_index is None:
             properties_to_index = [
-                x.property for x in dimension_type.dataset.properties_to_index
+                x.property for x in dimension_type.properties_to_index
             ]
 
         # Delete dataset; cascade deletes annotation dimensions which then deletes all annotation values
@@ -845,6 +876,7 @@ def update_dimension_type_metadata(
     db.add(dimension_type_metadata)
 
     db.flush()
+    invalidate_for_dataset_change(db, dimension_type_metadata)
     dimension_type.dataset_id = dataset_id  # pyright: ignore
     db.flush()
     db.refresh(dimension_type)
@@ -875,4 +907,5 @@ def update_dimension_type_metadata(
     populate_search_index_after_update(db, dimension_type)
 
     db.flush()
+    invalidate_cache_keys(db, DIMENSION_TYPES)
     return dimension_type

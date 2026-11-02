@@ -4,7 +4,10 @@ import useScatterPlotData from "@depmap/data-explorer-2/src/components/DataExplo
 import PrototypeScatterPlot from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/PrototypeScatterPlot";
 import SmallMultiplesScatter from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/SmallMultiplesScatter";
 import { useDataExplorerSettings } from "@depmap/data-explorer-2/src/contexts/DataExplorerSettingsContext";
-import { computeFacets } from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/plotUtils";
+import {
+  chosenCategoriesFor,
+  computeFacets,
+} from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/plotUtils";
 import {
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
@@ -47,7 +50,16 @@ function EmbeddedScatterPlot({
   plotConfig,
 }: Props) {
   const { plotStyles } = useDataExplorerSettings();
-  const { pointSize, pointOpacity, outlineWidth, palette } = plotStyles;
+  const {
+    pointSize,
+    facetedPointSize,
+    annotationFontSize,
+    pointOpacity,
+    outlineWidth,
+    palette,
+    xAxisFontSize,
+    yAxisFontSize,
+  } = plotStyles;
 
   const {
     formattedData,
@@ -58,6 +70,7 @@ function EmbeddedScatterPlot({
     regressionLines,
     showIdentityLine,
     regressionLinesByFacet,
+    facetKeysWithNoData,
   } = useScatterPlotData(
     data,
     plotConfig,
@@ -66,10 +79,15 @@ function EmbeddedScatterPlot({
     canShowIdentityLine(data)
   );
 
-  const facetInfo = useMemo(() => computeFacets(data, plotConfig.facet_by), [
-    data,
-    plotConfig.facet_by,
-  ]);
+  // facet_categories is the user's own pick from the category picker, and it
+  // overrides computeFacets' ranking entirely — omit it and an embedded link
+  // carrying one renders a different set of panels than Data Explorer does.
+  const facetChosen = chosenCategoriesFor(plotConfig, "facet");
+
+  const facetInfo = useMemo(
+    () => computeFacets(data, plotConfig.facet_by, "facet", facetChosen),
+    [data, plotConfig.facet_by, facetChosen]
+  );
 
   if (!formattedData) {
     return null;
@@ -109,16 +127,27 @@ function EmbeddedScatterPlot({
             legendForDownload={legendForDownload}
             facetKeys={facetKeys || []}
             facetOrder={facetOrder}
-            // hiddenFacets={}
+            // Data Explorer seeds its "Facets" panel with these same keys, so
+            // it opens with the no-data facets toggled off. Here they're
+            // hidden permanently: there's no Facets panel in an embed, so
+            // nothing can ever toggle them back on, and without this they'd
+            // render as "(no data)" placeholders that the reader can't
+            // dismiss. Note this is what suppresses them even under
+            // placeholderEmptyFacets below — hiddenFacets is subtracted
+            // first, and deliberately wins over the placeholder behavior.
+            hiddenFacets={
+              (facetKeysWithNoData ?? undefined) as Set<string> | undefined
+            }
             regressionLinesByFacet={regressionLinesByFacet}
             placeholderEmptyFacets={Boolean(plotConfig.expand_by?.length)}
             showIdentityLine={showIdentityLine}
-            pointSize={pointSize}
+            pointSize={facetedPointSize}
             pointOpacity={pointOpacity}
             outlineWidth={outlineWidth}
             palette={palette}
-            xAxisFontSize={12}
-            yAxisFontSize={12}
+            annotationFontSize={annotationFontSize}
+            xAxisFontSize={xAxisFontSize}
+            yAxisFontSize={yAxisFontSize}
             showBuiltinLegend={showBuiltinLegend}
           />
         ) : (
@@ -151,8 +180,9 @@ function EmbeddedScatterPlot({
             pointOpacity={pointOpacity}
             outlineWidth={outlineWidth}
             palette={palette}
-            xAxisFontSize={12}
-            yAxisFontSize={12}
+            annotationFontSize={annotationFontSize}
+            xAxisFontSize={xAxisFontSize}
+            yAxisFontSize={yAxisFontSize}
             showBuiltinLegend={showBuiltinLegend}
           />
         ))}

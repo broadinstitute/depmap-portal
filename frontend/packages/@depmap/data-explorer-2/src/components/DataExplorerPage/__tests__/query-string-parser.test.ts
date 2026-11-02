@@ -149,6 +149,106 @@ describe("Data Explorer 2.0 query string parser", () => {
     expect(result?.version).toEqual(CURRENT_PLOT_VERSION);
   });
 
+  describe("`color_property` on a 1D plot", () => {
+    const color_property = "slice/lineage/1/label";
+
+    it("should be both colored and faceted", () => {
+      // Legacy (version 1) behavior: a single axis drove coloring and
+      // faceting at once. Post-ADR-0004/0005 that takes the two-axis form,
+      // and since this is a version-2 mint point the v1 -> v2 migration that
+      // would have translated it never runs. See facetOnColorPropertyFor1d.
+      const result = parseShorthandParams(
+        {
+          xDataset: "Chronos_Combined",
+          xFeature: "SOX10",
+          color_property,
+        },
+        MOCK_DATASETS_BY_INDEX_TYPE
+      );
+
+      expect(result?.plot_type).toEqual("density_1d");
+      expect(result?.facet_by).toEqual("property");
+      expect(result?.metadata?.facet_property).toEqual({
+        slice_id: color_property,
+      });
+
+      // "facet" (not "property") so the two axes share one partition rather
+      // than resolving two independent ones off the same slice.
+      expect(result?.color_by).toEqual("facet");
+      expect(result?.metadata?.color_property).toBeUndefined();
+    });
+
+    it("should still sort facets by mean", () => {
+      const result = parseShorthandParams(
+        {
+          xDataset: "Chronos_Combined",
+          xFeature: "SOX10",
+          color_property,
+        },
+        MOCK_DATASETS_BY_INDEX_TYPE
+      );
+
+      expect(result?.sort_by).toEqual("mean_values_asc");
+    });
+
+    it("should color but NOT facet a scatter", () => {
+      // A real facet_by on a scatter renders as small multiples, which legacy
+      // `color_property` never did there.
+      const result = parseShorthandParams(
+        {
+          xDataset: "Chronos_Combined",
+          yDataset: "Chronos_Combined",
+          xFeature: "SOX10",
+          yFeature: "TP53",
+          color_property,
+        },
+        MOCK_DATASETS_BY_INDEX_TYPE
+      );
+
+      expect(result?.plot_type).toEqual("scatter");
+      expect(result?.facet_by).toBeUndefined();
+      expect(result?.metadata?.facet_property).toBeUndefined();
+      expect(result?.color_by).toEqual("property");
+      expect(result?.metadata?.color_property).toEqual({
+        slice_id: color_property,
+      });
+    });
+
+    it("should treat `colorDataset` + `colorFeature` identically", () => {
+      const result = parseShorthandParams(
+        {
+          xDataset: "Chronos_Combined",
+          xFeature: "SOX10",
+          colorDataset: "lineage",
+          colorFeature: "1",
+        },
+        MOCK_DATASETS_BY_INDEX_TYPE
+      );
+
+      expect(result?.facet_by).toEqual("property");
+      expect(result?.color_by).toEqual("facet");
+      expect(result?.metadata?.facet_property).toEqual({
+        slice_id: "slice/lineage/1/label",
+      });
+    });
+
+    it("should be `uniform` when there is nothing to color by at all", () => {
+      // Reaching the uniform arm means no facet_by was set either, so an
+      // absent color_by would read back as "facet" and match nothing.
+      const result = parseShorthandParams(
+        {
+          xDataset: "Chronos_Combined",
+          xFeature: "SOX10",
+        },
+        MOCK_DATASETS_BY_INDEX_TYPE
+      );
+
+      expect(result?.color_by).toEqual("uniform");
+      expect(result?.facet_by).toBeUndefined();
+      expect(result?.sort_by).toBeUndefined();
+    });
+  });
+
   it("should infer `index_type` from `dataset_id` and `slice_type`", () => {
     const result = parseShorthandParams(
       {

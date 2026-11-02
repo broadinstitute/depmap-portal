@@ -1,13 +1,17 @@
 import * as identifiers from "./identifiers";
 import * as variables from "./variables";
-import * as breadboxMethods from "./breadboxMethods";
+import * as labels from "./labels";
+import * as standardPlot from "./standardPlot";
 import * as expandedPlot from "./expandedPlot";
+import * as fetchPlotData from "./fetchPlotData";
 
 export const dataExplorerAPI = {
   ...identifiers,
   ...variables,
-  ...breadboxMethods,
+  ...labels,
+  ...standardPlot,
   ...expandedPlot,
+  ...fetchPlotData,
 };
 
 export type { DataExplorerExpandBy } from "@depmap/types";

@@ -11,6 +11,7 @@
     "@depmap/api": "1.0.0",
     "@depmap/common-components": "1.0.0",
     "@depmap/types": "1.0.0",
+    "@depmap/utils": "1.0.0",
     "classnames": "^2.3.1",
     "react-select": "^3.2.0",
     "react-windowed-select": "^3.1.2"
@@ -34,10 +35,25 @@
         {
           "diagnostics": false
         }
+      ],
+      "^.+\\.js$": [
+        "babel-jest",
+        {
+          "presets": [
+            [
+              "@babel/preset-env",
+              {
+                "targets": {
+                  "node": "current"
+                }
+              }
+            ]
+          ]
+        }
       ]
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!depmap-shared)"
+      "node_modules/(?!(?:depmap-shared|d3|d3-[a-z0-9-]+|internmap|delaunator|robust-predicates)/)"
     ],
     "testRegex": ".*/__tests__/.*test.*\\.(ts|tsx|js)$",
     "testEnvironment": "jsdom",

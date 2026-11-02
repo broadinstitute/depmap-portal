@@ -8,7 +8,7 @@ import {
   entityRefKey,
   pairRef,
 } from "@depmap/types";
-import { pluralize } from "../../../../../utils/misc";
+import { pluralize } from "../../../../../utils/dimensionHelpers";
 import { SectionStackContext } from "../../SectionStack";
 import HelpTip from "../../HelpTip";
 import PairsVirtualList, { SelectionRow } from "./PairsVirtualList";

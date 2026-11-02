@@ -51,6 +51,17 @@ google-cloud-monitoring="^2.21"
 google-cloud-trace="^1.13"
 google-cloud-error-reporting="^1.10"
 
+# tracing (exports to Google Cloud Trace)
+opentelemetry-api = "^1.27.0"
+opentelemetry-sdk = "^1.27.0"
+opentelemetry-exporter-gcp-trace = "^1.9.0"
+opentelemetry-instrumentation-flask = "^0.48b0"
+opentelemetry-instrumentation-requests = "^0.48b0"
+opentelemetry-instrumentation-httpx = "^0.48b0"
+opentelemetry-instrumentation-celery = "^0.48b0"
+# opentelemetry-instrumentation still imports pkg_resources, which setuptools>=81 no longer bundles
+setuptools = "<81"
+
 # needed for pulling data used in data load
 boto3="^1.16.52"
 
@@ -90,7 +101,7 @@ requests-toolbelt="^1.0.0"
 MarkupSafe="^3.0"
 
 SQLAlchemy="^2.0"
-breadbox-client = {version = "^4.6.0", source = "public-python"}
+breadbox-client = {version = "^4.20.0", source = "public-python"}
 pypatch-and-run = {version = "^1.0.2", source = "public-python"}
 
 pyyaml="^6.0"
@@ -103,6 +114,8 @@ pytest-split = "^0.10"
 multidict = "^6.1.0"
 html-sanitizer = "^2.3.0"
 httpx = "^0.28.1"
+flask-compress = "^1.15"
+brotli = "^1.1"
 
 # Security floors for transitive dependencies we do not import directly.
 # Declared here only so they can be targeted by `poetry update`; without a

@@ -175,7 +175,8 @@ def get_features_info_and_dataset(
     if dataset is None:
         raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
 
-    assert isinstance(dataset, MatrixDataset)
+    if not isinstance(dataset, MatrixDataset):
+        raise UserError(f"Expected a matrix dataset. Dataset {dataset_id} is {dataset.format}.")
 
     feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
         db, db.user, dataset

@@ -1,9 +1,9 @@
 import React from "react";
 import { PlotlyLoaderProvider } from "@depmap/data-explorer-2/src/contexts/PlotlyLoaderContext";
 import {
-  getDimensionTypeLabel,
+  formatDimensionTypeName,
   pluralize,
-} from "@depmap/data-explorer-2/src/utils/misc";
+} from "@depmap/data-explorer-2/src/utils/dimensionHelpers";
 import useCorrelationHeatmapData from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/useCorrelationHeatmapData";
 import PrototypeCorrelationHeatmap from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/PrototypeCorrelationHeatmap";
 import { useDataExplorerSettings } from "@depmap/data-explorer-2/src/contexts/DataExplorerSettingsContext";
@@ -41,7 +41,10 @@ function TooManyEntitiesWarning({
     return null;
   }
 
-  const entitiesLabel = pluralize(getDimensionTypeLabel(dimension.slice_type));
+  const entitiesLabel = pluralize(
+    // Not getDimensionTypeLabel: that waits on a fetch this view can't count on.
+    formatDimensionTypeName(dimension.slice_type)
+  );
 
   return (
     <div style={{ maxWidth: 600, padding: 20 }}>

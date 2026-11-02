@@ -10,9 +10,9 @@ import {
 import { dataExplorerAPI } from "../../../../services/dataExplorerAPI";
 import {
   getDimensionTypeLabel,
-  pluralize,
   sortDimensionTypes,
 } from "../../../../utils/misc";
+import { pluralize } from "../../../../utils/dimensionHelpers";
 import renderConditionally from "../../../../utils/render-conditionally";
 import PlotConfigSelect from "../../../PlotConfigSelect";
 import DimensionSelectV2 from "../../../DimensionSelectV2";
@@ -566,6 +566,30 @@ export function ShowRegressionLineCheckbox({ value, onChange }: any) {
     </Checkbox>
   );
 }
+
+// Sub-option of ShowRegressionLineCheckbox, so it's `renderConditionally` —
+// unlike its parent, it's only offered when a faceted plot has a color
+// partition of its own to split each panel's fit by (see
+// canShowRegressionLinePerColor).
+export const ShowRegressionLinePerColorCheckbox = renderConditionally(
+  ({
+    value,
+    onChange,
+  }: {
+    value: boolean;
+    onChange: (nextValue: boolean) => void;
+  }) => {
+    return (
+      <Checkbox
+        className={styles.checkbox}
+        checked={value}
+        onChange={(e) => onChange((e.target as any).checked)}
+      >
+        <span>One line per color in each facet</span>
+      </Checkbox>
+    );
+  }
+);
 
 export const UseClusteringCheckbox = renderConditionally(
   ({ value, onChange }: any) => {

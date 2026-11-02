@@ -10,10 +10,13 @@ from .utils.debug_event_log import log_event, _get_log_filename
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from starlette.datastructures import MutableHeaders
 
 from .api import api_router
+from .api.temp.plot_data import plot_data_error_handler
+from .service.plot_data import PlotDataError
 from .config import Settings
 from .ui import SinglePageApplication
 from importlib.metadata import version
@@ -31,6 +34,9 @@ def create_app(settings: Settings):
         version=version("breadbox"),
     )
 
+    # POST /temp/plot-data reports every failure in its own {"error": {...}} shape
+    app.add_exception_handler(PlotDataError, plot_data_error_handler)
+
     if settings.breadbox_env != "dev":
         FastAPIInstrumentor.instrument_app(app)
 
@@ -41,6 +47,10 @@ def create_app(settings: Settings):
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Nothing in front of breadbox compresses responses (the portal proxies them through as-is).
+    # Starlette defaults to level 9, which is ~7x slower than 6 for ~3% smaller output.
+    app.add_middleware(GZipMiddleware, minimum_size=512, compresslevel=6)
 
     if api_prefix != "":
         root_router = APIRouter(prefix=api_prefix)

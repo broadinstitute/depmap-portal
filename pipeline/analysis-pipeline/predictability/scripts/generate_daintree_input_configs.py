@@ -5,9 +5,8 @@ import os
 import math
 from typing import List, Dict, Any, Optional
 
-# lets get CRISPR and rnai fully working before tackling the others
-# screens = ["crispr", "rnai", "oncref"]
-screens = ["crispr", "rnai"]
+screens = ["crispr", "rnai", "oncref"]
+
 
 def generate_daintree_configs(
     model_config_path: str, input_config_path: str, test_only_first_n: Optional[int]
@@ -49,10 +48,12 @@ def generate_daintree_configs(
     # at this time, it appears that genes and compounds use the same configurations. Generate the definitions of the model config
     # that the breadbox loader will consume
     model_configs_for_breadbox = []
-    for dim_type in ['gene', 'compound']:
+    for dim_type in ["gene", "compound"]:
         per_dim_type = []
         for model_name, model_config in config.items():
-            per_dim_type.append(dict(name=model_name, description=', '.join(model_config["Features"])))
+            per_dim_type.append(
+                dict(name=model_name, description=", ".join(model_config["Features"]))
+            )
         model_configs_for_breadbox.append(dict(dim_type=dim_type, configs=per_dim_type))
 
     # Process each model for both CRISPR and RNAi screens
@@ -136,7 +137,12 @@ def generate_daintree_configs(
     # now write out an additional artifact which has the model configuration that breadbox requires
     with open("breadbox_model_configs.json", "wt") as fd:
         fd.write(json.dumps(model_configs_for_breadbox, indent=2))
-    artifacts.append(dict(type="breadbox-model-configs", filename= {"$filename": "breadbox_model_configs.json"}))
+    artifacts.append(
+        dict(
+            type="breadbox-model-configs",
+            filename={"$filename": "breadbox_model_configs.json"},
+        )
+    )
 
     # Write results
     with open("results.json", "w") as f:

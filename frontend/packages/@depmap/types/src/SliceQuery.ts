@@ -28,8 +28,19 @@ export const areSliceQueriesEqual = (
   sq1: SliceQuery,
   sq2: SliceQuery
 ): boolean => {
-  if (!isValidSliceQuery(sq1) || !isValidSliceQuery(sq2)) {
-    throw new Error("Invalid slice query!");
+  const valid1 = isValidSliceQuery(sq1);
+  const valid2 = isValidSliceQuery(sq2);
+
+  if (!valid1) {
+    console.warn("[areSliceQueriesEqual] invalid input:", sq1);
+  }
+
+  if (!valid2) {
+    console.warn("[areSliceQueriesEqual] invalid input:", sq2);
+  }
+
+  if (!valid1 || !valid2) {
+    return false;
   }
 
   if (

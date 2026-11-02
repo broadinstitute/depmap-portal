@@ -1,4 +1,5 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import { Button } from "react-bootstrap";
 import {
   promptForValue,
   PromptComponentProps,
@@ -9,15 +10,19 @@ import ReactTable, {
   RowSelectionState,
   SearchBar,
 } from "@depmap/react-table";
-import { compareNaturally } from "@depmap/utils";
+import { compareNaturally, downloadCsv } from "@depmap/utils";
 import {
   HARD_MAX_CATEGORIES,
   SOFT_MAX_CATEGORIES,
 } from "../../../../constants/plotConstants";
 import {
+  CategoryRow,
   scoreCategories,
   selectBestCategories,
 } from "../../../../utils/bestCategories";
+import buildCategoryCsvColumns, {
+  CATEGORY_CSV_ID_COLUMN,
+} from "../../../../utils/categoryCsv";
 import HelpTip from "../HelpTip";
 import styles from "../../styles/DataExplorer2.scss";
 
@@ -31,14 +36,6 @@ const SCORE_COLUMN_ID = "score";
 // category would stop at every score containing a 2 on the way there.
 const CATEGORY_COLUMN_ID = "category";
 const SEARCHABLE_COLUMN_IDS = [CATEGORY_COLUMN_ID];
-
-interface CategoryRow {
-  category: string;
-  count: number;
-  score: number;
-  meanX?: number;
-  meanY?: number;
-}
 
 function formatStat(value: number | undefined) {
   if (value === undefined) {
@@ -69,6 +66,8 @@ interface TableProps {
   // tracks the Score column — so which it is has to be said, or a saved choice
   // reads as the ranking having gone wrong.
   isSavedSelection: boolean;
+  // What the download calls itself, without the extension.
+  downloadFilename: string;
   onChangeSelection: (categories: string[]) => void;
 }
 
@@ -79,6 +78,7 @@ function CategoriesTable({
   swatchLimit,
   initialSelection,
   isSavedSelection,
+  downloadFilename,
   onChangeSelection,
 }: TableProps) {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>(() =>
@@ -173,6 +173,26 @@ function CategoriesTable({
     onChangeSelection(ids);
   };
 
+  const handleClickDownload = useCallback(() => {
+    const csvColumns = buildCategoryCsvColumns({
+      rows,
+      axisLabels,
+      // What the table is showing, after the search filter and in the current
+      // sort order — the same rule the slice table's download follows. Without
+      // it a filtered view silently downloads everything.
+      displayOrder: tableRef.current?.getDisplayRowIds(),
+      selected: new Set(
+        Object.keys(rowSelection).filter((category) => rowSelection[category])
+      ),
+    });
+
+    const filename = downloadFilename.endsWith(".csv")
+      ? downloadFilename
+      : `${downloadFilename}.csv`;
+
+    downloadCsv(csvColumns, CATEGORY_CSV_ID_COLUMN, filename);
+  }, [rows, axisLabels, rowSelection, downloadFilename]);
+
   return (
     <div className={styles.categoryPicker}>
       <p className={styles.categoryPickerIntro}>
@@ -189,13 +209,22 @@ function CategoriesTable({
         )}{" "}
         Whatever isn&rsquo;t picked shares a single bucket.
       </p>
-      <SearchBar
-        tableRef={tableRef}
-        className={styles.categoryPickerSearch}
-        // Not "Find in table": only the Category column is searched, and the
-        // stat columns sitting right there would otherwise look included.
-        placeholder={`Find ${noun}`}
-      />
+      <div className={styles.categoryPickerControls}>
+        <SearchBar
+          tableRef={tableRef}
+          className={styles.categoryPickerSearch}
+          // Not "Find in table": only the Category column is searched, and the
+          // stat columns sitting right there would otherwise look included.
+          placeholder={`Find ${noun}`}
+        />
+        {/* Same label and glyph as the slice table's, because the two tables
+            open side by side out of the same plot and a download that looked
+            different would read as a different kind of download. */}
+        <Button onClick={handleClickDownload} bsSize="small">
+          <i className="glyphicon glyphicon-download-alt" />
+          <span> Download data</span>
+        </Button>
+      </div>
       <div className={styles.categoryPickerTable}>
         <ReactTable
           columns={columns}
@@ -276,6 +305,7 @@ export default async function promptForCategories({
   chosen,
   noun,
   swatchLimit,
+  downloadFilename,
 }: {
   values: (string | null)[];
   axes: (number | null)[][];
@@ -283,6 +313,8 @@ export default async function promptForCategories({
   visible: boolean[];
   chosen: string[] | null;
   noun: string;
+  // What the table's download calls itself, without the extension.
+  downloadFilename: string;
   // Past this many, colors repeat and the picker says so. Null for facets,
   // where the degradation is panels getting small rather than ambiguous.
   swatchLimit: number | null;
@@ -338,6 +370,7 @@ export default async function promptForCategories({
         swatchLimit={swatchLimit}
         initialSelection={seed}
         isSavedSelection={isSavedSelection}
+        downloadFilename={downloadFilename}
         onChangeSelection={(next) => {
           selection = next;
           onChange(next.length > 0);

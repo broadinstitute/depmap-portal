@@ -173,7 +173,7 @@ class TestCheckForMetadataNotInDataset:
         dataset = make_dataset()
         metadata_given_ids = [str(i) for i in range(100)]
         dataset_given_ids = [str(i) for i in range(10)]
-        for dimension_type_name in ["gene", "compound"]:
+        for dimension_type_name in ["gene", "compound_v2"]:
             issue = check_for_metadata_not_in_dataset(
                 dataset,
                 dimension_type_name,

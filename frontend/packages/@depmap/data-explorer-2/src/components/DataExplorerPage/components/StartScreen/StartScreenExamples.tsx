@@ -1,8 +1,8 @@
 import React from "react";
-import { DepMap, toStaticUrl } from "@depmap/globals";
-import { DataExplorerPlotConfig } from "@depmap/types";
+import { DepMap, enabledFeatures, toStaticUrl } from "@depmap/globals";
 import StartScreenExample from "./StartScreenExample";
-import examples from "./examples.json";
+import transcripts from "./examples/transcripts.json";
+import public_ from "./examples/public.json";
 import styles from "../../styles/DataExplorer2.scss";
 
 const handleClickAdherentGrowthPattern = () => {
@@ -14,7 +14,7 @@ const handleClickAdherentGrowthPattern = () => {
       0: {
         dataset_id: "depmap_model_metadata",
         identifier_type: "column" as const,
-        identifier: "0",
+        identifier: "GrowthPattern",
       },
     },
   });
@@ -24,12 +24,12 @@ const handleClickSuspensionGrowthPattern = () => {
   DepMap.saveNewContext({
     name: "Suspension",
     dimension_type: "depmap_model",
-    expr: { "==": [{ var: "0" }, "Adherent"] },
+    expr: { "==": [{ var: "0" }, "Suspension"] },
     vars: {
       0: {
         dataset_id: "depmap_model_metadata",
         identifier_type: "column" as const,
-        identifier: "Suspension",
+        identifier: "GrowthPattern",
       },
     },
   });
@@ -38,12 +38,72 @@ const handleClickSuspensionGrowthPattern = () => {
 function StartScreenExamples() {
   return (
     <div className={styles.StartScreenExamples}>
+      {enabledFeatures.show_transcript_example_in_data_explorer && (
+        <StartScreenExample
+          title="Isoform-level expression of CD44"
+          imgSrc={toStaticUrl(
+            "img/data_explorer_2/example_thumbnails/cd44-transcripts.png"
+          )}
+          plot={transcripts["cd44-transcripts"]}
+          description={
+            <>
+              <p>
+                CD44 is heavily alternatively spliced, and its isoforms have
+                been tied to different roles in EMT, stemness, and metastasis —
+                distinctions a gene-level value hides. Long read RNA-seq is
+                expanded here into one distribution per transcript.
+              </p>
+              <p>
+                <b>Try:</b> Set <b>Color By</b> to <b>Model Annotation</b> and
+                choose lineage to see whether isoform usage tracks with lineage.
+              </p>
+            </>
+          }
+        />
+      )}
+
+      <StartScreenExample
+        title="BRAF dependency vs BRAF inhibitor sensitivity"
+        imgSrc={toStaticUrl(
+          "img/data_explorer_2/example_thumbnails/braf-vs-braf-inhibitors.png"
+        )}
+        plot={public_["braf-vs-braf-inhibitors"]}
+        description={
+          <>
+            <p>
+              See whether the models that genetically depend on BRAF are also
+              the ones killed by inhibiting it. The y-axis is a context of every
+              compound whose annotated target names BRAF, expanded into one
+              panel per inhibitor.
+            </p>
+            <p>
+              <b>Try:</b> Use <b>Filter</b> to restrict the plot to skin models
+              and see which inhibitors still separate the BRAF-dependent lines.
+            </p>
+          </>
+        }
+      />
+
+      <StartScreenExample
+        title="Expression distribution per lineage"
+        imgSrc={toStaticUrl(
+          "img/data_explorer_2/example_thumbnails/expression-distribution-per-lineage.png"
+        )}
+        plot={public_["expression-distribution-per-lineage"]}
+        description={
+          <div>
+            Compare the expression of SOX10 between lineages to see which
+            lineages express this gene and which do not.
+          </div>
+        }
+      />
+
       <StartScreenExample
         title="Biomarker relationship"
         imgSrc={toStaticUrl(
           "img/data_explorer_2/example_thumbnails/biomarker-relationship-v2.png"
         )}
-        plot={examples["biomarker-relationship"] as DataExplorerPlotConfig}
+        plot={public_["biomarker-relationship"]}
         description={
           <>
             <p>
@@ -63,9 +123,7 @@ function StartScreenExamples() {
         imgSrc={toStaticUrl(
           "img/data_explorer_2/example_thumbnails/context-specific-dependencies.png"
         )}
-        plot={
-          examples["context-specific-dependencies"] as DataExplorerPlotConfig
-        }
+        plot={public_["context-specific-dependencies"]}
         description={
           <>
             <p>
@@ -85,7 +143,7 @@ function StartScreenExamples() {
         imgSrc={toStaticUrl(
           "img/data_explorer_2/example_thumbnails/context-specific-expression.png"
         )}
-        plot={examples["context-specific-expression"] as DataExplorerPlotConfig}
+        plot={public_["context-specific-expression"]}
         description={
           <>
             <p>
@@ -106,9 +164,7 @@ function StartScreenExamples() {
         imgSrc={toStaticUrl(
           "img/data_explorer_2/example_thumbnails/compare-expression-distributions-v2.png"
         )}
-        plot={
-          examples["compare-expression-distributions"] as DataExplorerPlotConfig
-        }
+        plot={public_["compare-expression-distributions"]}
         description={
           <>
             <p>
@@ -129,11 +185,7 @@ function StartScreenExamples() {
         imgSrc={toStaticUrl(
           "img/data_explorer_2/example_thumbnails/mean-expression-vs-mean-crispr-gene-effect.png"
         )}
-        plot={
-          examples[
-            "mean-expression-vs-mean-crispr-gene-effect"
-          ] as DataExplorerPlotConfig
-        }
+        plot={public_["mean-expression-vs-mean-crispr-gene-effect"]}
         description={
           <>
             <p>
@@ -153,11 +205,7 @@ function StartScreenExamples() {
         imgSrc={toStaticUrl(
           "img/data_explorer_2/example_thumbnails/correlation-structure-of-dependencies.png"
         )}
-        plot={
-          examples[
-            "correlation-structure-of-dependencies"
-          ] as DataExplorerPlotConfig
-        }
+        plot={public_["correlation-structure-of-dependencies"]}
         description={
           <>
             <p>

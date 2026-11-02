@@ -1,0 +1,16 @@
+{% extends "full_page.html" %}
+
+{% block page_title %}
+  Depmap Resources (v3) | Depmap Portal
+{% endblock %}
+
+{% block content %}
+    <div class="full-screen-div">
+        {% include "nav_footer/nav.html" %}
+        <div id="react-resources-v3-page"></div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script src="{{ webpack_url('resourcesV3Page.js') }}"></script>
+{% endblock %}

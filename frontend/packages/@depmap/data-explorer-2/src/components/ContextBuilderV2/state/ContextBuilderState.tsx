@@ -16,7 +16,7 @@ import {
   SliceQuery,
   TabularDataset,
 } from "@depmap/types";
-import { isCompleteExpression } from "../../../utils/misc";
+import { isCompleteExpression } from "../../../utils/dimensionHelpers";
 import {
   Expr,
   isBoolean,

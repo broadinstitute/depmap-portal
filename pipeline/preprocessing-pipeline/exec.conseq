@@ -25,13 +25,14 @@ executor-template dsub {
       --env AWS_SECRET_ACCESS_KEY=invalid \
       --min-ram {{ parameters.min_ram | default("4") }} \
       --boot-disk-size {{ parameters.boot_disk_size | default("10") }} \
+      --service-account depmap-pipeline-runner@depmap-portal-pipeline.iam.gserviceaccount.com \
       --command '{{ COMMAND }}'""",
   "CHECK_COMMAND_TEMPLATE": """python dstat_wrapper.py {{config.DSTAT_EXE_PATH}} \
       --provider google-batch \
       --project {{ config.DEFAULT_GCP_PROJECT }} \
       --location us-central1 \
       --jobs {{ JOB_ID }} \
-      --format json""",
+      --format json --status '*'""",
   "IS_RUNNING_PATTERN": "IN_PROGRESS:", 
   "TERMINATE_CMD_TEMPLATE": "{{ config.DDEL_EXE_PATH }} --provider google-batch --project {{ config.DEFAULT_GCP_PROJECT }} --jobs {{ JOB_ID }}",
   "JOB_ID_PATTERN": """(?:(?:Job: )|(?:Launched job-id: ))(\S+).*""",

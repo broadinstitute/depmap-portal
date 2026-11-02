@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fake MCP host: many views</title>
+  <style>
+    body { font-family: sans-serif; margin: 12px; }
+    iframe { display: block; width: 100%; height: 540px; border: 1px solid #ccc; margin-bottom: 40px; }
+    #bar { position: sticky; top: 0; background: #fff; padding: 8px 0; z-index: 1; border-bottom: 1px solid #ccc; }
+    pre { margin: 4px 0; }
+  </style>
+</head>
+<body>
+<!--
+  Mounts N views in a column, like a long chat, to reproduce the browser's WebGL
+  context limit (16 live contexts per page; each scattergl plot holds 2).
+  Same fake-host protocol as index.html. Query params: n= (default 12),
+  data=, params= (see index.html), same=1 (add allow-same-origin to
+  the sandbox so the views run in this page's renderer process and share its
+  WebGL budget; without it the probe cannot see the views' contexts).
+
+  "Probe" creates WebGL contexts in THIS page until the browser evicts the
+  oldest one (webglcontextlost on the first) and reports how many it made. Run
+  it with the views off screen (scrolled away) vs. on screen, before and after
+  scrolling, to see how many context slots are free. Contexts created by
+  cross-origin iframes may or may not share this page's budget depending on the
+  browser's process model, so also watch the views themselves: a plot that
+  blanks and then redraws is the recovery path working.
+-->
+<div id="bar">
+  <button id="probe">Probe free WebGL contexts</button>
+  <pre id="out"></pre>
+</div>
+<div id="views"></div>
+<script>
+  const q = new URLSearchParams(location.search);
+  const n = Number(q.get("n") || 12);
+  // Not a query param: loading a URL from the query string is an open redirect,
+  // and with same=1 it would run arbitrary content next to this page.
+  const viewUrl = "/breadbox/breadbox/static/embed/mcp.html";
+  // The canned response must come from this origin (the repo root being served).
+  const dataUrl = new URL(q.get("data") || "plot-data.json", location.href);
+  if (dataUrl.origin !== location.origin) {
+    throw new Error("data= must be a path on this origin");
+  }
+  const params = JSON.parse(q.get("params") || '{"plot_type":"scatter"}');
+  const frames = [];
+
+  for (let i = 0; i < n; i += 1) {
+    const f = document.createElement("iframe");
+    f.sandbox = q.get("same") ? "allow-scripts allow-same-origin" : "allow-scripts";
+    document.getElementById("views").appendChild(f);
+    frames.push(f);
+  }
+
+  const send = (frame, msg) => frame.contentWindow.postMessage(msg, "*");
+
+  window.addEventListener("message", async (event) => {
+    const frame = frames.find((f) => f.contentWindow === event.source);
+    if (!frame) return;
+    const msg = event.data;
+
+    if (msg.method === "ui/initialize") {
+      send(frame, {
+        jsonrpc: "2.0", id: msg.id,
+        result: {
+          protocolVersion: msg.params.protocolVersion,
+          hostInfo: { name: "fake-host", version: "0" },
+          hostCapabilities: { serverTools: {}, openLinks: {} },
+          hostContext: { containerDimensions: { maxHeight: 540 } },
+        },
+      });
+    } else if (msg.method === "ui/notifications/initialized") {
+      send(frame, {
+        jsonrpc: "2.0",
+        method: "ui/notifications/tool-result",
+        params: {
+          content: [{ type: "text", text: "Showing a plot." }],
+          structuredContent: { type: "plot", api_version: 1, params, link: "https://example.com/data_explorer_2" },
+        },
+      });
+    } else if (msg.method === "tools/call") {
+      const text = await (await fetch(dataUrl)).text();
+      console.log("get_plot_data requested by view", frames.indexOf(frame));
+      send(frame, { jsonrpc: "2.0", id: msg.id, result: { content: [{ type: "text", text }] } });
+    } else if (msg.id !== undefined && msg.method) {
+      send(frame, { jsonrpc: "2.0", id: msg.id, result: {} });
+    }
+  });
+
+  // Staggered like a chat restoring its history.
+  frames.forEach((f, i) => setTimeout(() => (f.src = viewUrl), i * 100));
+
+  // Creates one WebGL context per tick, holding them all, until the browser
+  // evicts one (webglcontextlost). Reports how many were alive when that
+  // happened: the page's free budget at that moment. Eviction is asynchronous,
+  // so creating them in a single loop would overshoot and flood the page.
+  document.getElementById("probe").onclick = () => {
+    const out = document.getElementById("out");
+    const held = [];
+    let lostAtCount = null;
+
+    const release = () =>
+      held.forEach((c) =>
+        c.getContext("webgl")?.getExtension("WEBGL_lose_context")?.loseContext()
+      );
+
+    const step = () => {
+      if (lostAtCount !== null || held.length >= 64) {
+        out.textContent +=
+          lostAtCount !== null
+            ? `first eviction when probe context #${lostAtCount} was created (so ~${lostAtCount - 1} free before it)\n`
+            : "no eviction after 64 probe contexts\n";
+        // Let the eviction events from releasing settle before the next probe.
+        release();
+        return;
+      }
+      const c = document.createElement("canvas");
+      c.getContext("webgl");
+      c.addEventListener("webglcontextlost", () => {
+        if (lostAtCount === null) lostAtCount = held.length;
+      });
+      held.push(c);
+      setTimeout(step, 50);
+    };
+    step();
+  };
+</script>
+</body>
+</html>

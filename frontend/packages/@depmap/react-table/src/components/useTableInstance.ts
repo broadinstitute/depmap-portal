@@ -65,6 +65,10 @@ export type ColumnStats = {
   min: number;
   max: number;
   hasVariance: boolean;
+  // Longest string in the column, for cells that draw their value at a scale
+  // shared with the rest of the column rather than filling their own width.
+  // Undefined when the column holds no strings.
+  maxLength?: number;
 };
 
 export function useTableInstance<TData extends RowData>(
@@ -433,6 +437,13 @@ export function useTableInstance<TData extends RowData>(
           if (value < colStats.min) colStats.min = value;
           if (value > colStats.max) colStats.max = value;
         }
+
+        if (typeof value === "string" && value.length > 0) {
+          const colStats = stats[id];
+          if (value.length > (colStats.maxLength ?? 0)) {
+            colStats.maxLength = value.length;
+          }
+        }
       });
     });
 
@@ -440,9 +451,14 @@ export function useTableInstance<TData extends RowData>(
     Object.keys(stats).forEach((colId) => {
       const colStats = stats[colId];
 
-      // If min is still Infinity, no numeric values were found
+      // If min is still Infinity, no numeric values were found. Such a column
+      // is still worth keeping when it recorded a string length, which is the
+      // one stat a non-numeric column can have.
       if (colStats.min === Infinity) {
-        delete stats[colId];
+        if (colStats.maxLength === undefined) {
+          delete stats[colId];
+        }
+
         return;
       }
 
@@ -497,6 +513,16 @@ export function useTableInstance<TData extends RowData>(
       size: 150,
       minSize: 100,
       maxSize: 1000,
+      // TanStack's own built-in default here is `props =>
+      // props.renderValue()?.toString()`, which would otherwise get baked
+      // into every column's `columnDef.cell` before TableCell ever sees it.
+      // TableCell uses `columnDef.cell`'s presence to tell a column that
+      // renders itself apart from one that doesn't (deciding whether
+      // numericPrecision/magnitude bars may format the value) -- overriding
+      // the default to `undefined` here keeps that signal meaningful. A
+      // column's own `cell`, when it sets one, still wins (it's applied
+      // after this default).
+      cell: undefined,
     },
   });
 
@@ -513,10 +539,17 @@ export function useTableInstance<TData extends RowData>(
   // for display and search. This is memoized separately so both
   // searchMatches and displayRows can share the same filtered set without
   // redundant filtering.
+  //
+  // `enhancedColumns` is a dependency even though it isn't read here. Adding
+  // or removing a column no longer changes `rows` — useData reuses the row
+  // array so TanStack doesn't rebuild 300K Row objects for a row set that
+  // didn't change — but it does change what a row CONTAINS, which is what
+  // predicates like "hide incomplete rows" are looking at.
   const filteredRows = useMemo(() => {
     if (!rowFilter) return rows;
     return rows.filter((row) => rowFilter(row.original));
-  }, [rows, rowFilter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, rowFilter, enhancedColumns]);
 
   // Helper to get searchable text from a cell value
   const getSearchableText = useCallback((value: unknown): string => {
@@ -594,12 +627,16 @@ export function useTableInstance<TData extends RowData>(
     });
 
     return matches;
+    // `enhancedColumns` for the same reason as in `filteredRows`: a column
+    // added while a search is active has to be searched too.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     enableSearch,
     searchableColumnIds,
     searchQuery,
     getSearchableText,
     filteredRows,
+    enhancedColumns,
     table,
   ]);
 

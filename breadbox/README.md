@@ -51,6 +51,44 @@ To run tests, run
 
     pytest
 
+### Plot data endpoint (`POST /temp/plot-data`)
+
+Takes a Data Explorer plot config and returns the data behind that plot. Breadbox runs the
+standalone `breadbox/static/plot-data/plot-data.js` with `node` (one fresh process per call),
+which reads back from this same Breadbox over localhost _as the calling user_. See
+[ADR 0010](../frontend/packages/@depmap/data-explorer-2/docs/adr/0010-standalone-node-bundle-of-the-plot-data-service.md)
+for the script's stdin/stdout contract. Like everything under `/temp`, it is for DepMap Portal
+use (including the MCP server), not external consumers.
+
+- Request: `{"api_version": 1, "plot_config": {...}}` (max 256 KB). Success: `{"api_version": 1, "data": {...}}`.
+  Every error is `{"error": {"code", "message", "details"}}`; codes are `invalid_request`,
+  `unsupported_api_version`, `request_too_large`, `invalid_config`, `forbidden`,
+  `dataset_not_found`, `result_too_large`, `busy` (with `Retry-After`), `upstream_error`,
+  `timeout` and `internal_error`. Identity comes from the usual `get_user` headers. When `restrict_sql_endpoint_access_to_user` is set (the public portal), only that user may call it (403 `forbidden` otherwise); it is unset elsewhere.
+- Responses are cached in process memory per (user, config, version of the script) and identical
+  concurrent calls share one child process. Responses carry `Server-Timing` and `X-Plot-Data-Bytes`.
+- Needs **Node >= 18** on `PATH` (the Docker image installs the distro `nodejs`) and the built
+  bundle. Locally: `cd frontend && yarn build:embed`.
+
+Settings (environment variables / `.env`, all optional):
+
+| Setting                                                     | Default                 |                                                                                                |
+| ----------------------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------- |
+| `PLOT_DATA_BASE_URL`                                        | `http://127.0.0.1:8000` | where the child reads Breadbox; unprefixed (no `/breadbox`), loopback                          |
+| `PLOT_DATA_MAX_REQUEST_BYTES`                               | 262144                  | request body cap                                                                               |
+| `PLOT_DATA_TIMEOUT_SECONDS`                                 | 30                      | per-call deadline; the child is killed (504)                                                   |
+| `PLOT_DATA_MAX_OUTPUT_BYTES`                                | 8388608                 | child stdout cap, checked once the child has finished (413)                                    |
+| `PLOT_DATA_MAX_CONCURRENCY`                                 | 2                       | simultaneous children                                                                          |
+| `PLOT_DATA_MAX_QUEUE` / `PLOT_DATA_QUEUE_TIMEOUT_SECONDS`   | 8 / 5                   | waiters allowed / how long they wait before a 429                                              |
+| `PLOT_DATA_NODE_MAX_OLD_SPACE_MB`                           | 512                     | child heap                                                                                     |
+| `PLOT_DATA_CACHE_MAX_BYTES` / `PLOT_DATA_CACHE_TTL_SECONDS` | 134217728 / 300         | response cache; 0 disables it (concurrent identical calls are still coalesced)                 |
+| `PLOT_DATA_CHILD_ENV_PASSTHROUGH`                           | `[]`                    | JSON list of environment variable names to copy into the child (it otherwise gets `PATH` only) |
+| `PLOT_DATA_COMMAND_OVERRIDE`                                | unset                   | JSON list replacing the whole child command; for tests                                         |
+
+Tests: `pytest tests/api/test_plot_data.py` uses a fake child and runs anywhere.
+`tests/api/test_plot_data_live.py` serves the app on a real port and runs the real bundle
+against it; those tests are skipped unless `node` and the bundle exist.
+
 ### Running Elara
 
 Elara is the UI containing tools that use and interface with the Breadbox service. To run the elara app, see instructions for setup at https://github.com/broadinstitute/depmap-portal/tree/master/frontend/packages/elara-frontend/README.md

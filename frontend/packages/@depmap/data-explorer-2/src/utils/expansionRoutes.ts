@@ -4,7 +4,8 @@ import {
   getDimensionTypeIdentifiersPersisted,
 } from "@depmap/api";
 import { DataExplorerContextV2 } from "@depmap/types";
-import { capitalize, getDimensionTypeLabel, pluralize } from "./misc";
+import { capitalize, getDimensionTypeLabel } from "./misc";
+import { pluralize } from "./dimensionHelpers";
 
 // A way one dimension type can be expanded into the members associated with
 // some other entity — "the transcripts of a gene", "the doses of a compound",

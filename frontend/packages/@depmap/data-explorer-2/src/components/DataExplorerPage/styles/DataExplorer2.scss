@@ -44,14 +44,14 @@
   }
 
   @media (max-width: 1300px) {
-    .StartScreenExample {
-      width: 45%;
+    .StartScreenExamples {
+      grid-template-columns: repeat(2, 1fr);
     }
   }
 
   @media (max-width: 1000px) {
-    .StartScreenExample {
-      width: 100%;
+    .StartScreenExamples {
+      grid-template-columns: 1fr;
     }
   }
 
@@ -545,15 +545,15 @@
 }
 
 .StartScreenExamples {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+  display: grid;
+  // Fixed three columns. A short final row leaves its empty space at the end
+  // of the row, unlike the flex + space-between it replaces, which put the
+  // gap in the middle.
+  grid-template-columns: repeat(3, 1fr);
   gap: 25px 10px;
 }
 
 .StartScreenExample {
-  width: 30%;
-
   span:hover {
     figure {
       border: 1px solid #4479b2;
@@ -613,7 +613,7 @@
   border-radius: 4px;
 
   &:focus {
-    background-color: inherit;
+    background-color: #d4d4d4;
     outline: 1px solid #005ecc;
   }
 
@@ -650,12 +650,18 @@
   height: calc(100vh - 298px);
 }
 
+.categoryPickerControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
 // The bar defaults to the width the slice table's control strip has room for,
 // which is most of a modal. Narrowed here through the custom property it
 // exposes, rather than by reaching into its input.
 .categoryPickerSearch {
   --search-bar-input-width: 180px;
-  margin-bottom: 8px;
   margin-left: 2px;
 }
 
@@ -676,4 +682,15 @@
 
 .categoryPickerWarning {
   color: #a94442;
+}
+
+.exportCsvModal {
+  :global .modal-lg {
+    width: calc(100vw - 150px);
+  }
+}
+
+.exportCsvModalBody {
+  display: flex;
+  height: calc(100vh - 209px);
 }

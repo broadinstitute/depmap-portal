@@ -5,6 +5,7 @@ import requests
 from flask import Blueprint, redirect, render_template, request
 from itsdangerous import BadSignature, SignatureExpired, TimestampSigner
 from typing import cast, Optional
+from urllib.parse import urlsplit, urlunsplit
 
 import logging
 
@@ -116,14 +117,24 @@ class Turnstile:
             return render_template(
                 "turnstile_challenge.html",
                 site_key=app.config["TURNSTILE_SITE_KEY"],
-                next_url=request.url,
+                next_url=_drop_url_proto_and_host(request.url),
                 error=False,
             )
 
 
-def _set_cookie(app, response):
+def _drop_url_proto_and_host(url):
+    parts = urlsplit(url)
+    relative_url = urlunsplit(("", "", parts.path, parts.query, parts.fragment))
+    return relative_url
+
+
+def sign_cookie_value(app) -> str:
     signer = TimestampSigner(app.config["SECRET_KEY"])
-    signed = signer.sign("1").decode()
+    return signer.sign("1").decode()
+
+
+def _set_cookie(app, response):
+    signed = sign_cookie_value(app)
     max_age = app.config.get("TURNSTILE_COOKIE_EXPIRY", 604800)
     response.set_cookie(
         "PROBABLY_HUMAN",

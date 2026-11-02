@@ -1,4 +1,4 @@
-from typing import Dict, List, Literal, Optional, Type, Union
+from typing import Collection, Dict, List, Literal, Optional, Type, Union
 from uuid import uuid4
 
 from sqlalchemy import and_, inspect
@@ -6,6 +6,12 @@ from sqlalchemy import and_, inspect
 import pandas as pd
 import numpy as np
 
+from breadbox.crud.cache_invalidation import (
+    DIMENSION_TYPES,
+    GET_DATASETS,
+    invalidate_cache_keys,
+    invalidate_for_dataset_change,
+)
 from breadbox.db.session import SessionWithUser
 from breadbox.schemas.custom_http_exception import DimensionTypeNotFoundError
 from breadbox.schemas.dataset import TabularDatasetIn
@@ -140,6 +146,8 @@ def add_dimension_type(
     )
     db.add(dimension_type)
     db.flush()
+    # get_datasets() filters by dimension type axis
+    invalidate_cache_keys(db, DIMENSION_TYPES, GET_DATASETS)
 
     if dataset_in is not None and metadata_df is not None:
         group_id = str(dataset_in.group_id)
@@ -156,6 +164,7 @@ def add_dimension_type(
 
         dataset_id = dataset_in.id
         db.flush()
+        invalidate_for_dataset_change(db, metadata_dataset)
         dimension_type.dataset_id = dataset_id  # pyright: ignore
         db.flush()
 
@@ -247,11 +256,14 @@ def update_dataset_dimensions_with_dimension_type(
 def delete_dimension_type(db: SessionWithUser, dimension_type: DimensionType):
     """Delete the dimension type as well as its metadata dataset."""
     if dimension_type.dataset is not None:
+        invalidate_for_dataset_change(db, dimension_type.dataset)
         db.delete(dimension_type.dataset)
         dimension_type.dataset = None
         db.flush()
     db.delete(dimension_type)
     db.flush()
+    # get_datasets() filters by dimension type axis
+    invalidate_cache_keys(db, DIMENSION_TYPES, GET_DATASETS)
     return True
 
 
@@ -260,12 +272,14 @@ def get_dimension_type_metadata_col(
     dimension_type_name: str,
     col_name: str,
     limit: Optional[int] = None,
+    given_ids: Optional[Collection[str]] = None,
 ) -> dict[str, str]:
     assert isinstance(col_name, str)
 
     """
     Get a column of values from the dimension type's metadata. 
     Return a dictionary of values indexed by given ID.
+    If `given_ids` is provided, only those rows are fetched.
     If there is no metadata for the given dimension type, return an empty dict.
     """
     dimension_type = get_dimension_type(db=db, name=dimension_type_name)
@@ -277,17 +291,30 @@ def get_dimension_type_metadata_col(
     if dimension_type.dataset_id is None:
         return {}
 
-    values_by_id_tuples = (
-        db.query(TabularColumn)
-        .filter(
-            and_(
-                TabularColumn.dataset_id == dimension_type.dataset_id,
-                TabularColumn.given_id == col_name,
+    def _query(id_chunk: Optional[Collection[str]]):
+        query = (
+            db.query(TabularColumn)
+            .filter(
+                and_(
+                    TabularColumn.dataset_id == dimension_type.dataset_id,
+                    TabularColumn.given_id == col_name,
+                )
             )
+            .join(TabularCell)
         )
-        .join(TabularCell)
-        .limit(limit)
-        .with_entities(TabularCell.dimension_given_id, TabularCell.value)
-        .all()
-    )
-    return {id: value for id, value in values_by_id_tuples}
+        if id_chunk is not None:
+            query = query.filter(TabularCell.dimension_given_id.in_(id_chunk))
+        return query.limit(limit).with_entities(
+            TabularCell.dimension_given_id, TabularCell.value
+        )
+
+    if given_ids is None:
+        return {id: value for id, value in _query(None).all()}
+
+    # Chunked to stay under SQLite's bound-parameter limit
+    id_list = list(given_ids)
+    values_by_id: dict[str, str] = {}
+    for start in range(0, len(id_list), 900):
+        for id, value in _query(id_list[start : start + 900]).all():
+            values_by_id[id] = value
+    return values_by_id

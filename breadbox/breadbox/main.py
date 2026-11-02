@@ -6,6 +6,8 @@ from fastapi import Request, status
 from fastapi.exception_handlers import http_exception_handler
 from .logging import configure_logging, GCPExceptionReporter
 from .telemetry import configure_tracing
+from .service.plot_data import PlotDataError
+from .api.temp.plot_data import plot_data_error_response
 
 configure_logging()
 
@@ -47,3 +49,16 @@ async def custom_exception_handler(request: Request, exc: Exception):
         request, status.HTTP_500_INTERNAL_SERVER_ERROR, get_user(request)
     )
     raise exc
+
+
+# Same idea as the StarletteHTTPException handler above: report the 500s from POST
+# /temp/plot-data (child crashed, garbage on stdout, node missing, ...) and then answer with
+# the endpoint's normal error body.
+
+
+@app.exception_handler(PlotDataError)
+async def custom_plot_data_error_handler(request: Request, exc: PlotDataError):
+    if (exception_reporter.disabled is False) and exc.status_code == 500:
+        exception_reporter.report(request, exc.status_code, get_user(request))
+
+    return plot_data_error_response(exc)

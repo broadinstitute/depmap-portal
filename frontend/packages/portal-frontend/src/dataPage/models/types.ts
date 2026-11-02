@@ -57,9 +57,9 @@ export function getDataPageDataTypeString(datatype: DataPageDataType) {
     case DataPageDataType.RNAi_Drive_Novartis:
       return "Drive (Novartis)";
     case DataPageDataType.Proteomics_Olink_Lysate:
-      return "Olink Lysate";
+      return "Olink Lysate (Broad)";
     case DataPageDataType.Proteomics_Olink_Media:
-      return "Olink Media";
+      return "Olink Media (Broad)";
     case DataPageDataType.Proteomics_RPPA_CCLE:
       return "RPPA (CCLE)";
     case DataPageDataType.Proteomics_MS_CCLE:
@@ -77,7 +77,7 @@ export function getDataPageDataTypeString(datatype: DataPageDataType) {
     case DataPageDataType.Sequencing_ATACSeq_Broad:
       return "ATAC-seq (Broad)";
     case DataPageDataType.Sequencing_Long_Reads:
-      return "Long Reads";
+      return "Long-read RNA (Broad)";
     case DataPageDataType.CRISPR_Achilles_Broad:
       return "CRISPR KO screens (Broad)";
     case DataPageDataType.CRISPR_Score_Sanger:

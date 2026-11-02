@@ -3,7 +3,7 @@ import { Button, Checkbox } from "react-bootstrap";
 import { Spinner } from "@depmap/common-components";
 import { PartialDataExplorerPlotConfig } from "@depmap/types";
 import { downloadCsv } from "@depmap/utils";
-import { isCompleteDimension } from "../../../../../utils/misc";
+import { isCompleteDimension } from "../../../../../utils/dimensionHelpers";
 import usePrecomputedAssocationData from "../../../hooks/usePrecomputedAssocationData";
 import useScrollOnLoad from "./useScrollOnLoad";
 import AssociationsTable from "./AssociationsTable";

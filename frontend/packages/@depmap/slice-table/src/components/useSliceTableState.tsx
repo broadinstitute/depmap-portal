@@ -6,10 +6,12 @@ import React, {
   useState,
 } from "react";
 import { breadboxAPI, cached } from "@depmap/api";
-import { getConfirmation } from "@depmap/common-components";
+import { getConfirmation, showInfoModal } from "@depmap/common-components";
+import { DepMap } from "@depmap/globals";
 import { RowSelectionState } from "@depmap/react-table";
 import {
   areSliceQueriesEqual,
+  DimensionType,
   isValidSliceQuery,
   SliceQuery,
 } from "@depmap/types";
@@ -17,6 +19,15 @@ import useData, { createUniqueColumnKey, RowFilters } from "./useData";
 import chooseDataSlice from "./chooseDataSlice";
 import chooseFilters from "./chooseFilters";
 import showDataSlicePreview from "./showDataSlicePreview";
+
+const truncateVal = (s: unknown) => {
+  if (typeof s !== "string") {
+    return s;
+  }
+
+  const MAX = 45;
+  return s && s.length > MAX ? `${s.substr(0, MAX)}…` : s;
+};
 
 export interface CellCtx {
   row: Record<"id", string> & { original: Record<string, unknown> };
@@ -62,12 +73,23 @@ interface Props {
     label: string;
     getValue: (sliceQuery: SliceQuery) => unknown;
   }) => boolean;
+  // See `rowIds` in SliceTable's props.
+  rowIds?: Set<string>;
   customColumns?: CustomColumn[];
   customColumnPlacement?: CustomColumnPlacement;
   getColumnDisplayOptions?: (
     sliceQuery: SliceQuery
   ) => import("./useData").ColumnDisplayOptions | null;
   hiddenDatasets?: Set<string>;
+  // Whether a column of the table's own index type may offer "Create context".
+  // Turn this off where the table already lives inside a context builder: that
+  // item opens another builder, which hosts another table, and so on. Columns
+  // of a *different* type are unaffected, since they lead somewhere new.
+  allowSameTypeContextCreation?: boolean;
+  // Bumped by SliceTable's "Try again" button. See `retryToken` in useData for
+  // why the refetch needs a token of its own, and the adjustment below for what
+  // else a retry re-initializes.
+  retryToken: number;
 }
 
 // A column the caller supplies itself, for values that aren't Breadbox slices —
@@ -196,10 +218,13 @@ export function useSliceTableState({
   downloadFilename,
   tableRef,
   implicitFilter = undefined,
+  rowIds = undefined,
   customColumns = undefined,
   customColumnPlacement = "end",
   getColumnDisplayOptions = undefined,
   hiddenDatasets = undefined,
+  allowSameTypeContextCreation = true,
+  retryToken,
 }: Props) {
   const [slices, setSlices] = useState<SliceQuery[]>(initialSlices || []);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>(
@@ -226,6 +251,21 @@ export function useSliceTableState({
   if (syncedInitialSelection !== initialRowSelection) {
     setSyncedInitialSelection(initialRowSelection);
     setRowSelection(initialRowSelection);
+  }
+
+  // A retry re-reads `getInitialState` — SliceTable bumps its revision in the
+  // same click — so by the time this runs, `initialSlices` is the freshly-read
+  // set. For a caller that drops what it persisted in `onLoadError` (see
+  // forgetRememberedColumns) that is the smaller set, which is the whole point:
+  // replaying the column set that was just rejected would fail identically
+  // every time, so the retry has to start from whatever the caller now
+  // considers its starting point. Adjusted during render for the same reason
+  // the row selection above is.
+  const [syncedRetryToken, setSyncedRetryToken] = useState(retryToken);
+
+  if (syncedRetryToken !== retryToken) {
+    setSyncedRetryToken(retryToken);
+    setSlices(initialSlices);
   }
 
   const prevIndexTypeName = useRef(index_type_name);
@@ -275,11 +315,13 @@ export function useSliceTableState({
   }, [initialSlices, slices, onChangeSlices]);
 
   // Fetch data without any filtering — useData now returns the full dataset
-  const { columns, data, loading, error, exportToCsv } = useData({
+  const { columns, data, loading, progress, error, exportToCsv } = useData({
     getColumnDisplayOptions,
     index_type_name,
     slices,
     viewOnlySlices,
+    rowIds,
+    retryToken,
   });
 
   // Populate the slice data cache whenever columns or data change.
@@ -382,7 +424,7 @@ export function useSliceTableState({
                 typeof c.header === "string"
                   ? c.header
                   : c.meta?.idLabel ?? c.id;
-              lines.push(`${label}: ${val}`);
+              lines.push(`${label}: ${truncateVal(val)}`);
             }
           }
 
@@ -401,15 +443,20 @@ export function useSliceTableState({
   );
 
   // Build the set of row IDs that pass the implicit filter (i.e. the rows
-  // that would be visible if the user had no filters applied). When there
-  // is no implicit filter, returns undefined — SlicePreview will fall back
+  // that would be visible if the user had no filters applied). When the table
+  // is not scoped at all, returns undefined — SlicePreview will fall back
   // to using the full preview dataset as the baseline. This is passed
   // alongside `visibleRowIds` so the preview can distinguish between
-  // "filtering caused by the (invisible) implicit filter" and "filtering
+  // "filtering caused by the (invisible) scoping" and "filtering
   // the user actually applied themselves".
+  //
+  // `rowIds` is the same claim as an id-testing `implicitFilter` and answers this
+  // directly: it already *is* the table's universe, so there is nothing to
+  // evaluate. A caller may supply both, in which case the predicate still has to
+  // run over what was fetched.
   const getUnfilteredRowIds = useCallback((): Set<string> | undefined => {
     if (!implicitFilter) {
-      return undefined;
+      return rowIds;
     }
 
     const predicate = filterPredicate(
@@ -419,7 +466,7 @@ export function useSliceTableState({
     );
 
     return new Set(data.filter(predicate).map((row) => row.id as string));
-  }, [columns, data, implicitFilter]);
+  }, [columns, data, implicitFilter, rowIds]);
 
   const handleClickAddColumn = useCallback(async () => {
     const visibleRowIds = new Set(tableRef.current?.getDisplayRowIds() || []);
@@ -542,6 +589,248 @@ export function useSliceTableState({
     []
   );
 
+  // One column's values as a list of strings. Rows are the ones on screen, in
+  // display order (same set as the CSV download), optionally narrowed to the
+  // selection. Empty values are skipped so the result stays usable as a list.
+  const getColumnValues = useCallback(
+    (
+      column: typeof columns[number],
+      { selectedOnly }: { selectedOnly: boolean }
+    ) => {
+      const displayRowIds = tableRef.current?.getDisplayRowIds();
+      const displayRowIdSet = displayRowIds ? new Set(displayRowIds) : null;
+      const passesImplicitFilter = filterPredicate(
+        columns,
+        implicitFilter,
+        sliceDataCacheRef.current
+      );
+
+      const rowsById = new Map<string, typeof data[number]>();
+
+      for (const row of data) {
+        const id = row.id as string;
+
+        if (
+          passesImplicitFilter(row) &&
+          (!displayRowIdSet || displayRowIdSet.has(id)) &&
+          (!selectedOnly || selectedRowIds.has(id))
+        ) {
+          rowsById.set(id, row);
+        }
+      }
+
+      let orderedRows: typeof data = [...rowsById.values()];
+
+      if (displayRowIds) {
+        orderedRows = [];
+
+        for (const id of displayRowIds) {
+          const row = rowsById.get(id);
+
+          if (row) {
+            orderedRows.push(row);
+          }
+        }
+      }
+
+      const values: string[] = [];
+      const seenListItems = new Set<string>();
+      const { numericPrecision } = column.meta;
+
+      for (const row of orderedRows) {
+        const value: unknown = row[column.id];
+
+        if (value === null || value === undefined) {
+          continue;
+        }
+
+        if (Array.isArray(value)) {
+          // A list column is flattened to one value per line. Each distinct
+          // value appears once, in first-seen order.
+          for (const item of value) {
+            const s = String(item);
+
+            if (s !== "" && !seenListItems.has(s)) {
+              seenListItems.add(s);
+              values.push(s);
+            }
+          }
+        } else {
+          values.push(
+            typeof value === "number" && numericPrecision != null
+              ? value.toFixed(numericPrecision)
+              : String(value)
+          );
+        }
+      }
+
+      return values;
+    },
+    [columns, data, implicitFilter, selectedRowIds, tableRef]
+  );
+
+  const handleClickCopyColumn = useCallback(
+    async (
+      column: typeof columns[number],
+      options: { selectedOnly: boolean }
+    ) => {
+      try {
+        await navigator.clipboard.writeText(
+          getColumnValues(column, options).join("\n")
+        );
+      } catch (err) {
+        console.error("Failed to copy: ", err);
+      }
+    },
+    [getColumnValues]
+  );
+
+  // A column of a tabular dataset can seed a context on that dataset's index
+  // type: a protein table's own `label`, or its gene `symbol` reached through
+  // `reindex_through` (the outermost slice's dataset decides the type, so the
+  // chain needs no special handling). Matrix slices and continuous columns are
+  // excluded, since "is one of these numbers" doesn't describe a set of things.
+  //
+  // A slice query normally carries the dataset's `given_id` (the Context
+  // Builder prefers those for forward compatibility) rather than its real id,
+  // so each type is indexed under both.
+  const [typeByTabularDatasetId, setTypeByTabularDatasetId] = useState<
+    Map<string, DimensionType>
+  >(new Map());
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const [types, datasets] = await Promise.all([
+          cached(breadboxAPI).getDimensionTypes(),
+          cached(breadboxAPI).getDatasets(),
+        ]);
+
+        if (cancelled || !Array.isArray(types) || !Array.isArray(datasets)) {
+          return;
+        }
+
+        const next = new Map<string, DimensionType>();
+
+        for (const dataset of datasets) {
+          if (dataset.format !== "tabular_dataset") {
+            continue;
+          }
+
+          const type = types.find((t) => t.name === dataset.index_type_name);
+
+          if (type) {
+            next.set(dataset.id, type);
+
+            if (dataset.given_id) {
+              next.set(dataset.given_id, type);
+            }
+          }
+        }
+
+        setTypeByTabularDatasetId(next);
+      } catch (e) {
+        window.console.error(e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const getContextTargetType = useCallback(
+    (column: typeof columns[number]) => {
+      const { sliceQuery } = column.meta;
+
+      if (
+        !isValidSliceQuery(sliceQuery) ||
+        sliceQuery.identifier_type !== "column" ||
+        column.meta.value_type === "continuous"
+      ) {
+        return null;
+      }
+
+      const target = typeByTabularDatasetId.get(sliceQuery.dataset_id);
+
+      if (
+        !target ||
+        (!allowSameTypeContextCreation && target.name === index_type_name)
+      ) {
+        return null;
+      }
+
+      return target;
+    },
+    [allowSameTypeContextCreation, index_type_name, typeByTabularDatasetId]
+  );
+
+  // Uses the selected rows when the table supports selection and any are
+  // selected, otherwise the rows on screen. The builder shows the resulting
+  // list, so the user can review it before saving.
+  const handleClickCreateContext = useCallback(
+    (column: typeof columns[number], target: DimensionType) => {
+      const { sliceQuery } = column.meta;
+      const selectedOnly =
+        Boolean(enableRowSelection) && selectedRowIds.size > 0;
+      // Distinct values only: many rows can share one (every protein in a gene
+      // family, every cell line in a lineage), and the list is a set.
+      const values = [...new Set(getColumnValues(column, { selectedOnly }))];
+
+      if (values.length === 0) {
+        showInfoModal({
+          title: `Create ${target.display_name} context`,
+          content: (
+            <p>
+              There are no values in <b>“{column.meta.idLabel}”</b> for the{" "}
+              {selectedOnly ? "selected" : "visible"} rows, so there is nothing
+              to build a context from.
+            </p>
+          ),
+        });
+        return;
+      }
+
+      const isIdColumn = sliceQuery.identifier === target.id_column;
+      const variable = { var: isIdColumn ? "given_id" : sliceQuery.identifier };
+
+      DepMap.saveNewContext({
+        name: `${target.display_name} list`,
+        dimension_type: target.name,
+        // A one-item `in` is legal but is an odd thing to find in the builder.
+        expr:
+          values.length === 1
+            ? { "==": [variable, values[0]] }
+            : { in: [variable, values] },
+        vars: isIdColumn
+          ? {}
+          : {
+              [sliceQuery.identifier]: {
+                dataset_id: sliceQuery.dataset_id,
+                identifier_type: "column",
+                identifier: sliceQuery.identifier,
+              },
+            },
+      });
+    },
+    [enableRowSelection, getColumnValues, selectedRowIds]
+  );
+
+  // The menu calls these through a ref so that what a click acts on is the
+  // selection and data at the moment of the click, never whatever a menu item's
+  // closure captured when it was built.
+  const latestHandlersRef = useRef({
+    copy: handleClickCopyColumn,
+    create: handleClickCreateContext,
+  });
+
+  latestHandlersRef.current = {
+    copy: handleClickCopyColumn,
+    create: handleClickCreateContext,
+  };
+
   const extendedColumns = useMemo(() => {
     const OFFSET = columns.length - slices.length;
 
@@ -586,6 +875,35 @@ export function useSliceTableState({
               label: "View distribution",
               icon: "glyphicon-eye-open",
               onClick: () => handleClickViewColumn(column),
+            },
+
+          !column.meta.loadFailure && {
+            label: "Copy values",
+            icon: "glyphicon-copy",
+            onClick: () =>
+              latestHandlersRef.current.copy(column, { selectedOnly: false }),
+          },
+
+          !column.meta.loadFailure &&
+            enableRowSelection &&
+            selectedRowIds.size > 0 && {
+              label: "Copy selected values",
+              icon: "glyphicon-copy",
+              onClick: () =>
+                latestHandlersRef.current.copy(column, { selectedOnly: true }),
+            },
+
+          !column.meta.loadFailure &&
+            getContextTargetType(column) && {
+              label: `Create ${
+                getContextTargetType(column)!.display_name
+              } context`,
+              icon: "glyphicon-plus-sign",
+              onClick: () =>
+                latestHandlersRef.current.create(
+                  column,
+                  getContextTargetType(column)!
+                ),
             },
 
           colIndex >= OFFSET && {
@@ -706,9 +1024,12 @@ export function useSliceTableState({
     columns,
     customColumns,
     customColumnPlacement,
+    enableRowSelection,
+    getContextTargetType,
     handleClickEditColumn,
     handleClickViewColumn,
     removeColumn,
+    selectedRowIds,
     slices.length,
   ]);
 
@@ -801,6 +1122,7 @@ export function useSliceTableState({
     data,
     error,
     loading,
+    progress,
     columns: extendedColumns,
     rowFilter,
     handleClickAddColumn,

@@ -93,3 +93,12 @@ export async function getDimensionDataWithoutLabels(slice: SliceQuery) {
 
   throw new Error(`Bad slice query ${JSON.stringify(slice)}`);
 }
+
+// Starts requests whose results are awaited again, later, by the caller (see
+// the "Pre-fetch" comments). A rejection here isn't an unhandled one: the same
+// failure surfaces at the later `await`. But the promise returned here has no
+// handler of its own, and an unhandled rejection is only a console message in a
+// browser while in Node it ends the process.
+export function prefetch(...requests: Promise<unknown>[]) {
+  requests.forEach((request) => request.catch(() => {}));
+}

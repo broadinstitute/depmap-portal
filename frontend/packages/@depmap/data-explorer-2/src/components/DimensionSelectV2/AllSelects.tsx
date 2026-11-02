@@ -1,5 +1,6 @@
 import React from "react";
-import { capitalize, getDimensionTypeLabel, pluralize } from "../../utils/misc";
+import { capitalize, getDimensionTypeLabel } from "../../utils/misc";
+import { pluralize } from "../../utils/dimensionHelpers";
 import ContextSelectorV2 from "../ContextSelectorV2";
 import DataTypeSelect from "./DataTypeSelect";
 import UnitsSelect from "./UnitsSelect";
@@ -32,7 +33,7 @@ interface Props {
 }
 
 const truncate = (s: string) => {
-  const MAX = 15;
+  const MAX = 16;
   return s && s.length > MAX ? `${s.substr(0, MAX)}…` : s;
 };
 

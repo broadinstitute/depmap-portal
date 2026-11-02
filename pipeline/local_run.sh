@@ -3,7 +3,7 @@ set -e
 
 if [[ -z "$2" || -z "$1" ]]; then
     echo "Error: Environment name and pipeline name is required"
-    echo "Usage: $0 [analysis-pipeline | data-prep-pipeline] [internal|external|dmc]"
+    echo "Usage: $0 [preprocessing-pipeline | analysis-pipeline | data-prep-pipeline] [internal|external|dmc]"
     exit 1
 fi
 

@@ -23,11 +23,18 @@ function makeMockEnabledFeatures() {
   });
 }
 
+// This module is also bundled for Node (see embed-frontend/webpack.node.js),
+// where there is no `window` or `document`. Everything defined at module scope
+// below must tolerate that.
+const hasDom = typeof window !== "undefined" && typeof document !== "undefined";
+
 // In the Portal, this is defined here:
 // https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/portal-backend/depmap/templates/nav_footer/layout.html#L88
 // In Elara, it's defined here:
 // https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/frontend/packages/elara-frontend/webpack.common.js#L34-L36
-export const depmapContactUrl: string = (window as any).depmapContactUrl;
+export const depmapContactUrl: string = hasDom
+  ? (window as any).depmapContactUrl
+  : "";
 
 // This is injected into the HTML by the Portal backend:
 // https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/portal-backend/depmap/templates/nav_footer/layout.html#L88
@@ -35,14 +42,19 @@ export const depmapContactUrl: string = (window as any).depmapContactUrl;
 // https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/frontend/packages/elara-frontend/webpack.common.js#L29-L33
 // If it doesn't exist on `window` then we assume we're running in a test
 // environment (like Jest or Storybook) and return a mock.
-export const enabledFeatures: Record<string, boolean> =
-  (window as any).enabledFeatures || makeMockEnabledFeatures();
+// Outside a browser there is nothing to mock or detect, so no features are on.
+export const enabledFeatures: Record<string, boolean> = hasDom
+  ? (window as any).enabledFeatures || makeMockEnabledFeatures()
+  : {};
 
-export const isPortal: boolean = Boolean(
-  document.getElementById("webpack-config")
-);
+export const isPortal: boolean =
+  hasDom && Boolean(document.getElementById("webpack-config"));
 
 function extractUrlPrefixFromWebpackConfig() {
+  if (!hasDom) {
+    return "";
+  }
+
   const element = document.getElementById("webpack-config");
   let urlPrefix = "";
 
@@ -135,7 +147,9 @@ export function toStaticUrl(relativeUrl: string) {
 // https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/frontend/packages/elara-frontend/webpack.common.js#L37
 export const errorHandler: {
   report: (message: string) => void;
-} = (window as any).errorHandler;
+} = hasDom
+  ? (window as any).errorHandler
+  : { report: (message: string) => console.error(message) };
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 type DepmapGlobalObject = Record<string, Function> & {
@@ -169,7 +183,7 @@ type DepmapGlobalObject = Record<string, Function> & {
 // All exported functions in this file become its properties:
 // https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/frontend/packages/portal-frontend/src/index.tsx
 export const DepMap =
-  "Proxy" in window
+  hasDom && "Proxy" in window
     ? (new Proxy(
         {},
         {

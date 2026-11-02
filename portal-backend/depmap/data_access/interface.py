@@ -182,23 +182,6 @@ def get_dataset_sample_labels_by_id(dataset_id) -> dict[str, str]:
     return interactive_utils.get_dataset_sample_labels_by_id(dataset_id)
 
 
-def get_dataset_dimension_ids_by_label(
-    dataset_id: str, axis: Literal["sample", "feature"]
-) -> dict[str, str]:
-    """
-    For the given dataset axis, load all given_ids indexed by label.
-    This is helpful for re-indexing data which has been loaded by label. 
-    """
-    if axis == "feature":
-        labels_by_id = get_dataset_feature_labels_by_id(dataset_id)
-    else:
-        labels_by_id = get_dataset_sample_labels_by_id(dataset_id)
-    # invert the dictionary
-    # Also make sure ids are converted to strings (some legacy IDs are not)
-    ids_by_label = {label: str(id) for id, label in labels_by_id.items()}
-    return ids_by_label
-
-
 def get_dataset_feature_labels(dataset_id: str) -> list[str]:
     """
     Get a list of all feature/entity labels for the given dataset.

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { DataExplorerContextV2 } from "@depmap/types";
 import {
-  isContextAll,
   isNegatedContext,
   loadContextsFromLocalStorage,
   negateContext,
 } from "../../utils/context";
+import { isContextAll } from "../../utils/contextExpr";
 import getContextHash from "../../utils/get-context-hash";
 
 const toContextSelectorHash = async (context: DataExplorerContextV2 | null) => {

@@ -51,10 +51,52 @@ function instanceOfErrorDetail(object: any): object is ErrorDetail {
   );
 }
 
-async function request<T>(url: string, options: RequestInit): Promise<T> {
+// Lets a non-browser caller (e.g. the standalone Node bundle) point a client at
+// an absolute URL and supply its own auth. When nothing is configured, clients
+// behave exactly as they do in the browser: a relative prefix and cookies.
+export interface ClientSettings {
+  // Replaces the client's entire URL prefix (including any "/breadbox" segment).
+  baseUrl?: string;
+  // Sent with every request. Per-request headers (Accept, Content-Type) win.
+  headers?: Record<string, string>;
+  // Replaces the global `fetch`. Useful for signing or otherwise wrapping requests.
+  fetch?: typeof fetch;
+}
+
+type GetSettings = () => ClientSettings | null;
+
+// Everything `request()` throws is tagged so a caller outside the browser can
+// tell "Breadbox didn't give a usable answer" (and with what status) apart from
+// a bug elsewhere, without parsing messages. `status` is absent when there was
+// no response at all (a network failure).
+function markRequestFailure<E extends Error>(error: E, status?: number): E {
+  return Object.assign(error, { isRequestFailure: true, status });
+}
+
+export function getRequestFailure(error: unknown): { status?: number } | null {
+  const tagged = error as {
+    isRequestFailure?: boolean;
+    status?: number;
+  } | null;
+
+  return tagged && tagged.isRequestFailure ? { status: tagged.status } : null;
+}
+
+async function request<T>(
+  url: string,
+  options: RequestInit,
+  settings: ClientSettings | null
+): Promise<T> {
   let response: Response;
 
   const headers = new Headers(options.headers || {});
+
+  // Configured headers fill in around the request's own, which take precedence.
+  Object.entries(settings?.headers || {}).forEach(([name, value]) => {
+    if (!headers.has(name)) {
+      headers.set(name, value);
+    }
+  });
 
   // Only add Accept if not a multipart/form-data request
   if (!(options.body instanceof FormData) && !headers.has("Accept")) {
@@ -62,14 +104,19 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
   }
 
   try {
-    response = await fetch(url, {
-      credentials: "include",
+    const init: RequestInit = {
+      // Cookies only make sense for a browser talking to its own origin.
+      ...(settings ? {} : { credentials: "include" as const }),
       ...options,
       headers,
-    });
+    };
+
+    response = settings?.fetch
+      ? await settings.fetch(url, init)
+      : await fetch(url, init);
   } catch (err) {
-    window.console.error("Network or fetch error:", err);
-    throw new Error("Network request failed");
+    console.error("Network or fetch error:", err);
+    throw markRequestFailure(new Error("Network request failed"));
   }
 
   // Handle 404 and other non-JSON responses gracefully
@@ -77,31 +124,51 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
     // Check if response is JSON before trying to parse
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
-      const json = await response.json();
+      let json: unknown;
+
+      try {
+        json = await response.json();
+      } catch (err) {
+        console.error("Failed to parse JSON error response:", err);
+        throw markRequestFailure(
+          new Error(`Request failed with status ${response.status}`),
+          response.status
+        );
+      }
+
       if (instanceOfBreadboxCustomException(json)) {
-        throw new ErrorTypeError(
-          instanceOfErrorDetail(json.detail)
-            ? {
-                errorType: json.detail.error_type,
-                message: json.detail.message,
-              }
-            : {
-                errorType: "UNSPECIFIED_LEGACY_ERROR",
-                message: json.detail,
-              }
+        throw markRequestFailure(
+          new ErrorTypeError(
+            instanceOfErrorDetail(json.detail)
+              ? {
+                  errorType: json.detail.error_type,
+                  message: json.detail.message,
+                }
+              : {
+                  errorType: "UNSPECIFIED_LEGACY_ERROR",
+                  message: json.detail,
+                }
+          ),
+          response.status
         );
       } else {
         const message =
           typeof json === "object" && json !== null
             ? JSON.stringify(json)
             : `Request failed with status ${response.status}`;
-        throw new Error(message);
+        throw markRequestFailure(new Error(message), response.status);
       }
     } else if (response.status === 404) {
-      throw new Error(`Endpoint not found: ${url}`);
+      throw markRequestFailure(
+        new Error(`Endpoint not found: ${url}`),
+        response.status
+      );
     } else {
       // Non-JSON error response (like HTML 404 page)
-      throw new Error(`Request failed with status ${response.status}`);
+      throw markRequestFailure(
+        new Error(`Request failed with status ${response.status}`),
+        response.status
+      );
     }
   }
 
@@ -110,8 +177,11 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
   try {
     json = await response.json();
   } catch (err) {
-    window.console.error("Failed to parse JSON response:", err);
-    throw new Error("Failed to parse JSON response");
+    console.error("Failed to parse JSON response:", err);
+    throw markRequestFailure(
+      new Error("Failed to parse JSON response"),
+      response.status
+    );
   }
 
   return json as T;
@@ -154,11 +224,14 @@ async function resolveWithPersistence<T>(
   return fresh;
 }
 
-const makeGetJson = (urlPrefix: string) => <T>(
+const makeGetJson = (getPrefix: () => string, getSettings: GetSettings) => <T>(
   url: string,
   queryParameters?: Record<string, unknown>,
   options?: RequestInit
 ): Promise<T> => {
+  const urlPrefix = getPrefix();
+  const settings = getSettings();
+
   const getJson = () => {
     let fullUrl = `${urlPrefix}${url}`;
 
@@ -169,7 +242,7 @@ const makeGetJson = (urlPrefix: string) => <T>(
       fullUrl += "?" + qs.stringify(queryParameters, { arrayFormat: "repeat" });
     }
 
-    return request<T>(fullUrl, { method: "GET", ...options });
+    return request<T>(fullUrl, { method: "GET", ...options }, settings);
   };
 
   // Captured synchronously: the decorator clears it as soon as this returns.
@@ -196,16 +269,23 @@ const makeGetJson = (urlPrefix: string) => <T>(
   return cache[cacheKey] as Promise<T>;
 };
 
-const makePostJson = (urlPrefix: string) => async <T>(
-  url: string,
-  payload: unknown
-): Promise<T> => {
+const makePostJson = (
+  getPrefix: () => string,
+  getSettings: GetSettings
+) => async <T>(url: string, payload: unknown): Promise<T> => {
+  const urlPrefix = getPrefix();
+  const settings = getSettings();
+
   const postJson = () => {
-    return request<T>(`${urlPrefix}${url}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    return request<T>(
+      `${urlPrefix}${url}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      },
+      settings
+    );
   };
 
   // Captured synchronously: the decorator clears it as soon as this returns.
@@ -230,27 +310,37 @@ const makePostJson = (urlPrefix: string) => async <T>(
   return cache[cacheKey] as Promise<T>;
 };
 
-const makePatchJson = (urlPrefix: string) => async <T>(
-  url: string,
-  payload: unknown
-): Promise<T> => {
+const makePatchJson = (
+  getPrefix: () => string,
+  getSettings: GetSettings
+) => async <T>(url: string, payload: unknown): Promise<T> => {
+  const urlPrefix = getPrefix();
+  const settings = getSettings();
+
   if (cacheContext !== null) {
-    window.console.warn("PATCH requests cannot be cached");
+    console.warn("PATCH requests cannot be cached");
   }
 
-  return request<T>(`${urlPrefix}${url}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  return request<T>(
+    `${urlPrefix}${url}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+    settings
+  );
 };
 
-const makeDeleteJson = (urlPrefix: string) => async <T>(
-  url: string,
-  payload?: unknown
-): Promise<T> => {
+const makeDeleteJson = (
+  getPrefix: () => string,
+  getSettings: GetSettings
+) => async <T>(url: string, payload?: unknown): Promise<T> => {
+  const urlPrefix = getPrefix();
+  const settings = getSettings();
+
   if (cacheContext !== null) {
-    window.console.warn("DELETE requests cannot be cached");
+    console.warn("DELETE requests cannot be cached");
   }
 
   const options: RequestInit = {
@@ -262,18 +352,24 @@ const makeDeleteJson = (urlPrefix: string) => async <T>(
     options.body = JSON.stringify(payload);
   }
 
-  return request<T>(`${urlPrefix}${url}`, options);
+  return request<T>(`${urlPrefix}${url}`, options, settings);
 };
 
-const makePostMultipart = (urlPrefix: string) => async <T>(
+const makePostMultipart = (
+  getPrefix: () => string,
+  getSettings: GetSettings
+) => async <T>(
   url: string,
   args: Record<
     string,
     Blob | string | File | number | boolean | null | undefined
   >
 ): Promise<T> => {
+  const urlPrefix = getPrefix();
+  const settings = getSettings();
+
   if (cacheContext !== null) {
-    window.console.warn("Multipart POST requests cannot be cached");
+    console.warn("Multipart POST requests cannot be cached");
   }
 
   const formData = new FormData();
@@ -284,21 +380,31 @@ const makePostMultipart = (urlPrefix: string) => async <T>(
     }
   });
 
-  return request<T>(`${urlPrefix}${url}`, {
-    method: "POST",
-    body: formData,
-  });
+  return request<T>(
+    `${urlPrefix}${url}`,
+    {
+      method: "POST",
+      body: formData,
+    },
+    settings
+  );
 };
 
-const makePatchMultipart = (urlPrefix: string) => async <T>(
+const makePatchMultipart = (
+  getPrefix: () => string,
+  getSettings: GetSettings
+) => async <T>(
   url: string,
   args: Record<
     string,
     Blob | string | File | number | boolean | null | undefined
   >
 ): Promise<T> => {
+  const urlPrefix = getPrefix();
+  const settings = getSettings();
+
   if (cacheContext !== null) {
-    window.console.warn("Multipart PATCH requests cannot be cached");
+    console.warn("Multipart PATCH requests cannot be cached");
   }
 
   const formData = new FormData();
@@ -309,19 +415,49 @@ const makePatchMultipart = (urlPrefix: string) => async <T>(
     }
   });
 
-  return request<T>(`${urlPrefix}${url}`, {
-    method: "PATCH",
-    body: formData,
-  });
+  return request<T>(
+    `${urlPrefix}${url}`,
+    {
+      method: "PATCH",
+      body: formData,
+    },
+    settings
+  );
 };
 
-const createJsonClient = (urlPrefix: string) => ({
-  getJson: makeGetJson(urlPrefix),
-  postJson: makePostJson(urlPrefix),
-  patchJson: makePatchJson(urlPrefix),
-  deleteJson: makeDeleteJson(urlPrefix),
-  postMultipart: makePostMultipart(urlPrefix),
-  patchMultipart: makePatchMultipart(urlPrefix),
-});
+// `urlPrefix` may be a function so it is resolved per request rather than at
+// import time. `getSettings` returns the caller-supplied overrides, if any.
+const createJsonClient = (
+  urlPrefix: string | (() => string),
+  getSettings: GetSettings = () => null
+) => {
+  // Resolved once, on first use. This used to happen at import time, and the
+  // prefix is derived from `window.location`, so it must not drift as the user
+  // navigates around a single-page app.
+  let defaultPrefix: string | null = null;
+
+  const getPrefix = () => {
+    const baseUrl = getSettings()?.baseUrl;
+
+    if (baseUrl !== undefined) {
+      return baseUrl.replace(/\/+$/, "");
+    }
+
+    if (defaultPrefix === null) {
+      defaultPrefix = typeof urlPrefix === "function" ? urlPrefix() : urlPrefix;
+    }
+
+    return defaultPrefix;
+  };
+
+  return {
+    getJson: makeGetJson(getPrefix, getSettings),
+    postJson: makePostJson(getPrefix, getSettings),
+    patchJson: makePatchJson(getPrefix, getSettings),
+    deleteJson: makeDeleteJson(getPrefix, getSettings),
+    postMultipart: makePostMultipart(getPrefix, getSettings),
+    patchMultipart: makePatchMultipart(getPrefix, getSettings),
+  };
+};
 
 export default createJsonClient;

@@ -426,7 +426,7 @@ def _get_all_sample_indices(
 @app.task(base=LogErrorsTask, bind=True)
 def export_dataset(
     self: Any,
-    dataset_id: str,
+    dataset_id: str, # matrix dataset ID
     feature_labels: Optional[List[str]],
     sample_ids: Optional[List[str]],
     drop_nas: bool,

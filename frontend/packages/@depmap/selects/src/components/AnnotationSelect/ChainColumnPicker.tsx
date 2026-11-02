@@ -12,6 +12,7 @@ import React, {
 } from "react";
 import { WordBreaker } from "@depmap/common-components";
 import { SliceQuery } from "@depmap/types";
+import { compareCaseInsensitive } from "@depmap/utils";
 import type {
   ChainHop,
   ColumnEntry,
@@ -291,7 +292,9 @@ export default function ChainColumnPicker({
     const table = tables.find((t) => t.id === supplementalTable.tableId);
     if (!table) return [];
 
-    let cols = Object.keys(table.columns);
+    // Object key order is insertion order, not alphabetical, so sort here
+    // rather than trusting whatever order the schema arrived in.
+    let cols = Object.keys(table.columns).sort(compareCaseInsensitive);
 
     if (hiddenSet.size > 0) {
       cols = cols.filter((name) => !isColumnHidden(name, null));
@@ -318,7 +321,9 @@ export default function ChainColumnPicker({
       .filter((group) => group.columns.length > 0);
   }, [columnGroups, isSearching, searchLower]);
 
-  // Sort columns within each group: id_column first, disabled last.
+  // Sort columns within each group: id_column first, disabled last, then
+  // alphabetically. The alphabetical pass ignores case, so "Age" sorts next to
+  // "aliases" instead of ahead of every lowercase name.
   const sortedColumnGroups = useMemo(() => {
     return filteredColumnGroups.map((group) => {
       const idColumn = dimTypeMap[group.dimType]?.id_column ?? null;
@@ -332,7 +337,7 @@ export default function ChainColumnPicker({
         const bDisabled = isColumnDisabled(b.columnName, b);
         if (aDisabled !== bDisabled) return aDisabled ? 1 : -1;
 
-        return 0;
+        return compareCaseInsensitive(a.columnName, b.columnName);
       });
 
       return { ...group, columns: sorted };
@@ -642,11 +647,11 @@ export default function ChainColumnPicker({
         dimTypeMap
       );
 
-      return displayLabelFromNavState(
-        value.identifier,
-        nav.hops,
-        nav.supplementalTable?.tableName ?? null
-      );
+      // The supplemental table name is deliberately omitted: the trigger is
+      // narrow and usually truncates, so a table-name prefix would push the
+      // column name (the part that distinguishes one choice from another) out
+      // of view. The table name is still shown in the dropdown's breadcrumbs.
+      return displayLabelFromNavState(value.identifier, nav.hops, null);
     } catch {
       return value.identifier;
     }

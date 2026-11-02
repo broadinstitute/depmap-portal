@@ -1,0 +1,136 @@
+/* styling for the whole resources page container, including the filters on the side */
+.ResourcesV3PageContainer {
+  font-family: "Roboto";
+}
+
+.resourcesPageHeader {
+  height: 110px;
+
+  h1 {
+    font-weight: bold;
+  }
+
+  h3 {
+    font-weight: normal;
+  }
+}
+
+/* styling for the post content */
+.postContentContainer {
+  a {
+    overflow-wrap: break-word;
+  }
+  h1,
+  h2,
+  h3 {
+    margin-bottom: 20px;
+  }
+  p {
+    // font-size: 16px;
+    // line-height: 25px;
+    margin-bottom: 1.2em;
+  }
+
+  ul {
+    font-size: 16px;
+    line-height: 35px;
+  }
+
+  .postTitle {
+    margin-top: 0;
+    margin-bottom: 5px;
+  }
+
+  .postDate {
+    padding: 0 0 20px 0;
+    p {
+      font-size: 12px;
+      line-height: 18px;
+      margin-bottom: 0;
+    }
+  }
+}
+
+.postContent {
+  padding: 0 20px;
+}
+
+/* styling for the nav accordions section */
+.postsNavList {
+  overflow-y: auto;
+  max-height: 40vh;
+
+  /* keep the menu visible while the post scrolls with the page */
+  @media screen and (min-width: 992px) {
+    position: sticky;
+    top: 50px; /* clear the 50px site nav */
+    max-height: calc(100vh - 50px);
+  }
+
+  /* strip the bootstrap panel / list-group boxes so the menu is a flat list */
+  :global(.panel-group) {
+    margin-bottom: 0;
+  }
+
+  :global(.panel) {
+    margin-top: 0 !important;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  :global(.panel-heading) {
+    padding: 0;
+    background: transparent !important;
+    border: none !important;
+  }
+
+  :global(.panel-collapse) > :global(.list-group) {
+    margin-bottom: 0;
+    border: none !important;
+  }
+
+  /* menu headings and posts share the same row styling */
+  .navRow {
+    margin-bottom: 0;
+    /* padding-left is adjusted inline for nesting depth */
+    padding: 8px 10px;
+    font-size: 15px;
+    line-height: 1.4;
+    color: #333;
+    background: transparent;
+    border: none;
+    /* beats bootstrap's .list-group-item:last-child rounded corners */
+    border-radius: 0 !important;
+    cursor: pointer;
+
+    &:hover,
+    &:focus {
+      color: #333;
+      background: #f0f3f8;
+    }
+  }
+
+  .panelHeading {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "title glyph-symbol";
+    font-weight: 600;
+  }
+
+  .headingTitle {
+    grid-area: title;
+  }
+
+  .navPostItem {
+    font-weight: 400;
+  }
+
+  .navPostItem:global(.active) {
+    font-weight: 600;
+    color: #286090 !important;
+    background: #e8eff9 !important;
+    box-shadow: inset 3px 0 0 #337ab7;
+  }
+}

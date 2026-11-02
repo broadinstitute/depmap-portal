@@ -1,7 +1,6 @@
 import {
   Dataset,
   DatasetUpdateArgs,
-  ErrorTypeError,
   SearchDimenionsRequest,
   SearchDimenionsResponse,
   SliceQuery,
@@ -148,62 +147,25 @@ export async function getTabularDatasetData(
 ) {
   checkDatasetId(datasetId);
 
-  const result = await postJson<{
+  return postJson<{
     [key: string]: Record<string, any>;
   }>(uri`/datasets/tabular/${datasetId}`, args);
-
-  // WORKAROUND: Breadbox responds with a 200 even though there was an error.
-  if ("detail" in result) {
-    const isErrorObj = typeof result.detail === "object";
-
-    throw new ErrorTypeError({
-      errorType: isErrorObj
-        ? result.detail.errorType
-        : ("UNSPECIFIED_LEGACY_ERROR" as ErrorTypeError["errorType"]),
-
-      message: isErrorObj ? result.detail.message : result.detail,
-    });
-  }
-
-  return result;
 }
 
 export async function getDatasetSamples(datasetId: string) {
   checkDatasetId(datasetId);
 
-  const result = await getJson<{ id: string; label: string }[]>(
+  return getJson<{ id: string; label: string }[]>(
     uri`/datasets/samples/${datasetId}`
   );
-
-  if (!Array.isArray(result)) {
-    const detail = (result as any).detail;
-
-    throw new ErrorTypeError({
-      errorType: detail.error_type,
-      message: detail.message,
-    });
-  }
-
-  return result;
 }
 
 export async function getDatasetFeatures(datasetId: string) {
   checkDatasetId(datasetId);
 
-  const result = await getJson<{ id: string; label: string }[]>(
+  return getJson<{ id: string; label: string }[]>(
     uri`/datasets/features/${datasetId}`
   );
-
-  if (!Array.isArray(result)) {
-    const detail = (result as any).detail;
-
-    throw new ErrorTypeError({
-      errorType: detail.error_type,
-      message: detail.message,
-    });
-  }
-
-  return result;
 }
 
 export function searchDimensions({
@@ -220,10 +182,41 @@ export function searchDimensions({
   });
 }
 
-export function getDimensionData(sliceQuery: SliceQuery) {
-  return postJson<{
-    ids: string[];
-    labels: string[];
-    values: string[];
-  }>("/datasets/dimension/data/", sliceQuery);
+// `indices` restricts a tabular column to the given dimension IDs, for a caller
+// that already knows which rows it will show. It is a separate argument rather
+// than a SliceQuery field on purpose: SliceQuery is serialized into saved links
+// and remembered table columns, and column identity is derived from it, so a row
+// set must not be able to change either. It still reaches the persistent cache
+// key, since the key is the whole POST body -- one entry per row set.
+//
+// `options.fields` narrows the response to the listed keys; it is how a caller that
+// already has the row labels (or never shows them) avoids paying for them on the
+// wire. Like `indices` it is not part of SliceQuery, and it reaches the persistent
+// cache key through the POST body, so narrowed and full responses never collide.
+type DimensionDataField = "ids" | "labels" | "values";
+type DimensionDataResponse = {
+  ids: string[];
+  labels: string[];
+  values: string[];
+};
+
+export function getDimensionData(
+  sliceQuery: SliceQuery,
+  indices?: string[]
+): Promise<DimensionDataResponse>;
+export function getDimensionData<F extends DimensionDataField>(
+  sliceQuery: SliceQuery,
+  indices: string[] | undefined,
+  options: { fields: F[] }
+): Promise<Pick<DimensionDataResponse, F>>;
+export function getDimensionData(
+  sliceQuery: SliceQuery,
+  indices?: string[],
+  options?: { fields: DimensionDataField[] }
+) {
+  return postJson<Partial<DimensionDataResponse>>("/datasets/dimension/data/", {
+    ...sliceQuery,
+    ...(indices ? { indices } : {}),
+    ...(options ? { fields: options.fields } : {}),
+  });
 }

@@ -1,6 +1,9 @@
 export { legacyPortalAPI } from "./src/legacyPortalAPI";
 export type { LegacyPortalApiResponse } from "./src/legacyPortalAPI";
 export { breadboxAPI } from "./src/breadboxAPI";
+export { configureBreadboxClient } from "./src/breadboxAPI/client";
+export type { ClientSettings } from "./src/createJsonClient";
+export { getRequestFailure } from "./src/createJsonClient";
 export type { BreadboxApiResponse } from "./src/breadboxAPI";
 export { cached } from "./src/apiCacheDecorator";
 

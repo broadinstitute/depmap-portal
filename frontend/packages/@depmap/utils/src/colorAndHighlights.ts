@@ -118,3 +118,20 @@ export const getHighlightSymbol: HighlightFunction<string> = (
   }
   return "circle";
 };
+
+/**
+ * Generates a color based on correlation value (-1 to 1): linear
+ * interpolation from blue (-1) to light gray (0) to red (1).
+ */
+export const getCorrelationColor = (val: number): string => {
+  const clamp = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
+  const lightGray = { r: 220, g: 220, b: 220 };
+  const endColor = val >= 0 ? { r: 150, g: 0, b: 0 } : { r: 0, g: 117, b: 250 };
+  const factor = Math.min(1, Math.abs(val));
+
+  const r = lightGray.r + (endColor.r - lightGray.r) * factor;
+  const g = lightGray.g + (endColor.g - lightGray.g) * factor;
+  const b = lightGray.b + (endColor.b - lightGray.b) * factor;
+
+  return `rgb(${clamp(r)}, ${clamp(g)}, ${clamp(b)})`;
+};

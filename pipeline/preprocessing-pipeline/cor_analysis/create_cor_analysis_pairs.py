@@ -9,6 +9,8 @@ skip_if_missing = [
     "Prism_oncology_viability",
     "PRISMOncologyReferenceSeqLog2AUCMatrix",
     "Prism_oncology_seq_viability",
+    "PRISMOncologyReferenceUnifiedLog2AUCMatrix",
+    "Prism_oncology_unified_viability",
 ]
 
 
@@ -33,10 +35,8 @@ def main():
     def make_drug_vs_genetic():
         by_given_id = {artifact["given_id"]: artifact for artifact in inputs["a_set"]}
         for drug_given_id in [
-            "PRISMOncologyReferenceLog2AUCMatrix",
-            "Prism_oncology_viability",
-            "PRISMOncologyReferenceSeqLog2AUCMatrix",
-            "Prism_oncology_seq_viability",
+            "PRISMOncologyReferenceUnifiedLog2AUCMatrix",
+            "Prism_oncology_unified_viability",
             "REPURPOSING_log2AUC_collapsed",
             "CTRP_log2AUC_collapsed",
             "GDSC1_log2AUC_collapsed",

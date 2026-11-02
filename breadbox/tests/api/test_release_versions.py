@@ -74,7 +74,7 @@ class TestGet:
         release = factories.release_version(
             minimal_db,
             files=[
-                {"file_name": "test.csv", "datatype": "crispr", "is_main_file": True}
+                {"file_name": "test.csv", "datatypes": ["crispr"], "is_main_file": True}
             ],
         )
         release_version_id = str(release.id)
@@ -108,7 +108,7 @@ class TestPost:
             "description": "New release",
             "content_hash": "a" * 32,
             "files": [
-                {"file_name": "data.csv", "datatype": "crispr", "is_main_file": True}
+                {"file_name": "data.csv", "datatypes": ["crispr"], "is_main_file": True}
             ],
             "release_pipelines": [{"pipeline_name": "Standard", "description": "Desc"}],
         }

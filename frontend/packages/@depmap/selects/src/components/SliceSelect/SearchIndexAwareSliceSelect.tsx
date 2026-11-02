@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import VanillaAsyncSelect from "react-select/async";
 import { WindowedMenuList } from "react-windowed-select";
 import extendReactSelect from "../../utils/extend-react-select";
 import { SliceSelection } from "./types";
-import { useDefaultOptions, useSearch } from "./hooks";
+import { useDefaultOptions, useSearch, useValueValidity } from "./hooks";
 import formatOptionLabel from "./formatOptionLabel";
 
 const AsyncSelect = extendReactSelect(VanillaAsyncSelect);
@@ -50,29 +50,18 @@ function SearchIndexAwareSliceSelect({
     dataset_id
   );
 
-  const invalidValue = useMemo(() => {
-    if (!dataset_id || !value || isLoadingDefaultOptions) {
-      return false;
+  const { invalidValue, disabledValueLabel } = useValueValidity(
+    slice_type,
+    dataType,
+    dataset_id,
+    value
+  );
+
+  useEffect(() => {
+    if (disabledValueLabel) {
+      searchQuery.current = disabledValueLabel;
     }
-
-    for (let i = 0; i < defaultOptions.length; i += 1) {
-      const opt = defaultOptions[i] as {
-        label: string;
-        value: string;
-        isDisabled: boolean;
-      };
-
-      if (value.id === opt.value || value.id === opt.label) {
-        if (opt.isDisabled) {
-          searchQuery.current = opt.label;
-        }
-
-        return opt.isDisabled;
-      }
-    }
-
-    return true;
-  }, [dataset_id, value, isLoadingDefaultOptions, defaultOptions]);
+  }, [disabledValueLabel]);
 
   return (
     <AsyncSelect

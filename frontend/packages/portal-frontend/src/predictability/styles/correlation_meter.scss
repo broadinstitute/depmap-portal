@@ -54,6 +54,12 @@
   right: 50%;
 }
 
+.fullBar {
+  --bar-color: #e3a7a7;
+  left: 0;
+  right: auto;
+}
+
 .meter-bar {
   position: absolute;
   top: 0;

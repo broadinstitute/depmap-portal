@@ -7,17 +7,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PYENV_ROOT="/opt/pyenv"
 ENV PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
 
-# Cache-bust for the apt layer below. Without this, --cache-from replays a
-# previously-built apt layer from the registry and neither `update`, `upgrade`
-# nor `install` actually run, so the image ships whatever package versions were
-# current when that layer was first built (observed: 6 days stale).
-# build-docker-image.sh passes today's date, so the layer rebuilds once a day.
-ARG APT_REFRESH=0
-
 # Install base packages and pyenv build dependencies
-# APT_REFRESH must be referenced here - an unused ARG does not affect the cache key.
-RUN echo "apt cache-bust: ${APT_REFRESH}" \
-    && apt-get update -y && apt-get upgrade -y && apt-get install -y --no-install-recommends \
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
     nano joe \
     libpq-dev graphviz \
     build-essential zlib1g-dev \
@@ -61,8 +52,21 @@ ENV FLASK_APP=autoapp.py
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
 
+# Everything above is reused from the registry cache (--cache-from) as long as the
+# instructions don't change, so OS security patches would otherwise only arrive when
+# debian:trixie itself is republished. build-docker-image.sh passes a unique value
+# here on every build, which forces this layer (and everything after it) to rerun.
+# It sits after the slow pyenv build so we don't recompile Python each time.
+ARG SECURITY_PATCH_CACHE_BUST=unset
+RUN echo "security patch cache bust: ${SECURITY_PATCH_CACHE_BUST}" \
+    && apt-get update -y \
+    && apt-get upgrade -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install requirements
-RUN pip install "poetry>=2.0,<3.0" && poetry config virtualenvs.in-project true
+RUN pip install --upgrade pip \
+    && pip install "poetry>=2.0,<3.0" \
+    && poetry config virtualenvs.in-project true
 
 RUN mkdir -p /install
 ADD dist/additional-files.tar.gz /install

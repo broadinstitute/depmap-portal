@@ -54,6 +54,11 @@ export default class CellignerGraph extends React.Component<Props, State> {
 
   plotElement: ExtendedPlotType | null = null;
 
+  paletteCache: {
+    alignments: Alignments;
+    palette: ReturnType<typeof getGroupByColorPalette>;
+  } | null = null;
+
   plotLayout: Plotly.PlotRelayoutEvent = {
     dragmode: "zoom",
     "xaxis.autorange": true,
@@ -136,9 +141,7 @@ export default class CellignerGraph extends React.Component<Props, State> {
       prevState.pointSize !== pointSize ||
       prevState.tumorLegendPointVisibilty !== tumorLegendPointVisibilty ||
       prevState.colorLegendPointVisibilty !== colorLegendPointVisibilty ||
-      prevProps.sidePanelSelectedPoints !== sidePanelSelectedPoints ||
-      prevProps.annotatedPoints !== annotatedPoints ||
-      prevProps.lassoOrBoxSelectedPoints !== lassoOrBoxSelectedPoints
+      prevProps.annotatedPoints !== annotatedPoints
     ) {
       const groups = (alignments[colorByCategory] as any).map(
         (c: any) => c ?? "N/A"
@@ -148,7 +151,7 @@ export default class CellignerGraph extends React.Component<Props, State> {
         (_, i) => tumorLegendPointVisibilty[i] && colorLegendPointVisibilty[i]
       );
 
-      const groupbyColorPalette = getGroupByColorPalette(alignments);
+      const groupbyColorPalette = this.getColorPalette();
 
       (restyles as any).transforms = [
         [
@@ -170,7 +173,6 @@ export default class CellignerGraph extends React.Component<Props, State> {
 
     // Important for when the user clicks the new PlotControls "Deselect" option
     if (
-      !isEqual(prevProps.lassoOrBoxSelectedPoints, lassoOrBoxSelectedPoints) &&
       prevProps.lassoOrBoxSelectedPoints.size > 0 &&
       lassoOrBoxSelectedPoints.size === 0
     ) {
@@ -211,7 +213,22 @@ export default class CellignerGraph extends React.Component<Props, State> {
       Plotly.relayout(this.plotElement!, relayout);
     }
 
-    Plotly.restyle(this.plotElement!, restyles);
+    if (Object.keys(restyles).length > 0) {
+      Plotly.restyle(this.plotElement!, restyles);
+    }
+  }
+
+  getColorPalette() {
+    const { alignments } = this.props;
+
+    if (this.paletteCache?.alignments !== alignments) {
+      this.paletteCache = {
+        alignments,
+        palette: getGroupByColorPalette(alignments),
+      };
+    }
+
+    return this.paletteCache.palette;
   }
 
   onPlotRelayout(e: Partial<Plotly.PlotRelayoutEvent>) {
@@ -277,7 +294,9 @@ export default class CellignerGraph extends React.Component<Props, State> {
     });
   };
 
-  onMakeContextButtonClick = async () => {
+  // The DepMap IDs of selected, visible points that are models (tumors and
+  // other sample types have no DepMap ID).
+  getSelectedModelIds = () => {
     const {
       alignments,
       lassoOrBoxSelectedPoints,
@@ -286,9 +305,12 @@ export default class CellignerGraph extends React.Component<Props, State> {
     } = this.props;
     const { tumorLegendPointVisibilty, colorLegendPointVisibilty } = this.state;
 
-    const pointVisibility = alignments.lineage.map(
-      (_, i) => tumorLegendPointVisibilty[i] && colorLegendPointVisibilty[i]
-    );
+    if (
+      lassoOrBoxSelectedPoints.size === 0 &&
+      sidePanelSelectedPoints.size === 0
+    ) {
+      return [];
+    }
 
     const selectedPtsForContext = getValidSelectedPoints(
       lassoOrBoxSelectedPoints,
@@ -296,24 +318,33 @@ export default class CellignerGraph extends React.Component<Props, State> {
       selectedPoints
     );
 
-    const selectedModelIds = alignments.sampleId.filter(
-      (_, index) =>
-        alignments.type[index] === CellignerSampleType.DEPMAP_MODEL &&
-        selectedPtsForContext.has(index) &&
-        pointVisibility[index] === true
-    );
+    const selectedModelIds: string[] = [];
 
+    selectedPtsForContext.forEach((index) => {
+      if (
+        alignments.type[index] === CellignerSampleType.DEPMAP_MODEL &&
+        tumorLegendPointVisibilty[index] &&
+        colorLegendPointVisibilty[index]
+      ) {
+        selectedModelIds.push(alignments.sampleId[index]);
+      }
+    });
+
+    return [...new Set(selectedModelIds)];
+  };
+
+  onMakeContextButtonClick = async () => {
     const context = {
       name: "",
       dimension_type: "depmap_model",
       expr: {
-        in: [{ var: "entity_label" }, [...new Set(selectedModelIds)]],
+        in: [{ var: "id" }, this.getSelectedModelIds()],
       },
       vars: {
-        entity_label: {
+        id: {
           dataset_id: "depmap_model_metadata",
           identifier_type: "column" as const,
-          identifier: "label",
+          identifier: "depmap_id",
         },
       },
     };
@@ -322,36 +353,24 @@ export default class CellignerGraph extends React.Component<Props, State> {
   };
 
   getPlotControlEnabledTools = () => {
-    if (this.props.lassoOrBoxSelectedPoints.size > 0) {
-      return [
-        PlotToolOptions.Zoom,
-        PlotToolOptions.Pan,
-        PlotToolOptions.Lasso,
-        PlotToolOptions.Select,
-        PlotToolOptions.Deselect,
-        PlotToolOptions.MakeContext,
-        PlotToolOptions.UnselectAnnotatedPoints,
-      ];
-    }
-
-    if (this.props.sidePanelSelectedPoints.size > 0) {
-      return [
-        PlotToolOptions.Zoom,
-        PlotToolOptions.Pan,
-        PlotToolOptions.Lasso,
-        PlotToolOptions.Select,
-        PlotToolOptions.MakeContext,
-        PlotToolOptions.UnselectAnnotatedPoints,
-      ];
-    }
-
-    return [
+    const tools = [
       PlotToolOptions.Zoom,
       PlotToolOptions.Pan,
       PlotToolOptions.Lasso,
       PlotToolOptions.Select,
-      PlotToolOptions.UnselectAnnotatedPoints,
     ];
+
+    if (this.props.lassoOrBoxSelectedPoints.size > 0) {
+      tools.push(PlotToolOptions.Deselect);
+    }
+
+    if (this.getSelectedModelIds().length > 0) {
+      tools.push(PlotToolOptions.MakeContext);
+    }
+
+    tools.push(PlotToolOptions.UnselectAnnotatedPoints);
+
+    return tools;
   };
 
   render() {

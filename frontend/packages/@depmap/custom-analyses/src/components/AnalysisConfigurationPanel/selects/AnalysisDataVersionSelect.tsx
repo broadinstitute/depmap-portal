@@ -16,9 +16,16 @@ type GroupedOptions = { label: string; options: Options }[];
 
 const computeOptions = async (index_type: string) => {
   const datasets = await cached(breadboxAPI).getDatasets();
+  // Keyed by the same thing the option's `value` is, so the within-data-type
+  // sort below can find it. Keying by `id` alone silently produced NaN for
+  // every dataset with a given_id, which made that sort a no-op.
+  //
+  // Unprioritized last, matching the Data Version select in Data Explorer and
+  // `sortByNumberOrNull` in @depmap/utils: `1` is the highest priority, so a
+  // missing one is an absence of curation rather than the strongest claim.
   const priorities: Record<string, number> = {};
   for (const d of datasets) {
-    priorities[d.id] = d.priority ?? -Infinity;
+    priorities[d.given_id || d.id] = d.priority ?? Infinity;
   }
 
   const dimTypes = await cached(breadboxAPI).getDimensionTypes();
@@ -34,7 +41,9 @@ const computeOptions = async (index_type: string) => {
         ? (d as MatrixDataset).sample_type_name === index_type
         : (d as MatrixDataset).feature_type_name === index_type
     )
-    .sort((a, b) => priorities[a.id] - priorities[b.id])
+    .sort(
+      (a, b) => priorities[a.given_id || a.id] - priorities[b.given_id || b.id]
+    )
     .map((d) => ({
       label: d.name,
       value: d.given_id || d.id,

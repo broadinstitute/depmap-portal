@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import jsonBeautify from "json-beautify";
 import { showInfoModal } from "@depmap/common-components";
 import { DataExplorerContextV2, isValidSliceQuery } from "@depmap/types";
-import { isCompleteExpression } from "../../../utils/misc";
+import { isCompleteExpression } from "../../../utils/dimensionHelpers";
 import { dataExplorerAPI } from "../../../services/dataExplorerAPI";
 import { useContextBuilderState } from "../state/ContextBuilderState";
 import styles from "../../../styles/ContextBuilderV2.scss";

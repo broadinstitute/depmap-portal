@@ -1,0 +1,81 @@
+// Nightingale renders into a shadow root, so none of this reaches inside the
+// element -- it only sizes and positions the host. Anything that needs to
+// change within the band has to go through the element's own attributes.
+.strip {
+  display: block;
+  width: 100%;
+  // Nightingale sets `style="width: 100%"` on itself when no width attribute is
+  // present, and measures the box it lands in. In a table cell that box is
+  // whatever the column is, which is what we want -- but it needs a line-height
+  // reset, or the row grows by the cell's leading on top of the band's height.
+  line-height: 0;
+
+  // Belt and braces around Nightingale's own sizing. The element measures
+  // itself through a ResizeObserver and writes the result onto its SVG, so
+  // there is a window -- and, if the observer is ever wrong, a lasting state --
+  // where the SVG is wider than the cell. Clipping here keeps the band from
+  // spilling into the next column, and keeps the cell's scrollWidth equal to
+  // its clientWidth, which is what the table measures to decide whether to
+  // offer a truncation tooltip.
+  max-width: 100%;
+  overflow: hidden;
+}
+
+// Shown while the Nightingale chunk loads, and permanently if it fails. A long
+// residue string in a narrow column would otherwise force the column wide, so
+// it's clipped to one line.
+.fallback {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: monospace;
+  font-size: 11px;
+  color: #666;
+}
+
+// The legend lives in the column header rather than in each cell: it is the
+// same four classes for every row, and the band's colors are sub-3:1 against
+// the page, which makes a text label mandatory rather than decorative.
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  margin-top: 3px;
+  font-weight: normal;
+  font-size: 10px;
+  line-height: 1.3;
+  color: #333;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.legendSwatch {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 1px;
+}
+
+.gradientKey {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  font-weight: normal;
+  font-size: 10px;
+  line-height: 1.3;
+  color: #333;
+}
+
+.gradientBar {
+  flex: 1 1 auto;
+  min-width: 24px;
+  height: 8px;
+  border-radius: 1px;
+}

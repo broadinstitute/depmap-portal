@@ -1,8 +1,7 @@
-from typing import List, Optional, Set, Annotated
+from typing import List, Literal, Optional, Set, Annotated
 from logging import getLogger
 from ..db.util import transaction
 from breadbox.utils.asserts import index_error_msg
-from pydantic import Json
 
 from pydantic import Json
 
@@ -21,7 +20,11 @@ from fastapi import (
 
 from breadbox.db.session import SessionWithUser
 from breadbox.celery_task import utils
-
+from breadbox.api.utils import (
+    RenderIfChanged,
+    get_render_if_changed,
+)
+from breadbox.crud.cache_invalidation import GET_DATASETS, GET_DATASETS_PUBLIC
 from breadbox.compute.dataset_tasks import (
     get_file_dict,
     run_upload_dataset,
@@ -35,7 +38,6 @@ from ..crud import dimension_types as type_crud
 from ..crud.dimension_ids import get_dataset_feature_by_given_id
 
 from ..models.dataset import (
-    Dataset as DatasetModel,
     ValueType,
     MatrixDataset,
     TabularDataset,
@@ -98,28 +100,61 @@ def _get_root_query(sq: SliceQuery) -> SliceQuery:
     response_model_exclude_none=False,
 )
 def get_datasets(
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+    user: Annotated[str, Depends(get_user)],
+    render_if_changed: Annotated[RenderIfChanged, Depends(get_render_if_changed)],
     feature_id: Optional[str] = None,
     feature_type: Optional[str] = None,
     sample_id: Optional[str] = None,
     sample_type: Optional[str] = None,
     value_type: Optional[ValueType] = None,
-    db: SessionWithUser = Depends(get_db_with_user),
-    user: str = Depends(get_user),
+    group_id: Optional[str] = None,
 ):
     """
     Get metadata for all datasets available to current user.
 
     If `feature_id` and `feature_type` are specified, we return only the datasets that contain that feature.
 
+    If `group_id` is specified, we return only the datasets owned with that group
+
     If `feature_type` is specified without `feature_id`, then we return the datasets
     that have that `feature_type`.
 
     Similar for `sample_id` and `sample_type`.
     """
-    datasets = dataset_crud.get_datasets(
-        db, user, feature_id, feature_type, sample_id, sample_type, value_type
+
+    if group_id == PUBLIC_GROUP_ID:
+        # Special case which we handle as an optimization: Everyone can see everything in the public group, so if we've requested that, the result doesn't depend on
+        # the user or on changes to groups/group entries. It only changes when a public dataset does.
+        cache_keys = [GET_DATASETS_PUBLIC]
+        ignore_user_in_etag = True
+    else:
+        # Otherwise, the result depends on who is asking and on which groups they belong to, so the user needs
+        # to be part of the etag (GET_DATASETS is invalidated when groups or group entries change). Caching
+        # happens by url + etag, but user is sent via header so we need to add it to the etag
+        cache_keys = [GET_DATASETS]
+        ignore_user_in_etag = False
+
+    def _get_datasets():
+        datasets = dataset_crud.get_datasets(
+            db,
+            user,
+            feature_id,
+            feature_type,
+            sample_id,
+            sample_type,
+            value_type,
+            group_id,
+        )
+        return datasets
+
+    return render_if_changed(
+        db,
+        cache_keys,
+        _get_datasets,
+        response_model=List[DatasetResponse],
+        ignore_user=ignore_user_in_etag,
     )
-    return [dataset for dataset in datasets]
 
 
 def _get_required_dataset(db: SessionWithUser, dataset_id: str):
@@ -430,6 +465,7 @@ def get_dimensions(
     "/dimension/data/",
     operation_id="get_dimension_data",
     response_model=DimensionDataResponse,
+    response_model_exclude_unset=True,
 )
 def get_dimension_data(
     # TODO: This endpoint inlines the SliceQuery fields as individual Body() params
@@ -458,6 +494,27 @@ def get_dimension_data(
             description="Optional chain of FK joins to reindex the result by a different dimension type."
         ),
     ] = None,
+    indices: Annotated[
+        Optional[List[str]],
+        Body(
+            description=(
+                "Optional dimension IDs to restrict the result to. Only supported for "
+                "tabular columns, and not in combination with `reindex_through`. IDs "
+                "the dataset has no row for are omitted rather than treated as an error."
+            )
+        ),
+    ] = None,
+    fields: Annotated[
+        Optional[List[Literal["ids", "labels", "values"]]],
+        Body(
+            description=(
+                "Optional subset of response fields to return. When omitted, `ids`, "
+                "`labels` and `values` are all returned. Fields that are not listed "
+                "are left out of the response, which is useful when a caller already "
+                "has the labels or only needs the IDs."
+            )
+        ),
+    ] = None,
     db: SessionWithUser = Depends(get_db_with_user),
     settings: Settings = Depends(get_settings),
 ):
@@ -473,7 +530,7 @@ def get_dimension_data(
         else None,
     )
     slice_values_by_id = slice_service.get_slice_data(
-        db, settings.filestore_location, parsed_slice_query
+        db, settings.filestore_location, parsed_slice_query, indices=indices
     )
 
     # When reindex_through is present, the result is indexed by the root's entity IDs,
@@ -482,23 +539,37 @@ def get_dimension_data(
     if parsed_slice_query.reindex_through is not None:
         label_query = _get_root_query(parsed_slice_query)
 
-    labels_by_id = metadata_service.get_labels_for_slice_type(db, label_query)
+    # When the caller asked for specific rows, only those rows need labels.
+    labels_by_id = metadata_service.get_labels_for_slice_type(
+        db,
+        label_query,
+        given_ids=slice_values_by_id.index.to_list() if indices is not None else None,
+    )
 
-    # Only the values which have corresponding metadata should be returned
-    all_dataset_given_ids = slice_values_by_id.index.to_list()
-    result_given_ids: list[str] = [
-        id for id in all_dataset_given_ids if id in labels_by_id
-    ]
+    # Only the values which have corresponding metadata should be returned. The ids,
+    # values and labels are collected together in one positional pass; looking each
+    # id up in the Series by label is several times slower for large dimension types.
+    result_given_ids: list[str] = []
+    result_values: list = []
+    result_labels: list[str] = []
+    for given_id, value in zip(
+        slice_values_by_id.index.to_list(), slice_values_by_id.to_list()
+    ):
+        if given_id in labels_by_id:
+            result_given_ids.append(given_id)
+            result_values.append(value)
+            result_labels.append(labels_by_id[given_id])
 
-    # Ensure the values and labels are similarly filtered and ordered
-    result_values = [slice_values_by_id[id] for id in result_given_ids]
-    result_labels = [labels_by_id[id] for id in result_given_ids]
-
-    return {
+    result = {
         "ids": result_given_ids,
         "labels": result_labels,
         "values": result_values,
     }
+    if fields is not None:
+        # Rows are still filtered by label availability above, so the IDs a caller
+        # gets do not depend on which fields it asked for.
+        result = {key: value for key, value in result.items() if key in fields}
+    return result
 
 
 @router.patch(

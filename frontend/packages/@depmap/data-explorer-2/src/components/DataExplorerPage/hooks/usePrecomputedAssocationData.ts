@@ -5,10 +5,8 @@ import {
   DataExplorerPlotConfigDimension,
   DataExplorerPlotConfigDimensionV2,
 } from "@depmap/types";
-import {
-  convertDimensionToSliceQuery,
-  isCompleteDimension,
-} from "../../../utils/misc";
+import { convertDimensionToSliceQuery } from "../../../utils/misc";
+import { isCompleteDimension } from "../../../utils/dimensionHelpers";
 
 interface Props {
   dimension:

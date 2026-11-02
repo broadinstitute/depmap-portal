@@ -66,6 +66,29 @@ export function loadRememberedColumns(
   return stored.filter(isValidSliceQuery);
 }
 
+// Drops the memory entirely, so the next open falls back to the caller's
+// defaults rather than to "the user closed everything".
+//
+// The case this exists for: a remembered set large enough that loading it all
+// at once gets the whole batch rejected. That failure is reproducible by
+// construction — refreshing replays the same request — so the table would stay
+// broken until someone thought to clear their storage. Forgetting on failure
+// makes the retry the user was already going to attempt the thing that fixes
+// it. The cost is a column set they have to re-pick; the alternative is a
+// feature that stays dead.
+export function forgetRememberedColumns(
+  scope: RememberedColumnsScope,
+  slice_type: string
+) {
+  try {
+    const all = readAll();
+    delete all[entryKey(scope, slice_type)];
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  } catch (e) {
+    // Same reasoning as rememberColumns: not worth interrupting anyone over.
+  }
+}
+
 export function rememberColumns(
   scope: RememberedColumnsScope,
   slice_type: string,

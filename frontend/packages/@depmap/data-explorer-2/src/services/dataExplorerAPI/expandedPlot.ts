@@ -16,16 +16,17 @@ import {
   isValidSliceQuery,
   SliceQuery,
 } from "@depmap/types";
+// Deep imports: the `@depmap/selects` package root re-exports React components.
+import { resolveDisplayLabel } from "@depmap/selects/src/components/AnnotationSelect/sliceQueryUtils";
 import {
   buildDimTypeMap,
   buildTablesByDim,
-  resolveDisplayLabel,
-} from "@depmap/selects";
+} from "@depmap/selects/src/components/AnnotationSelect/schemaHelpers";
 import {
   isCompleteDimension,
   isExpansionDimension,
   isSampleType,
-} from "../../utils/misc";
+} from "../../utils/dimensionHelpers";
 import {
   assertExpansionAxesDiffer,
   chooseExpansionMembers,
@@ -33,14 +34,9 @@ import {
   maxExpansionMembersFor,
 } from "./expansionMembers";
 import { fetchDatasetIdentifiers } from "./identifiers";
-import { getDimensionDataWithoutLabels } from "./helpers";
-import {
-  buildExtendedMetadata,
-  fetchAxisLabel,
-  fetchDatasetLabel,
-  fetchPlotDimensions,
-  fetchValueType,
-} from "./breadboxMethods";
+import { getDimensionDataWithoutLabels, prefetch } from "./helpers";
+import { fetchAxisLabel, fetchDatasetLabel, fetchValueType } from "./labels";
+import { buildExtendedMetadata, fetchPlotDimensions } from "./standardPlot";
 
 // ---------------------------------------------------------------------------
 // fetchExpandedPlot
@@ -112,12 +108,14 @@ export async function fetchExpandedPlot(
   const [exp] = expand_by;
 
   // Pre-fetch (cached postJson) data we'll need below, in parallel.
-  cached(breadboxAPI).getDimensionTypes();
-  cached(breadboxAPI).getDatasets();
-  fetchDatasetLabel(dimensions.x?.dataset_id);
-  fetchDatasetLabel(dimensions.y?.dataset_id);
-  fetchDatasetLabel(dimensions.color?.dataset_id);
-  fetchDatasetLabel(dimensions.facet?.dataset_id);
+  prefetch(
+    cached(breadboxAPI).getDimensionTypes(),
+    cached(breadboxAPI).getDatasets(),
+    fetchDatasetLabel(dimensions.x?.dataset_id),
+    fetchDatasetLabel(dimensions.y?.dataset_id),
+    fetchDatasetLabel(dimensions.color?.dataset_id),
+    fetchDatasetLabel(dimensions.facet?.dataset_id)
+  );
 
   const dimTypes = await cached(breadboxAPI).getDimensionTypes();
   const indexDimType = dimTypes.find((t) => t.name === index_type);
@@ -436,7 +434,7 @@ export async function fetchExpandedPlot(
   // Today two `axis_type` values reach this path:
   //   - "raw_slice":        a single named column from the dataset
   //                         (e.g. one gene's expression). Mirrors
-  //                         fetchRawDimension in breadboxMethods.ts.
+  //                         fetchRawDimension in standardPlot.ts.
   //   - "aggregated_slice": a context resolved against a slice and
   //                         reduced to one value per index entity.
   //                         Mirrors fetchAggregatedDimension.
@@ -662,7 +660,7 @@ export async function fetchExpandedPlot(
     }
 
     // No cardinality check here — see the note on the twin of this block in
-    // breadboxMethods. How many distinct values an annotation has is a question
+    // standardPlot. How many distinct values an annotation has is a question
     // about legibility, which the renderer answers, not about whether the data
     // can be fetched.
     const isBinaryish =

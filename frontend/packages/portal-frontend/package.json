@@ -29,6 +29,7 @@
     "@depmap/plotly-wrapper": "1.0.0",
     "@depmap/selects": "1.0.0",
     "@depmap/slice-table": "1.0.0",
+    "@depmap/statistics": "1.0.0",
     "@depmap/types": "1.0.0",
     "@depmap/user-upload": "1.0.0",
     "@depmap/utils": "1.0.0",
@@ -69,6 +70,7 @@
   },
   "devDependencies": {
     "@types/bootstrap": "^3.3.7",
+    "@types/d3": "^3",
     "@types/d3-scale": "^4.0.9",
     "@types/immutability-helper": "2.0.15",
     "@types/js-base64": "^3.3.1",

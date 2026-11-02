@@ -94,6 +94,12 @@ def terms():
     )
 
 
+@blueprint.route("/ccle/terms_and_conditions")
+def ccle_terms_redirect():
+    # CCLE used to have its own terms page. Redirect to the single terms page.
+    return redirect(url_for("public.terms"), code=302)
+
+
 @blueprint.route("/terms_text")
 def terms_text():
     return jsonify(render_theme_template("terms_and_conditions_text.html"))

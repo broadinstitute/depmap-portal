@@ -14,7 +14,11 @@ import renderConditionally from "../../../../../utils/render-conditionally";
 import { PlotConfigReducerAction } from "../../../reducers/plotConfigReducer";
 import { isCompletePlot } from "../../../validation";
 import Section from "../../Section";
-import { ShowRegressionLineCheckbox } from "../selectors";
+import { canShowRegressionLinePerColor } from "../../../utils";
+import {
+  ShowRegressionLineCheckbox,
+  ShowRegressionLinePerColorCheckbox,
+} from "../selectors";
 import styles from "../../../styles/ConfigurationPanel.scss";
 
 interface Props {
@@ -184,6 +188,21 @@ function LinearRegressionInfo({ plot, dispatch }: Props) {
           dispatch({
             type: "select_show_regression_line",
             payload: show_regression_line,
+          });
+        }}
+      />
+      {/* Deliberately NOT also gated on `show_regression_line`: the two are
+          independent settings that happen to compose, and hiding this one
+          while lines are off would silently discard a choice the user made
+          (the reducer's normalize only drops it when the color/facet partitions
+          themselves stop supporting it). Offered whenever it can apply. */}
+      <ShowRegressionLinePerColorCheckbox
+        show={canShowRegressionLinePerColor(plot)}
+        value={plot.show_regression_line_per_color || false}
+        onChange={(show_regression_line_per_color: boolean) => {
+          dispatch({
+            type: "select_show_regression_line_per_color",
+            payload: show_regression_line_per_color,
           });
         }}
       />

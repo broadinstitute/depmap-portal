@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Tooltip } from "@depmap/common-components";
-import { pluralize } from "../../../../../../utils/misc";
+import { pluralize } from "../../../../../../utils/dimensionHelpers";
 import PlotConfigSelect from "../../../../../PlotConfigSelect";
 import { useContextBuilderState } from "../../../../state/ContextBuilderState";
 import useDimensionType from "../../../../hooks/useDimensionType";

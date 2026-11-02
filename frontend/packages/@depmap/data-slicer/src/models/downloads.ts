@@ -3,6 +3,7 @@ export enum ReleaseType {
   depmap_release = "DepMap Releases (CRISPR + Omics)",
   rnai = "RNAi Screens",
   drug = "Drug Screens",
+  proteomics = "Proteomics",
   other_omics = "Other Omics",
   other_crispr = "Other CRISPR Screens",
   other = "Other",

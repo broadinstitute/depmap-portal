@@ -3,6 +3,7 @@
   "references": [
     { "path": "../api" },
     { "path": "../common-components" },
-    { "path": "../types" }
+    { "path": "../types" },
+    { "path": "../utils" }
   ]
 }

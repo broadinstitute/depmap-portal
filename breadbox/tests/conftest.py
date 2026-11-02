@@ -65,7 +65,6 @@ def settings(tmpdir, db_path, monkeypatch):
         default_user="test@sample.com",
         breadbox_secret="secret",
         use_depmap_proxy=False,
-        sql_endpoints_enabled=True,
     )
 
     import breadbox.config
@@ -188,7 +187,7 @@ def minimal_db(db: SessionWithUser, settings: Settings, public_group, transient_
             file_id,
             file_name,
             file_description,
-            file_datatype,
+            file_datatypes,
             release_version_name,
             release_name,
             release_version_description,

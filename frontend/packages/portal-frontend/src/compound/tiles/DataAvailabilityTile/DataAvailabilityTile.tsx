@@ -1,15 +1,52 @@
 import React, { useState } from "react";
+import { toStaticUrl } from "@depmap/globals";
 import styles from "../CompoundTiles.scss";
 import useDataAvailabilityTileData from "../hooks/useDataAvailabilityTileData";
 import { MatrixDataset } from "@depmap/types";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ErrorLoading from "../ErrorLoading";
+import InfoIcon from "src/common/components/InfoIcon";
 
 interface DatasetAvailabilityTileProps {
   compoundName: string;
   compoundId: string;
   datasets: MatrixDataset[];
 }
+
+const customInfoImg = (
+  <img
+    style={{
+      height: "13px",
+      margin: "1px 3px 4px",
+      cursor: "pointer",
+    }}
+    src={toStaticUrl("img/gene_overview/info_purple.svg")}
+    alt="description of term"
+    className="icon"
+  />
+);
+
+const DatasetName = ({
+  datasetUrl,
+  datasetDisplayName,
+  tooltip = undefined,
+}: {
+  datasetUrl: string | null;
+  datasetDisplayName: string;
+  tooltip?: string;
+}) => (
+  <>
+    <a href={datasetUrl || ""}>{datasetDisplayName}</a>
+    {tooltip && (
+      <InfoIcon
+        target={customInfoImg}
+        popoverContent={<p>{tooltip}</p>}
+        popoverId={`data-availability-tooltip-${datasetDisplayName}`}
+        trigger={["hover", "focus"]}
+      />
+    )}
+  </>
+);
 
 export const DatasetAvailabilityTile: React.FC<DatasetAvailabilityTileProps> = ({
   compoundId,
@@ -69,9 +106,11 @@ export const DatasetAvailabilityTile: React.FC<DatasetAvailabilityTileProps> = (
                 {initialData.map((entry, index: number) => (
                   <tr key={index}>
                     <td className={styles.datasetColContent}>
-                      <a href={entry.datasetUrl || ""}>
-                        {entry.datasetDisplayName}
-                      </a>
+                      <DatasetName
+                        datasetUrl={entry.datasetUrl}
+                        datasetDisplayName={entry.datasetDisplayName}
+                        tooltip={entry.tooltip}
+                      />
                     </td>
                     <td className={styles.cellLineColContent}>
                       {entry.cellLineCount}
@@ -89,9 +128,11 @@ export const DatasetAvailabilityTile: React.FC<DatasetAvailabilityTileProps> = (
                   extraData.map((entry, index) => (
                     <tr key={index + 5}>
                       <td className={styles.extraDataContainer}>
-                        <a href={entry.datasetUrl || ""}>
-                          {entry.datasetDisplayName}
-                        </a>
+                        <DatasetName
+                          datasetUrl={entry.datasetUrl}
+                          datasetDisplayName={entry.datasetDisplayName}
+                          tooltip={entry.tooltip}
+                        />
                       </td>
                       <td>{entry.cellLineCount}</td>
                       <td>{entry.doseRangeLabel}</td>

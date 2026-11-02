@@ -1,4 +1,4 @@
-import { isCompleteDimension } from "../../utils/misc";
+import { isCompleteDimension } from "../../utils/dimensionHelpers";
 import {
   DataExplorerPlotConfig,
   DataExplorerPlotConfigDimension,

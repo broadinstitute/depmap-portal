@@ -2,6 +2,7 @@ from typing import List, Optional
 from sqlalchemy import String, Integer, Boolean, Date, ForeignKey, UniqueConstraint
 from datetime import date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.ext.associationproxy import association_proxy
 
 from breadbox.db.base_class import Base, UUIDMixin
 
@@ -58,7 +59,6 @@ class ReleaseFile(Base, UUIDMixin):
 
     # File Metadata
     file_name: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    datatype: Mapped[str] = mapped_column(String, nullable=False)
     size: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # e.g., "1.2GB"
     description: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
@@ -76,6 +76,34 @@ class ReleaseFile(Base, UUIDMixin):
 
     release_version: Mapped["ReleaseVersion"] = relationship(
         "ReleaseVersion", back_populates="files"
+    )
+
+    # datatypes is conceptually a set (order doesn't matter, no duplicates)
+    datatype_rows: Mapped[List["ReleaseFileDatatype"]] = relationship(
+        "ReleaseFileDatatype",
+        back_populates="release_file",
+        cascade="all, delete-orphan",
+    )
+    datatypes = association_proxy(
+        "datatype_rows",
+        "datatype",
+        creator=lambda dt: ReleaseFileDatatype(datatype=dt),
+    )
+
+
+class ReleaseFileDatatype(Base):
+    __tablename__ = "release_file_datatype"
+    __table_args__ = (UniqueConstraint("release_file_id", "datatype"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    release_file_id: Mapped[str] = mapped_column(
+        String, ForeignKey("release_file.id", ondelete="CASCADE"), nullable=False
+    )
+    # Free text, not FK'd to the `data_type` lookup table used by Dataset.
+    datatype: Mapped[str] = mapped_column(String, nullable=False)
+
+    release_file: Mapped["ReleaseFile"] = relationship(
+        "ReleaseFile", back_populates="datatype_rows"
     )
 
 
@@ -97,7 +125,7 @@ class ReleaseFileSearchIndex(Base):
     # File-specific metadata
     file_name: Mapped[str] = mapped_column(String)
     file_description: Mapped[str] = mapped_column(String)
-    file_datatype: Mapped[str] = mapped_column(String)
+    file_datatypes: Mapped[str] = mapped_column(String)
     release_version_name: Mapped[str] = mapped_column(String)
     release_name: Mapped[str] = mapped_column(String)
     release_version_description: Mapped[str] = mapped_column(String)

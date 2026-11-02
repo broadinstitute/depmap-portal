@@ -382,6 +382,108 @@ class TestPost:
         assert_status_ok(response)
         assert response.json()["counts"][secret.id] == 2
 
+    def test_context_dataset_coverage_public_scope(
+        self,
+        client: TestClient,
+        minimal_db: SessionWithUser,
+        public_group,
+        private_group,
+        settings,
+    ):
+        """
+        `scope=public` has to produce byte-identical answers for a caller who
+        can see a private dataset and one who cannot. That equality is the
+        whole reason the parameter exists -- the client persists these
+        responses to IndexedDB, which the next user of the machine can read.
+        """
+        factories.add_dimension_type(
+            minimal_db,
+            settings,
+            user=settings.admin_users[0],
+            name="some_feature_type",
+            display_name="Feature With Metadata",
+            id_column="ID",
+            annotation_type_mapping={
+                "ID": AnnotationType.text,
+                "label": AnnotationType.text,
+            },
+            axis="feature",
+            metadata_df=pd.DataFrame(
+                {
+                    "ID": ["featureID1", "featureID2"],
+                    "label": ["featureLabel1", "featureLabel2"],
+                }
+            ),
+        )
+        factories.add_dimension_type(
+            minimal_db,
+            settings,
+            user=settings.admin_users[0],
+            name="some_sample_type",
+            display_name="Sample",
+            id_column="ID",
+            annotation_type_mapping={
+                "ID": AnnotationType.text,
+                "label": AnnotationType.text,
+            },
+            axis="sample",
+            metadata_df=pd.DataFrame({"ID": ["sampleID1"], "label": ["sampleLabel1"]}),
+        )
+
+        def a_matrix():
+            return factories.matrix_csv_data_file_with_values(
+                feature_ids=["featureID1", "featureID2"],
+                sample_ids=["sampleID1"],
+                values=np.array([[1, 2]]),
+            )
+
+        shared = factories.matrix_dataset(
+            minimal_db,
+            settings,
+            feature_type="some_feature_type",
+            sample_type="some_sample_type",
+            data_file=a_matrix(),
+        )
+        secret = factories.matrix_dataset(
+            minimal_db,
+            settings,
+            feature_type="some_feature_type",
+            sample_type="some_sample_type",
+            data_file=a_matrix(),
+            group=private_group["id"],
+        )
+
+        request = {
+            "dimension_type": "some_feature_type",
+            "name": "all features",
+            "expr": True,
+        }
+
+        def coverage(user, scope):
+            response = client.post(
+                f"/temp/context/dataset-coverage?scope={scope}",
+                json=request,
+                headers={"X-Forwarded-User": user},
+            )
+            assert_status_ok(response)
+            return response.json()
+
+        insider = "someone@private-group.com"
+        outsider = "nobody@some-other-place.com"
+
+        # The default scope still answers per caller, so the two disagree.
+        assert coverage(insider, "all")["counts"][secret.id] == 2
+        assert secret.id not in coverage(outsider, "all")["counts"]
+
+        # Public scope: same answer for both, private dataset absent from each.
+        assert coverage(insider, "public") == coverage(outsider, "public")
+        assert coverage(insider, "public")["counts"] == {shared.id: 2}
+
+        # `total` counts the context's entities, not the datasets, so narrowing
+        # the scope must not move it. A caller merging a public-scoped response
+        # with anything else reads shares against this denominator.
+        assert coverage(insider, "public")["total"] == 2
+
     def test_evaluate_context_errors(
         self, client: TestClient, minimal_db: SessionWithUser, public_group, settings,
     ):

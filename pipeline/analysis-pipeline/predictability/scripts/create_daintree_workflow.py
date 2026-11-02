@@ -13,6 +13,8 @@ def create_sparkles_workflow(
     models_per_task: int,
     test_first_n_tasks: Optional[int],
     extra_python_files: Optional[str],
+    select_n_features: int,
+    filter: Optional[str],
 ):
     extra_python_path_dir = "extra_python_files"
 
@@ -48,6 +50,8 @@ def create_sparkles_workflow(
             str(models_per_task),
         ]
     )
+    if filter:
+        prepare_command += ["--filter", filter]
 
     if test_first_n_tasks:
         prepare_command += ["--test-first-n-tasks", str(test_first_n_tasks)]
@@ -62,13 +66,15 @@ def create_sparkles_workflow(
             "--x",
             "out/X.ftr",
             "--y",
-            "out/target_matrix.ftr",
+            "out/target_matrix_filtered.ftr",
             "--model-config",
             "{parameter.model_config}",
             "--n-folds",
             str(nfolds),
             "--cpus",
             str(ncpus),
+            "--select-n-features",
+            str(select_n_features),
             "--target-range",
             "{parameter.start_index}",
             "{parameter.end_index}",
@@ -172,6 +178,13 @@ def main():
         "--extra-python-files",
         help="Path to directory which contains transforms that daintree will use",
     )
+    parser.add_argument(
+        "--select-n-features",
+        help="How many top correlates to consider in feature selection",
+        type=int,
+        default=1000,
+    )
+    parser.add_argument("--filter", help="Filter the columns by the given regex")
 
     args = parser.parse_args()
     create_sparkles_workflow(
@@ -183,6 +196,8 @@ def main():
         models_per_task=args.models_per_task,
         test_first_n_tasks=args.test_first_n_tasks,
         extra_python_files=args.extra_python_files,
+        select_n_features=args.select_n_features,
+        filter=args.filter,
     )
 
 

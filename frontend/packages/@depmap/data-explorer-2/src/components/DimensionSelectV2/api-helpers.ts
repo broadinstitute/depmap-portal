@@ -44,10 +44,6 @@ export async function fetchDatasetIdentifiers(
         dataset_id
       );
 
-  if ("detail" in result) {
-    throw new Error(JSON.stringify(result.detail));
-  }
-
   return result;
 }
 

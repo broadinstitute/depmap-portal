@@ -9,8 +9,9 @@ import {
   GroupTableData,
 } from "@depmap/types";
 
-import { FormModal, Spinner } from "@depmap/common-components";
+import { FormModal, Spinner, showInfoModal } from "@depmap/common-components";
 import Button from "react-bootstrap/lib/Button";
+import Modal from "react-bootstrap/lib/Modal";
 
 import styles from "../styles/styles.scss";
 import WideTable from "@depmap/wide-table";
@@ -21,7 +22,7 @@ import AddGroupEntryForm from "./AddGroupEntryForm";
 export interface GroupsPageProps {
   getGroups: () => Promise<Group[]>;
   addGroup: (groupArgs: GroupArgs) => Promise<Group>;
-  deleteGroup: (group_id: string) => void;
+  deleteGroup: (group_id: string) => Promise<unknown>;
   addGroupEntry: (
     groupId: string,
     groupEntryArgs: GroupEntryArgs
@@ -67,6 +68,10 @@ export default function GroupsPage(props: GroupsPageProps) {
     null
   );
   const [addGroupError, setAddGroupError] = useState<string | null>(null);
+  const [deleteProgress, setDeleteProgress] = useState<{
+    completed: number;
+    total: number;
+  } | null>(null);
   const [groupEntryErrors, setGroupEntryErrors] = useState<{
     addGroupEntryError: string | null;
     updateGroupEntryError: string | null;
@@ -121,18 +126,57 @@ export default function GroupsPage(props: GroupsPageProps) {
   };
 
   const deleteButtonAction = async (groupIdsSet: Set<string>) => {
+    const groupIds = [...groupIdsSet];
+    const deletedIds = new Set<string>();
+    let errorMessage: string | null = null;
+
+    setDeleteProgress({ completed: 0, total: groupIds.length });
+
     try {
-      groupIdsSet.forEach(async (groupId) => {
-        await deleteGroup(groupId);
-        setGroups((groups || []).filter((group) => group.id !== groupId));
-      });
+      /* eslint-disable no-await-in-loop */
+      for (let i = 0; i < groupIds.length; i += 1) {
+        await deleteGroup(groupIds[i]);
+        deletedIds.add(groupIds[i]);
+        setDeleteProgress({
+          completed: deletedIds.size,
+          total: groupIds.length,
+        });
+      }
+      /* eslint-enable no-await-in-loop */
     } catch (e) {
       console.error(e);
-      if (e instanceof ErrorTypeError) {
-        setAddGroupError(e.message);
-      } else {
-        setAddGroupError("An unknown error occurred!");
-      }
+      errorMessage =
+        e instanceof ErrorTypeError ? e.message : "An unknown error occurred!";
+    } finally {
+      // Drop whatever was successfully deleted, even if a later delete failed.
+      setGroups((prevGroups) =>
+        (prevGroups || []).filter((group) => !deletedIds.has(group.id))
+      );
+      setSelectedGroupIds(
+        (prevSelected) =>
+          new Set([...prevSelected].filter((id) => !deletedIds.has(id)))
+      );
+      setDeleteProgress(null);
+    }
+
+    if (errorMessage) {
+      showInfoModal({
+        title:
+          groupIds.length === 1
+            ? "Error deleting group"
+            : "Error deleting groups",
+        content: (
+          <>
+            <p>{errorMessage}</p>
+            {groupIds.length > 1 ? (
+              <p>
+                {deletedIds.size} of {groupIds.length} selected groups were
+                deleted before the error occurred.
+              </p>
+            ) : null}
+          </>
+        ),
+      });
     }
   };
 
@@ -280,7 +324,35 @@ export default function GroupsPage(props: GroupsPageProps) {
         onAdd={addButtonAction}
         onDelete={deleteButtonAction}
         errorMessage={addGroupError}
+        isDeleting={deleteProgress !== null}
       />
+      {deleteProgress ? (
+        <Modal show backdrop="static" keyboard={false} onHide={() => {}}>
+          <Modal.Header>
+            <Modal.Title>
+              {deleteProgress.total === 1
+                ? "Deleting group"
+                : `Deleting ${deleteProgress.total} groups`}
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <p>
+              This can take several minutes, because every dataset has to be
+              checked for access changes. Please don’t close this page.
+            </p>
+            {deleteProgress.total > 1 ? (
+              <p>
+                <b>
+                  Deleted {deleteProgress.completed} of {deleteProgress.total}.
+                </b>
+              </p>
+            ) : null}
+            <div className={styles.deletingSpinner}>
+              <Spinner position="static" />
+            </div>
+          </Modal.Body>
+        </Modal>
+      ) : null}
       {groupToEditEntries && groupEntryForm ? (
         <FormModal
           bsSize="large"

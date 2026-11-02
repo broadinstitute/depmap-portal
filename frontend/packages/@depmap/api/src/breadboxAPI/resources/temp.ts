@@ -3,9 +3,32 @@ import {
   DataExplorerContextV2,
   SliceQuery,
 } from "@depmap/types";
-import { postJson } from "../client";
+import { getJson, postJson } from "../client";
 import { getTabularDatasetData } from "./datasets";
 import { getDimensionTypeIdentifiers } from "./types";
+
+// Correlates every feature in `datasetId` against the profile named by
+// `sliceQuery` (which may live in a different dataset entirely). Distinct
+// from fetchAssociations: that one queries precomputed associations for a
+// slice; this one computes on the fly for an arbitrary reference profile.
+export async function computeAssociations(
+  datasetId: string,
+  sliceQuery: SliceQuery
+) {
+  return postJson<{ label: string[]; given_id: string[]; cor: number[] }>(
+    "/temp/associations/compute",
+    {
+      dataset_id: datasetId,
+      slice_query: sliceQuery,
+    }
+  );
+}
+
+// One entry in the content-addressable store (used for contexts, among other
+// things). `value` is a JSON string.
+export async function getCasValue(hash: string) {
+  return getJson<{ value: string }>(`/temp/cas/${hash}`);
+}
 
 export async function fetchAssociations(
   sliceQuery: SliceQuery,
@@ -20,7 +43,7 @@ export async function fetchAssociations(
   );
 
   if ("detail" in result) {
-    window.console.warn("sliceQuery:", sliceQuery);
+    console.warn("sliceQuery:", sliceQuery);
     throw new Error(JSON.stringify(result.detail));
   }
 
@@ -113,30 +136,11 @@ export async function evaluateContext(context: NamelessContext) {
     }
   }
 
-  const response = await postJson<
-    | {
-        ids: string[];
-        labels: string[];
-        num_candidates: number;
-      }
-    // WORKAROUND: Errors result in a code 200 like regular responses.
-    // We'll look for detail property to detect them.
-    // FIXME: Figure out why Breadbox doesn't respond with an error! It's
-    // formatted like one.
-    | {
-        detail: {
-          message: string;
-          error_type: string;
-        };
-      }
-  >("/temp/context", context);
-
-  if ("detail" in response) {
-    window.console.warn("Could not evaluate context", context);
-    throw new Error(JSON.stringify(response.detail, null, 2));
-  }
-
-  return response;
+  return postJson<{
+    ids: string[];
+    labels: string[];
+    num_candidates: number;
+  }>("/temp/context", context);
 }
 
 // How many of a context's entities each dataset actually contains.
@@ -151,17 +155,20 @@ export async function evaluateContext(context: NamelessContext) {
 // Datasets matching nothing are absent from `counts` rather than present with
 // a zero, so a caller wanting the zeroes fills them in from its own dataset
 // list.
-export async function getContextDatasetCoverage(context: NamelessContext) {
-  const response = await postJson<
-    | { counts: Record<string, number>; total: number }
-    // Same workaround as evaluateContext above: errors come back with a 200.
-    | { detail: { message: string; error_type: string } }
-  >("/temp/context/dataset-coverage", context);
-
-  if ("detail" in response) {
-    window.console.warn("Could not compute dataset coverage", context);
-    return { counts: {}, total: 0 };
-  }
-
-  return response;
+//
+// `scope: "public"` counts over the public group only, which makes the answer
+// the same for every user and so safe to persist — the caller trades coverage
+// information about its private datasets for a response that survives a
+// reload. Pass it together with `persist: { publicCatalog: true }`; neither is
+// correct without the other. The scope rides in the URL rather than the body
+// because the body is the frozen DE2 context format, and because the cache key
+// is built from URL plus body, which keeps the two scopes on disjoint keys.
+export async function getContextDatasetCoverage(
+  context: NamelessContext,
+  scope: "all" | "public" = "all"
+) {
+  return postJson<{ counts: Record<string, number>; total: number }>(
+    `/temp/context/dataset-coverage?scope=${scope}`,
+    context
+  );
 }

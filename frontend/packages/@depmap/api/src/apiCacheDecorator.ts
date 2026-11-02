@@ -18,6 +18,12 @@ export interface CachedOptions {
    * `{ deps: [...] }` is for responses that are immutable only given some other
    * dataset. The deps are folded into the cache key, so when a dep changes the
    * key changes and the old entry is orphaned rather than wrongly served.
+   *
+   * `{ publicCatalog: true }` is for responses that depend on every public
+   * dataset and on nothing private — you must have asked the server for a
+   * public-scoped answer. They are keyed by a fingerprint of the public
+   * listing. The engine cannot check this one, so assert it only when the
+   * request itself makes it true. See ADR 0008.
    */
   persist?: PersistOption;
 }

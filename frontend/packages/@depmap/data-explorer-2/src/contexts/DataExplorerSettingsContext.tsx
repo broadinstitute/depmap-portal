@@ -13,8 +13,23 @@ const SettingsModal = React.lazy(
 export const DEFAULT_SETTINGS = {
   plotStyles: {
     pointSize: 10,
+    // Faceting subdivides the plot area — into small multiples (scatter),
+    // violin tracks (density 1D), or x-clusters (waterfall) — so every point
+    // has less room. Faceted plots get their own (smaller) point size
+    // instead of reusing `pointSize`.
+    facetedPointSize: 7,
     pointOpacity: 0.5,
     outlineWidth: 2,
+    // Point labels, which sit *inside* the plot area competing with the data
+    // — unlike the axis text, facet titles and legend, which sit outside it.
+    // That's why this is its own setting rather than a ratio of the axis font:
+    // enlarging the axis text for a projector shouldn't make point labels grow
+    // and start swallowing the scatter, and the right size here depends on how
+    // many points are labelled, which no axis setting knows.
+    //
+    // 12 is what Plotly's own annotation default gave us before this existed,
+    // so no plot changes appearance.
+    annotationFontSize: 12,
     xAxisFontSize: 14,
     yAxisFontSize: 14,
     palette: {

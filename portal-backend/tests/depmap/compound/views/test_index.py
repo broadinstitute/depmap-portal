@@ -169,9 +169,12 @@ def test_get_corr_analysis_options(app, monkeypatch):
         compound = CompoundFactory()
 
         result = get_corr_analysis_options(compound_label=compound.label)
-        assert len(result) == 7
+        # OncRef Lum and Seq are excluded from correlation analysis options
+        # (superseded by the unified OncRef dataset), even though all 7
+        # datasets in drc_compound_datasets otherwise pass the mocked checks.
+        assert len(result) == 5
         matches = [x for x in result if x == expected_oncref_dataset_w_priority]
-        assert len(matches) == 1
+        assert len(matches) == 0
 
 
 def test_dose_curve_options_all_datasets(app, monkeypatch):
