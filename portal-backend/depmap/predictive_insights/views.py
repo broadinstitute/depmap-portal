@@ -31,6 +31,9 @@ def _label_to_given_id(dim_type, label):
 
 @blueprint.route("/test-pred-component/<dim_type>/<label>")
 def view_test_pred_component(dim_type, label):
+    # just a little renaming to make the url prettier
+    if dim_type == "compound":
+        dim_type = "compound_v2"
     given_id = _label_to_given_id(dim_type, label)
     if given_id is None:
         abort(404)
