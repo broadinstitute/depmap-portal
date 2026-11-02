@@ -1,4 +1,4 @@
-from typing import Dict, List, Literal, Optional, Type, Union
+from typing import Collection, Dict, List, Literal, Optional, Type, Union
 from uuid import uuid4
 
 from sqlalchemy import and_, inspect
@@ -272,12 +272,14 @@ def get_dimension_type_metadata_col(
     dimension_type_name: str,
     col_name: str,
     limit: Optional[int] = None,
+    given_ids: Optional[Collection[str]] = None,
 ) -> dict[str, str]:
     assert isinstance(col_name, str)
 
     """
     Get a column of values from the dimension type's metadata. 
     Return a dictionary of values indexed by given ID.
+    If `given_ids` is provided, only those rows are fetched.
     If there is no metadata for the given dimension type, return an empty dict.
     """
     dimension_type = get_dimension_type(db=db, name=dimension_type_name)
@@ -289,17 +291,30 @@ def get_dimension_type_metadata_col(
     if dimension_type.dataset_id is None:
         return {}
 
-    values_by_id_tuples = (
-        db.query(TabularColumn)
-        .filter(
-            and_(
-                TabularColumn.dataset_id == dimension_type.dataset_id,
-                TabularColumn.given_id == col_name,
+    def _query(id_chunk: Optional[Collection[str]]):
+        query = (
+            db.query(TabularColumn)
+            .filter(
+                and_(
+                    TabularColumn.dataset_id == dimension_type.dataset_id,
+                    TabularColumn.given_id == col_name,
+                )
             )
+            .join(TabularCell)
         )
-        .join(TabularCell)
-        .limit(limit)
-        .with_entities(TabularCell.dimension_given_id, TabularCell.value)
-        .all()
-    )
-    return {id: value for id, value in values_by_id_tuples}
+        if id_chunk is not None:
+            query = query.filter(TabularCell.dimension_given_id.in_(id_chunk))
+        return query.limit(limit).with_entities(
+            TabularCell.dimension_given_id, TabularCell.value
+        )
+
+    if given_ids is None:
+        return {id: value for id, value in _query(None).all()}
+
+    # Chunked to stay under SQLite's bound-parameter limit
+    id_list = list(given_ids)
+    values_by_id: dict[str, str] = {}
+    for start in range(0, len(id_list), 900):
+        for id, value in _query(id_list[start : start + 900]).all():
+            values_by_id[id] = value
+    return values_by_id

@@ -406,6 +406,8 @@ function getCurrentAxisLabel(plot: ExtendedPlotType, axis: "x" | "y" | "x2") {
 // when a prompt opens and back out when it resolves.
 const brToNewline = (text: string) => text.replace(/<br\s*\/?>/gi, "\n");
 const newlineToBr = (text: string) => text.replace(/\n/g, "<br>");
+// For the one-line summary shown on the buttons that open those editors.
+const brToSpace = (text: string) => text.replace(/<br\s*\/?>/gi, " ");
 
 // A plain textarea rather than a single-line input: promptForValue's whole
 // reason for existing here (over a text input in the side panel) is to
@@ -541,9 +543,19 @@ function ExportImageModal({
   const [unit, setUnit] = useState<DimensionUnit>(remembered.unit);
   const [resolution, setResolution] = useState(remembered.resolution);
   const [format, setFormat] = useState<ExportImageFormat>(remembered.format);
-  const [legendPosition, setLegendPosition] = useState<ExportLegendPosition>(
-    remembered.legendPosition
-  );
+  const [
+    chosenLegendPosition,
+    setLegendPosition,
+  ] = useState<ExportLegendPosition>(remembered.legendPosition);
+  // A legend with nothing but an "All" entry carries no information, so it's
+  // forced hidden and none of its controls are offered. The user's own choice
+  // is kept apart (and is what gets remembered) so it isn't clobbered for
+  // the next plot that does have a meaningful legend.
+  const hasLegend =
+    Boolean(previewPlot?.legend) && !previewPlot?.legend?.isTrivial;
+  const legendPosition: ExportLegendPosition = hasLegend
+    ? chosenLegendPosition
+    : "hidden";
   const [edgePadding, setEdgePadding] = useState(remembered.edgePadding);
   const [chromeLineWidth, setChromeLineWidth] = useState(
     remembered.chromeLineWidth
@@ -1259,7 +1271,7 @@ function ExportImageModal({
         unit,
         resolution,
         format,
-        legendPosition,
+        legendPosition: chosenLegendPosition,
         edgePadding,
         chromeLineWidth,
         dataLineWidth,
@@ -1410,13 +1422,13 @@ function ExportImageModal({
             Text and point sizes don’t scale with these dimensions, so a larger
             image has proportionally smaller labels.
           </p>
-          {Boolean(previewPlot?.legend) && (
+          {hasLegend && (
             <div className={styles.dimension}>
               <label htmlFor="export-legend">legend placement</label>
               <select
                 id="export-legend"
                 className={styles.select}
-                value={legendPosition}
+                value={chosenLegendPosition}
                 onChange={(e) =>
                   setLegendPosition(e.target.value as ExportLegendPosition)
                 }
@@ -1425,7 +1437,7 @@ function ExportImageModal({
                 <option value="above">Above plot</option>
                 <option value="hidden">Hidden</option>
               </select>
-              {legendPosition === "above" && (
+              {chosenLegendPosition === "above" && (
                 <p className={styles.hint}>
                   Spends height instead of width, and wraps to more rows rather
                   than clipping — better when there are many categories.
@@ -1564,11 +1576,12 @@ function ExportImageModal({
                 <Button
                   id="export-x-axis-label"
                   className={styles.axisLabelButton}
+                  title={brToNewline(xAxisLabel) || undefined}
                   onClick={() =>
                     handleEditAxisLabel("x", xAxisLabel, setXAxisLabel)
                   }
                 >
-                  {xAxisLabel || "(empty)"}
+                  {brToSpace(xAxisLabel) || "(empty)"}
                 </Button>
               </div>
               {(previewPlot?.hasYAxisLabel ?? true) && (
@@ -1577,11 +1590,12 @@ function ExportImageModal({
                   <Button
                     id="export-y-axis-label"
                     className={styles.axisLabelButton}
+                    title={brToNewline(yAxisLabel) || undefined}
                     onClick={() =>
                       handleEditAxisLabel("y", yAxisLabel, setYAxisLabel)
                     }
                   >
-                    {yAxisLabel || "(empty)"}
+                    {brToSpace(yAxisLabel) || "(empty)"}
                   </Button>
                 </div>
               )}
@@ -1593,6 +1607,7 @@ function ExportImageModal({
                   <Button
                     id="export-secondary-x-axis-label"
                     className={styles.axisLabelButton}
+                    title={brToNewline(secondaryXAxisLabel) || undefined}
                     onClick={() =>
                       handleEditAxisLabel(
                         "x2",
@@ -1601,19 +1616,20 @@ function ExportImageModal({
                       )
                     }
                   >
-                    {secondaryXAxisLabel || "(empty)"}
+                    {brToSpace(secondaryXAxisLabel) || "(empty)"}
                   </Button>
                 </div>
               )}
-              {previewPlot?.legend && legendPosition !== "hidden" && (
+              {hasLegend && legendPosition !== "hidden" && (
                 <div className={styles.dimension}>
                   <label htmlFor="export-legend-edit">legend</label>
                   <Button
                     id="export-legend-edit"
                     className={styles.axisLabelButton}
+                    title={brToNewline(legendTitle) || undefined}
                     onClick={handleEditLegend}
                   >
-                    {legendTitle || "(empty)"}
+                    {brToSpace(legendTitle) || "(empty)"}
                   </Button>
                 </div>
               )}

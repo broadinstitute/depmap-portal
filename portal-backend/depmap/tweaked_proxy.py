@@ -189,7 +189,14 @@ class ProxyMiddlewareWithLogging:
                 if querystring:
                     remote_url = f"{remote_url}?{querystring}"
 
-                con.putrequest(environ["REQUEST_METHOD"], remote_url, skip_host=True)
+                # http.client would otherwise add "Accept-Encoding: identity", which stops the
+                # upstream from compressing; the client's own header is forwarded below.
+                con.putrequest(
+                    environ["REQUEST_METHOD"],
+                    remote_url,
+                    skip_host=True,
+                    skip_accept_encoding=True,
+                )
 
                 for k, v in headers:
                     if k.lower() == "connection":
