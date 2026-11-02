@@ -531,7 +531,6 @@ subset_translocations.py: error: Argument of type "set[str]" cannot be assigned 
 taiga_id_loader.py: error: No parameter named "canonical_taiga_id" (reportCallIssue)
 taiga_id_loader.py: error: No parameter named "taiga_id" (reportCallIssue)
 task_utils.py: error: Argument of type "FileStorage" cannot be assigned to parameter "fileobj" of type "IO[Unknown]" in function "write_fileobj_to_local_file"
-task_utils.py: error: Argument of type "HTTPResponse | Any" cannot be assigned to parameter "fileobj" of type "IO[Unknown]" in function "write_fileobj_to_local_file"
 tasks.py: error: Argument of type "ArrayLike" cannot be assigned to parameter "column_labels" of type "List[str] | None" in function "_handle_df_nas"
 tasks.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "gene_ids" of type "MutationTableSpec" in function "get_subsetted_mutations_df_by_ids"
 tda_loader.py: error: "groups" is not a known attribute of "None" (reportOptionalMemberAccess)
