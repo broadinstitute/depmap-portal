@@ -38,12 +38,14 @@ rule process_model_config:
         crispr={"type": "target_matrix", "label": "crispr"},
         rnai={"type": "target_matrix", "label": "rnai"},
         oncref={"type": "target_matrix", "label": "oncref"},
+        repurposing={"type": "target_matrix", "label": "repurposing"},
 
         # Features
         lineage={"type": "feature", "label": "lineage"},
         crispr_confounder={"type": "feature", "label": "crispr_confounder"},
         rnai_confounder={"type": "feature", "label": "rnai_confounder"},
         oncref_confounder={"type": "feature", "label": "oncref_confounder"},
+        repurposing_confounder={"type": "feature", "label": "repurposing_confounder"},
         driver_events={"type": "feature", "label": "driver_events"},
         armlevel_cna={"type": "feature", "label": "armlevel_cna"},
         cytoband_cn={"type": "feature", "label": "cytoband_cn"},
