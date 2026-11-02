@@ -4,6 +4,14 @@ description: "Checks out and prepares poetry (with caching)"
 runs:
   using: "composite"
   steps:
+    # Pin python rather than using the runner's default. ubuntu-latest moved to 26.04
+    # (python 3.14), which pydantic-core 2.33.2 in breadbox's lock can't build for.
+    - name: "Set up Python"
+      id: setup-python
+      uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+      with:
+        python-version: "3.12"
+
     - name: "Compute poetry cache dir"
       id: "poetry-cachedir"
       run: 'echo POETRY_CACHEDIR="$HOME/.cache/pypoetry" >> "$GITHUB_OUTPUT"'
@@ -21,7 +29,7 @@ runs:
       id: cached-poetry-dependencies
       with:
         path: "${{ steps.poetry-cachedir.outputs.POETRY_CACHEDIR }}"
-        key: "breadbox-venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('breadbox*/**/poetry.lock') }}"
+        key: "breadbox-venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('breadbox*/**/poetry.lock') }}"
 #    - name: "peek at poetry cachedir (for debugging)"
 #      run: "ls -l ${{ steps.poetry-cachedir.outputs.POETRY_CACHEDIR }}/* || true"
 #      shell: bash
