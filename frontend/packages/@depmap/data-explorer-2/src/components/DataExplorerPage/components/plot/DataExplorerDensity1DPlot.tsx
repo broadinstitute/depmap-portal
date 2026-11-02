@@ -17,7 +17,7 @@ import {
 } from "@depmap/types";
 import useDensity1DPlotData from "./prototype/useDensity1DPlotData";
 import PrototypeDensity1D from "./prototype/PrototypeDensity1D";
-import { AnnotationTail, LegendInfo } from "./prototype/plotUtils";
+import { AnnotationTail, LEGEND_ALL, LegendInfo } from "./prototype/plotUtils";
 import DataExplorerPlotControls from "./DataExplorerPlotControls";
 import SectionStack, { StackableSection } from "../SectionStack";
 import PlotLegend from "./PlotLegend";
@@ -324,6 +324,7 @@ function DataExplorerDensity1DPlot({
         name: legendDisplayNames[key] ?? "",
         hexColor: colorMap.get(key) as string,
       })),
+    isTrivial: colorMap.size === 1 && colorMap.has(LEGEND_ALL),
   };
 
   return (

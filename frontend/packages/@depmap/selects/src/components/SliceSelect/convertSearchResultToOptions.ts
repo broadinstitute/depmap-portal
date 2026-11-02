@@ -86,15 +86,33 @@ export async function checkValueCompatibility(
     dataVersionCompatibleIds,
     dimensionTypeDisplayName,
     datasetName,
+    allIdentifiers,
   ] = await Promise.all([
     fetchDataTypeCompatibleIds(slice_type, dataType),
     fetchDataVersionCompatibleIds(slice_type, dataset_id),
     fetchDimensionTypeDisplayName(slice_type),
     fetchDatasetName(dataset_id),
+    fetchDimensionIdentifiers(slice_type),
   ]);
 
+  // A context may identify a slice by something other than its given ID (for
+  // example `entity_label` mapped to a "label" metadata column). In that case
+  // `id` is really a label, so resolve it to the actual identifier before
+  // checking compatibility.
+  let resolvedId = id;
+
+  if (!allIdentifiers.some((identifier) => identifier.id === id)) {
+    const labelMatches = allIdentifiers.filter(
+      (identifier) => identifier.label === id
+    );
+
+    if (labelMatches.length === 1) {
+      resolvedId = labelMatches[0].id;
+    }
+  }
+
   return computeDisabledState(
-    id,
+    resolvedId,
     dataTypeCompatibleIds,
     dataVersionCompatibleIds,
     dataType,
@@ -214,11 +232,14 @@ async function convertSearchResultToOptions(
         return labelA < labelB ? -1 : 1;
       }
 
-      const indexA = tokens.reduce(
+      // The labels are lowercased above, so the tokens must be too.
+      const lowercaseTokens = tokens.map((token) => token.toLowerCase());
+
+      const indexA = lowercaseTokens.reduce(
         (sum, token) => labelA.indexOf(token) + sum,
         0
       );
-      const indexB = tokens.reduce(
+      const indexB = lowercaseTokens.reduce(
         (sum, token) => labelB.indexOf(token) + sum,
         0
       );

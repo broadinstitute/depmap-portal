@@ -202,8 +202,8 @@ class ReleaseTerms(Enum):
             "achilles_drive_marcotte": """This combination of the Broad Institute Project Achilles, Novartis Project DRIVE, and Marcotte et al. breast cell line datasets is distributed under a <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">CC Attribution 4.0 license</a>.""",
             "gdsc": """These data were processed from data published on Sanger's website. <a target="_blank" href="http://www.cancerrxgene.org/legal">Click here to see Sanger's terms and conditions</a>.""",
             "project_score": """These data were processed from data published on Sanger's Project Score portal. <a target="_blank" href="https://score.depmap.sanger.ac.uk/documentation#usage">Click here to see Sanger's terms and conditions</a>.""",
-            "ccle": """CCLE publishes it's data under the <a target="_blank" href="{}">Terms and Conditions linked here.</a>""".format(
-                url_for("ccle", path="terms_and_conditions")
+            "ccle": """DepMap publishes it's data under the <a target="_blank" href="{}">Terms and Conditions linked here.</a>""".format(
+                url_for("public.terms")
             ),
             "depmap": """DepMap publishes it's data under the <a target="_blank" href="{}">Terms and Conditions linked here.</a>""".format(
                 url_for("public.terms")

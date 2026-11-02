@@ -10,6 +10,7 @@ from .utils.debug_event_log import log_event, _get_log_filename
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from starlette.datastructures import MutableHeaders
 
@@ -46,6 +47,10 @@ def create_app(settings: Settings):
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Nothing in front of breadbox compresses responses (the portal proxies them through as-is).
+    # Starlette defaults to level 9, which is ~7x slower than 6 for ~3% smaller output.
+    app.add_middleware(GZipMiddleware, minimum_size=512, compresslevel=6)
 
     if api_prefix != "":
         root_router = APIRouter(prefix=api_prefix)

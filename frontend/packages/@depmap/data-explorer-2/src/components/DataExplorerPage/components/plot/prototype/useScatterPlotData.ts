@@ -67,6 +67,7 @@ export interface ScatterPlotData {
   legendForDownload: {
     title: string;
     items: { name: string; hexColor: string }[];
+    isTrivial: boolean;
   };
   pointVisibility: boolean[] | null;
   regressionLines: RegressionLine[] | null;
@@ -250,6 +251,7 @@ export default function useScatterPlotData(
     return {
       title,
       items,
+      isTrivial: colorMap.size === 1 && colorMap.has(LEGEND_ALL),
     };
   }, [colorMap, data, continuousBins, hiddenLegendValues, colorMode]);
 

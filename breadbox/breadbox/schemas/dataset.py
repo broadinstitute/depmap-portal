@@ -595,6 +595,8 @@ class DimensionSearchIndexResponse(BaseModel):
 
 
 class DimensionDataResponse(BaseModel):
-    ids: list[str]
-    labels: list[str]
-    values: list[Any]
+    # `labels` and `values` are absent when the caller narrowed the response with
+    # `fields`; by default all three are present.
+    ids: Optional[list[str]] = None
+    labels: Optional[list[str]] = None
+    values: Optional[list[Any]] = None

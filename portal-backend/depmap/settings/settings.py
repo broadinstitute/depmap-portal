@@ -295,6 +295,22 @@ class Config(object):
     # As long as we're using in-memory cache, will be cleared on server restart.
     CACHE_DEFAULT_TIMEOUT = 24 * 60 * 60
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # Response compression (Flask-Compress). Only text-like types are compressed, so
+    # zip/csv attachments and other downloads are left alone. Static files are streamed,
+    # so the streaming list must name the same algorithms as the non-streaming one.
+    COMPRESS_ALGORITHM = ["br", "gzip"]
+    COMPRESS_ALGORITHM_STREAMING = ["br", "gzip"]
+    COMPRESS_MIMETYPES = [
+        "text/html",
+        "text/css",
+        "text/xml",
+        "text/javascript",
+        "application/javascript",
+        "application/json",
+        "image/svg+xml",
+    ]
+    COMPRESS_MIN_SIZE = 512
+    COMPRESS_BR_LEVEL = 4  # higher brotli quality is too slow to do per request
     APPLICATION_ROOT = "/"  # used as a variable to wire into DispatcherMiddleware in autoapp.py, and also as a setting to generate url_for outside a request context on a celery worker (https://flask.palletsprojects.com/en/1.1.x/config/#APPLICATION_ROOT)
     REPORT_EXCEPTIONS = False
     STATIC_MINI_SITES = ["achilles", "ccle"]
