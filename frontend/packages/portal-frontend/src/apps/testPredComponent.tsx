@@ -12,9 +12,28 @@ const { dimType, givenId } = JSON.parse(dataEl?.textContent || "{}");
 
 const container = document.getElementById("test-pred-component-root");
 
+const responseDescription = () => {
+  if (dimType === "gene") {
+    return "response to the inactivation of the gene";
+  }
+
+  if (dimType === "compound_v2") {
+    return "response to treament with the compound";
+  }
+
+  return "NA";
+};
+
 const App = () => (
   <ErrorBoundary>
     <Grid>
+      <p>
+        This page shows how well machine-learning models can predict{" "}
+        {responseDescription()} given other molecular features of the cell
+        lines. Random forest models have been bit with increasing number of
+        features and aggregate behavior is summarized by the plots at the top of
+        this page. Below, the specific results of each model are shown.
+      </p>
       <PlotlyLoaderProvider PlotlyLoader={PlotlyLoader}>
         <PredictiveInsightsPage dimType={dimType} dimTypeGivenId={givenId} />
       </PlotlyLoaderProvider>

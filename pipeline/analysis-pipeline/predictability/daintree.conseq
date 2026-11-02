@@ -25,7 +25,7 @@ add-if-missing {
 #  DPC-007256 DEG-35 PRC-008138974-313-12 (should see P53)
 #  DEG-37 PRC-000699183-281-19
 #  DPC-003981 Temozolomide PRC-008831813-672-71
-let reference_genes_for_testing="CDK6|CDK4|VPS4A|UBE3A|PAX8|JUP|MCL1|WRN|PELO"
+let reference_genes_for_testing="CDK6|CDK4|VPS4A|UBE3A|PAX8|JUP|MCL1|WRN|PELO|BRAF"
 let reference_compounds_for_testing="PRC-005235888|PRC-008717476|PRC-008138974|PRC-000699183|PRC-008831813"
 
 # creates artifacts for each run of daintree with the parameters daintree will need. Also emits a file containing the model config information that breadbox needs

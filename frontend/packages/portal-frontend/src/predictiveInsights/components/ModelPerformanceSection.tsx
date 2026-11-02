@@ -6,6 +6,7 @@ import { ScreenTypeData } from "../hooks/usePredictiveInsightsData";
 import { getScreenTypeLabel } from "../screenTypeLabel";
 import FeatureTable from "./FeatureTable";
 import MiniScatterPlot from "./MiniScatterPlot";
+import TitledPlot from "./TitledPlot";
 import ModelCorrelationHeatmap from "./ModelCorrelationHeatmap";
 import styles from "../styles/PredictiveInsights.scss";
 
@@ -89,27 +90,37 @@ export default function ModelPerformanceSection({
                 <div>
                   <div className={styles.modelPlotsRow}>
                     <div className={styles.modelPlotColumn}>
-                      <MiniScatterPlot
-                        dimType={dimType}
-                        xAxis={{
-                          datasetId: screenType.response.actuals_dataset.id,
-                          featureGivenId:
-                            screenType.response.actuals_feature_given_id,
-                          featureLabel:
-                            screenType.response.actuals_feature_label,
-                          axisLabel: "Actual",
-                        }}
-                        yAxis={{
-                          datasetId: fit.predictions_dataset.id,
-                          featureGivenId:
-                            screenType.response.actuals_feature_given_id,
-                          featureLabel: fit.predictions_dataset.name,
-                          axisLabel: "Prediction",
-                        }}
-                      />
+                      <TitledPlot
+                        title="Predicted vs. actual"
+                        tooltip="Each point is a cell line, plotted by its observed value (x) against the value this model predicted for it (y). Points near the diagonal mean the model predicts that cell line well; the overall correlation (shown in the header above) summarizes how well the model's predictions track the real data."
+                      >
+                        <MiniScatterPlot
+                          dimType={dimType}
+                          xAxis={{
+                            datasetId: screenType.response.actuals_dataset.id,
+                            featureGivenId:
+                              screenType.response.actuals_feature_given_id,
+                            featureLabel:
+                              screenType.response.actuals_feature_label,
+                            axisLabel: "Actual",
+                          }}
+                          yAxis={{
+                            datasetId: fit.predictions_dataset.id,
+                            featureGivenId:
+                              screenType.response.actuals_feature_given_id,
+                            featureLabel: fit.predictions_dataset.name,
+                            axisLabel: "Prediction",
+                          }}
+                        />
+                      </TitledPlot>
                     </div>
                     <div className={styles.modelPlotColumn}>
-                      <ModelCorrelationHeatmap fit={fit} dimType={dimType} />
+                      <TitledPlot
+                        title="Top feature correlations"
+                        tooltip="Pairwise correlations between this model's top predictive features across cell lines. Blocks of strongly correlated (red) or anti-correlated (blue) features are redundant or related signals, so they likely carry overlapping information about the prediction rather than independent evidence."
+                      >
+                        <ModelCorrelationHeatmap fit={fit} dimType={dimType} />
+                      </TitledPlot>
                     </div>
                   </div>
                   <FeatureTable
