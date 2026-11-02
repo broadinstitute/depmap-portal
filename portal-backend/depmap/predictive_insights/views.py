@@ -26,7 +26,7 @@ def _label_to_given_id(dim_type, label):
     matches = labels[labels == label]
     if len(matches) == 0:
         return None
-    return str(matches.index[0])
+    return str(matches.index[0])  # pyright: ignore
 
 
 @blueprint.route("/test-pred-component/<dim_type>/<label>")

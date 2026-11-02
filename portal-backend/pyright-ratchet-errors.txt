@@ -446,7 +446,6 @@ parse_downloads.py: error: Argument of type "Any | None" cannot be assigned to p
 parse_downloads.py: error: Argument of type "Any | None" cannot be assigned to parameter "stats" of type "List[Dict[str, Any]]" in function "get_summary_stats"
 parse_downloads.py: error: Argument of type "dict[str, Any | None]" cannot be assigned to parameter "__map" of type "SummaryStatsDict" in function "__init__"
 parse_downloads.py: error: Type "Any | None" is not assignable to declared type "RetractedUrl | str"
-parse_downloads.py: error: Type "Any | None" is not assignable to declared type "date"
 parse_downloads.py: error: Type "List[dict[Unknown, Unknown]]" is not assignable to return type "str"
 parse_downloads.py: error: Type "None" is not assignable to return type "List[FileSource]"
 parse_downloads.py: error: Type "tuple[Unknown | None, DownloadRelease]" is not assignable to return type "Tuple[str, DownloadRelease]"
