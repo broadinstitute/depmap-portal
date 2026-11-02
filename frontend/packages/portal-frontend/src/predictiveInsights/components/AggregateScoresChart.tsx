@@ -65,7 +65,7 @@ function Chart({
       height: 400,
       margin: { l: 60, r: 20, t: 20, b: 110 },
       xaxis: { tickangle: -30 },
-      yaxis: { title: "R (observed vs. predicted)" },
+      yaxis: { title: "R (observed vs. predicted)", rangemode: "tozero" },
       legend: { orientation: "h", y: -0.3, yanchor: "top" },
     };
 
