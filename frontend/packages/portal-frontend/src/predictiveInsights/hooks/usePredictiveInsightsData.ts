@@ -68,12 +68,16 @@ export function usePredictiveInsightsData(
           return;
         }
 
-        const screenTypes: ScreenTypeData[] = screenTypeOrder.map((s, i) => ({
-          actualsDatasetId: s.id,
-          actualsDatasetName: s.name,
-          color: SCREEN_TYPE_COLORS[i % SCREEN_TYPE_COLORS.length],
-          response: responses[i],
-        }));
+        // Skip datasets for which no models were fit for this feature, so
+        // we don't render empty plots/sections for them.
+        const screenTypes: ScreenTypeData[] = screenTypeOrder
+          .map((s, i) => ({
+            actualsDatasetId: s.id,
+            actualsDatasetName: s.name,
+            color: SCREEN_TYPE_COLORS[i % SCREEN_TYPE_COLORS.length],
+            response: responses[i],
+          }))
+          .filter((s) => s.response.model_fits.length > 0);
 
         setData({ configs, screenTypes });
       } catch (e) {
