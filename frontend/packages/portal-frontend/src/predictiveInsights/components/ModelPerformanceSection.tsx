@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Panel, PanelGroup } from "react-bootstrap";
 import { ModelConfigOut } from "@depmap/types";
+import InfoIcon from "src/common/components/InfoIcon";
 import CorrelationMeter from "src/predictability/components/CorrelationMeter";
 import { ScreenTypeData } from "../hooks/usePredictiveInsightsData";
 import { getScreenTypeLabel } from "../screenTypeLabel";
@@ -68,6 +69,14 @@ export default function ModelPerformanceSection({
                       {activeKey === config.model_config_name ? "−" : "+"}
                     </span>
                     {config.model_config_name}
+                    <InfoIcon
+                      popoverContent={<p>{config.model_config_description}</p>}
+                      popoverId={`model-config-info-${config.model_config_name.replace(
+                        /\W+/g,
+                        "-"
+                      )}`}
+                      trigger={["hover", "focus"]}
+                    />
                   </span>
                   <span className={styles.modelHeaderGaugeLabel}>
                     Correlation between observed and predicted
