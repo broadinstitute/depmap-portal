@@ -4,6 +4,7 @@ from breadbox.compute.dataset_uploads_tasks import run_dataset_upload
 from ..schemas.custom_http_exception import UserError
 
 from ..schemas.dataset import DatasetParams, AddDatasetResponse
+from ..config import Settings, get_settings
 from .dependencies import get_user
 
 from ..celery_task import utils
@@ -18,7 +19,9 @@ router = APIRouter(prefix="/dataset-v2", tags=["datasets"])
     status_code=status.HTTP_202_ACCEPTED,
 )
 def add_dataset_uploads(
-    dataset: DatasetParams, user: str = Depends(get_user),
+    dataset: DatasetParams,
+    user: str = Depends(get_user),
+    settings: Settings = Depends(get_settings),
 ):
     """
     Create a new dataset.
@@ -65,6 +68,12 @@ def add_dataset_uploads(
         - `col_type`: Annotation type for the column. Annotation types may include: `continuous`, `categorical`, `text`, or `list_strings`
 
     """
+    if (
+        getattr(dataset, "data_file_format", None) == "hdf5"
+        and user not in settings.admin_users
+    ):
+        raise HTTPException(403, "Only admin users may upload HDF5 datasets")
+
     if not dataset.is_transient and dataset.expiry_in_seconds is not None:
         raise UserError(
             "Dataset was not marked as 'transient' but expiry_in_seconds is set."
