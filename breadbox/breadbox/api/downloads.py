@@ -8,6 +8,7 @@ from typing import Annotated
 from fastapi import (
     APIRouter,
     Depends,
+    HTTPException,
 )
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -132,14 +133,42 @@ def export_merged_dataset(
 def data_slicer_download(
     name: str, file_path: str, settings: Settings = Depends(get_settings)
 ):
-    filename_for_user = name
-    file_path_from_compute_results_dir = os.path.join(
-        settings.compute_results_location, file_path
+    # `name` is only used as the download filename shown to the user, so it must
+    # be a bare filename: no path separators, no traversal, no null bytes.
+    if (
+        not name
+        or "/" in name
+        or "\\" in name
+        or ".." in name
+        # reject control characters (incl. CR/LF and null) so the name can never
+        # affect the Content-Disposition header, regardless of framework behavior
+        or any(ord(c) < 0x20 or ord(c) == 0x7F for c in name)
+    ):
+        raise HTTPException(400, "Invalid name")
+
+    # `file_path` is generated server side as <YYYYMMDD>/<task_id>/export.csv
+    # (relative to the compute results dir). Reject anything else.
+    if "\0" in file_path or "\\" in file_path or file_path.startswith("/"):
+        raise HTTPException(400, "Invalid file_path")
+    parts = file_path.split("/")
+    if len(parts) != 3 or any(p in ("", ".", "..") or ".." in p for p in parts):
+        raise HTTPException(400, "Invalid file_path")
+
+    # Resolve the final path and confirm it is still inside the results dir.
+    # realpath (rather than abspath) also collapses symlinks.
+    results_root = os.path.realpath(settings.compute_results_location)
+    file_path_from_compute_results_dir = os.path.realpath(
+        os.path.join(results_root, file_path)
     )
+    if not file_path_from_compute_results_dir.startswith(results_root + os.sep):
+        raise HTTPException(400, "Invalid file_path")
+
+    if not os.path.isfile(file_path_from_compute_results_dir):
+        raise HTTPException(404, "File not found")
 
     file_response = FileResponse(
         media_type="text/csv",
-        filename=filename_for_user,
+        filename=name,
         path=file_path_from_compute_results_dir,
         content_disposition_type="attachment",
     )
