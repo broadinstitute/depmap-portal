@@ -275,3 +275,30 @@ def test_associations(
 
     # make sure the file is gone too
     assert get_assoc_table_file_count() == 0
+
+
+def test_associations_mutations_require_admin(
+    client: TestClient, minimal_db: SessionWithUser, settings
+):
+    # The transient group is writable by everyone, so a non-admin has write
+    # access to these datasets. Mutations must still be rejected.
+    dataset_1 = factories.matrix_dataset(minimal_db, settings, is_transient=True)
+    dataset_2 = factories.matrix_dataset(minimal_db, settings, is_transient=True)
+    minimal_db.commit()
+
+    for headers in [{}, {"X-Forwarded-User": "someone@not-admin.com"}]:
+        response = client.post(
+            "/temp/associations",
+            json={
+                "dataset_1_id": dataset_1.id,
+                "dataset_2_id": dataset_2.id,
+                "axis": "feature",
+                "file_ids": [],
+                "md5": "0" * 32,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 403
+
+        response = client.delete("/temp/associations/some-id", headers=headers)
+        assert response.status_code == 403

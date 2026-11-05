@@ -3,7 +3,7 @@ from typing import List, Optional, Annotated
 from logging import getLogger
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, Body, Query
 
-from breadbox.api.dependencies import get_db_with_user
+from breadbox.api.dependencies import get_db_with_user, get_admin_user
 from breadbox.db.session import SessionWithUser
 from breadbox.db.util import transaction
 from breadbox.schemas.custom_http_exception import UserError
@@ -111,6 +111,7 @@ def get_release_version(
 def create_release_version(
     params: Annotated[CreateReleaseVersionParams, Body()],
     db: SessionWithUser = Depends(get_db_with_user),
+    admin_user: str = Depends(get_admin_user),
 ):
     """
     Register a new release version and its associated files/pipelines.
@@ -140,7 +141,9 @@ def create_release_version(
     "/{release_version_id}", operation_id="delete_release_version",
 )
 def delete_release_version(
-    release_version_id: str, db: SessionWithUser = Depends(get_db_with_user),
+    release_version_id: str,
+    db: SessionWithUser = Depends(get_db_with_user),
+    admin_user: str = Depends(get_admin_user),
 ):
     """
     Delete a release version. Associated files and pipelines will be 
