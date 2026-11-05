@@ -1,7 +1,7 @@
 import * as React from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PanelGroup } from "react-bootstrap";
-import { useLocation, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Markdown, Spinner } from "@depmap/common-components";
 import { breadboxAPI, cached } from "@depmap/api";
 import { CmsMenu, CmsPost, CmsPostSummary } from "@depmap/types";
@@ -104,35 +104,6 @@ export default function ResourcesV3Page() {
     };
   }, [selectedPostTitle]);
 
-  // <Markdown> is lazy-loaded, so the post's HTML may not be in the DOM yet
-  // when the page first renders. The browser's native scroll-to-#anchor would
-  // run too early, so we scroll ourselves: once <Markdown> reports it has
-  // rendered (onRendered), and whenever the hash changes afterwards.
-  const postContentRef = useRef<HTMLDivElement>(null);
-  const hash = useLocation().hash;
-
-  const scrollToHash = useCallback(() => {
-    const container = postContentRef.current;
-
-    if (!container || !hash || hash === "#") {
-      return;
-    }
-
-    let id = hash.slice(1);
-
-    try {
-      id = decodeURIComponent(id);
-    } catch (e) {
-      // Malformed escape sequence; use the raw value.
-    }
-
-    container.querySelector(`[id="${CSS.escape(id)}"]`)?.scrollIntoView();
-  }, [hash]);
-
-  useEffect(() => {
-    scrollToHash();
-  }, [scrollToHash]);
-
   if (error) {
     return (
       <div className={`container ${styles.ResourcesV3PageContainer}`}>
@@ -170,7 +141,7 @@ export default function ResourcesV3Page() {
         </section>
         <section className={`col-md-9 ${styles.postContentContainer}`}>
           {selectedPostSummary && (
-            <div className={styles.postContent} ref={postContentRef}>
+            <div className={styles.postContent}>
               <h1 className={styles.postTitle}>{selectedPostSummary.title}</h1>
               {selectedPostSummary.updated_at && (
                 <div className={styles.postDate}>
@@ -187,9 +158,7 @@ export default function ResourcesV3Page() {
                 </div>
               )}
               {selectedPost ? (
-                <Markdown onRendered={scrollToHash}>
-                  {selectedPost.content}
-                </Markdown>
+                <Markdown>{selectedPost.content}</Markdown>
               ) : (
                 selectedPostContentLoading && <Spinner />
               )}

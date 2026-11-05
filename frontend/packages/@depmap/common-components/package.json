@@ -19,7 +19,6 @@
     "react-markdown": "7",
     "react-select": "^3.2.0",
     "rehype-raw": "6",
-    "rehype-slug": "5",
     "remark-gfm": "3"
   },
   "devDependencies": {
