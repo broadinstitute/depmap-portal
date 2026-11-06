@@ -5,7 +5,7 @@ import shutil
 from fastapi import Body, Depends
 from itsdangerous import URLSafeSerializer
 
-from breadbox.api.dependencies import get_db_with_user
+from breadbox.api.dependencies import get_db_with_user, get_admin_user
 from breadbox.config import Settings, get_settings
 from breadbox.db.session import SessionWithUser
 from breadbox.service.upload import construct_file_from_ids
@@ -117,6 +117,7 @@ def delete_associations(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
     settings: Annotated[Settings, Depends(get_settings)],
     id: str,
+    admin_user: Annotated[str, Depends(get_admin_user)],
 ):
     with transaction(db):
         return associations_crud.delete_association_table(
@@ -139,6 +140,7 @@ def add_associations(
             description="The associations table and which two datasets table references"
         ),
     ],
+    admin_user: Annotated[str, Depends(get_admin_user)],
 ):
 
     serializer = URLSafeSerializer(settings.breadbox_secret)

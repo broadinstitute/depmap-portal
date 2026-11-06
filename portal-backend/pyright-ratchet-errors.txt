@@ -732,7 +732,6 @@ views.py: error: Argument of type "str | None" cannot be assigned to parameter "
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "dataset_id" of type "str" in function "get_matrix_dataset"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "entity_id" of type "int" in function "integrate_size_and_label_data"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "model_condition_id" of type "str" in function "get_by_model_condition_id"
-views.py: error: Argument of type "str | None" cannot be assigned to parameter "paths" of type "BytesPath" in function "join"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "s" of type "str | bytes | bytearray" in function "loads"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "s" of type "str | bytes" in function "loads"
 views.py: error: Argument of type "str" cannot be assigned to parameter "_external" of type "bool | None" in function "url_for"
@@ -747,7 +746,6 @@ views.py: error: Cannot access attribute "symbol" for class "Entity"
 views.py: error: Cannot access attribute "values" for class "ndarray[_AnyShape, dtype[Any]]"
 views.py: error: Invalid conditional operand of type "ColumnElement[bool]"
 views.py: error: No overloads for "__setitem__" match the provided arguments (reportCallIssue)
-views.py: error: No overloads for "join" match the provided arguments (reportCallIssue)
 views.py: error: No overloads for "rename" match the provided arguments (reportCallIssue)
 views.py: error: No overloads for "sort_values" match the provided arguments
 views.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)

@@ -97,9 +97,26 @@ class TestGet:
         assert len(resp_with_files.json()["files"]) == 1
 
 
+def admin_headers(settings):
+    return {"X-Forwarded-User": settings.admin_users[0]}
+
+
 class TestPost:
-    def test_create_release_version_success(
+    def test_create_release_version_requires_admin(
         self, client: TestClient, minimal_db: SessionWithUser
+    ):
+        payload = {
+            "version_name": "26Q1",
+            "release_name": "Public",
+            "content_hash": "a" * 32,
+        }
+        for headers in [{}, {"X-Forwarded-User": "anyone"}]:
+            response = client.post("/release-versions/", json=payload, headers=headers)
+            assert response.status_code == 403
+        assert client.get("/release-versions/").json() == []
+
+    def test_create_release_version_success(
+        self, client: TestClient, minimal_db: SessionWithUser, settings
     ):
         """Test successful creation of a release version."""
         payload = {
@@ -112,14 +129,16 @@ class TestPost:
             ],
             "release_pipelines": [{"pipeline_name": "Standard", "description": "Desc"}],
         }
-        response = client.post("/release-versions/", json=payload)
+        response = client.post(
+            "/release-versions/", json=payload, headers=admin_headers(settings)
+        )
         assert_status_ok(response)
         data = response.json()
         assert data["version_name"] == "26Q1"
         assert len(data["files"]) == 1
 
     def test_create_release_version_conflict(
-        self, client: TestClient, minimal_db: SessionWithUser
+        self, client: TestClient, minimal_db: SessionWithUser, settings
     ):
         """Test that duplicate release/version combinations are rejected."""
         # Create initial
@@ -133,21 +152,35 @@ class TestPost:
             "release_name": "Project X",
             "content_hash": "b" * 32,
         }
-        response = client.post("/release-versions/", json=payload)
+        response = client.post(
+            "/release-versions/", json=payload, headers=admin_headers(settings)
+        )
         assert response.status_code == 409
         assert "already exists" in response.json()["detail"]
 
 
 class TestDelete:
-    def test_delete_release_version_success(
+    def test_delete_release_version_requires_admin(
         self, client: TestClient, minimal_db: SessionWithUser
+    ):
+        release = factories.release_version(minimal_db)
+        release_id = str(release.id)
+        for headers in [{}, {"X-Forwarded-User": "anyone"}]:
+            response = client.delete(f"/release-versions/{release_id}", headers=headers)
+            assert response.status_code == 403
+        assert client.get(f"/release-versions/{release_id}").status_code == 200
+
+    def test_delete_release_version_success(
+        self, client: TestClient, minimal_db: SessionWithUser, settings
     ):
         """Test deleting a release version and verifying it is gone."""
         release = factories.release_version(minimal_db)
         release_id = str(release.id)
 
         # Delete
-        response = client.delete(f"/release-versions/{release_id}")
+        response = client.delete(
+            f"/release-versions/{release_id}", headers=admin_headers(settings)
+        )
         assert_status_ok(response)
         assert "deleted successfully" in response.json()["message"]
 
