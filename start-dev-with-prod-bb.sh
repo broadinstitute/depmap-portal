@@ -19,7 +19,8 @@ for arg in "$@"; do
 done
 
 nginx_listen_port=8000
-nginx_upstream_port=8008
+#nginx_upstream_port=8008 # iqa
+nginx_upstream_port=8019 # dstaging
 
 nginx_conf="$(mktemp -t nginx.XXXXXX).conf"
 config="$(mktemp -t mprocs.XXXXXX).yaml"
