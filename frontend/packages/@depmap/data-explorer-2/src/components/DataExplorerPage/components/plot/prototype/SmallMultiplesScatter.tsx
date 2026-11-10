@@ -178,7 +178,6 @@ interface Props {
 }
 
 type PlotlyType = typeof Plotly;
-value === "pan" || value === "select" || value === "lasso";
 
 type PropsWithPlotly = Props & { Plotly: PlotlyType };
 
