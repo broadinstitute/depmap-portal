@@ -54,6 +54,7 @@ class ExternalConfig(RemoteConfig):
     BREADBOX_PROXY_DEFAULT_USER = "anonymous"
     TURNSTILE_SITE_KEY = "0x4AAAAAADUm6LZT0GHl88BI"
     TURNSTILE_SECRET_KEY = os.getenv("TURNSTILE_SECRET_KEY")
+    SESSION_COOKIE_NAME = "sessionv2"
 
 
 class ExternalQAConfig(ExternalConfig):
