@@ -12,6 +12,7 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: "public/index.html",
       publicPath: "",
+      chunks: ["embed"],
     }),
     new webpack.DefinePlugin({
       "window.enabledFeatures": JSON.stringify({ embed: true }),
