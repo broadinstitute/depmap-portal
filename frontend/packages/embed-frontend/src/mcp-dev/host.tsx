@@ -87,6 +87,9 @@ function Host() {
             serverTools: {},
             openLinks: {},
             updateModelContext: { text: {} },
+            // Enables the point-selection button. The message the view sends
+            // is only logged; nothing is drafted or sent.
+            message: { text: {} },
           },
           hostContext: { containerDimensions: { maxHeight: 800 } },
         });

@@ -75,6 +75,7 @@ import {
   truncateFacetLabel,
   RegressionLine,
   widenExtentsToAxisRange,
+  isDragmode,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
 import type ExtendedPlotType from "../../../ExtendedPlotType";
@@ -122,6 +123,11 @@ interface Props {
   onClickPoint?: (pointIndex: number, anyModifier: boolean) => void;
   onMultiselect?: (pointIndices: number[]) => void;
   onClickResetSelection?: () => void;
+  // Opt-in (the embedded view). Keeps Plotly's own box and lasso buttons in the
+  // modebar and follows the mode they pick: dragmode is React state here (see
+  // `dragmode` below), so without this a modebar click would be undone by the
+  // next re-render. Data Explorer leaves it off and uses its own toolbar.
+  modebarSelectionTools?: boolean;
   onLoad?: (plot: ExtendedPlotType) => void;
   pointSize?: number;
   pointOpacity?: number;
@@ -172,6 +178,7 @@ interface Props {
 }
 
 type PlotlyType = typeof Plotly;
+
 type PropsWithPlotly = Props & { Plotly: PlotlyType };
 
 // Unlike PrototypeScatterPlot, which caches whole axis objects, this renderer
@@ -254,6 +261,7 @@ function SmallMultiplesScatter({
   onClickPoint = () => {},
   onMultiselect = () => {},
   onClickResetSelection = () => {},
+  modebarSelectionTools = false,
   onLoad = () => {},
   pointSize = 7,
   pointOpacity = 1,
@@ -911,7 +919,7 @@ function SmallMultiplesScatter({
     const config: Partial<Config> = {
       responsive: true,
       displaylogo: false,
-      modeBarButtonsToRemove: ["lasso2d"],
+      modeBarButtonsToRemove: modebarSelectionTools ? [] : ["lasso2d"],
       // Let the user drag a label's tail (but not the label body), same as the
       // single-panel plots.
       edits: { annotationTail: true },
@@ -1285,7 +1293,12 @@ function SmallMultiplesScatter({
       onClickResetSelection();
     });
 
-    on("plotly_relayout", () => {
+    on("plotly_relayout", (e) => {
+      // The modebar changed the drag mode itself; make our state follow it.
+      if (modebarSelectionTools && isDragmode(e?.dragmode)) {
+        plot.setDragmode(e.dragmode);
+      }
+
       axes.current = {
         xaxis: { range: (plot.layout as any).xaxis?.range, autorange: false },
         yaxis: { range: (plot.layout as any).yaxis?.range, autorange: false },
@@ -1360,6 +1373,7 @@ function SmallMultiplesScatter({
     dragmode,
     placeholderEmptyFacets,
     hiddenFacets,
+    modebarSelectionTools,
     Plotly,
   ]);
 

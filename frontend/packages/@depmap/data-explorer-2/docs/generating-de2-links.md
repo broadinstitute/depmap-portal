@@ -994,6 +994,8 @@ Two fields together express this, and both are required:
 
 Older links may also carry `limit` and `offset` — a page size and a window, from when the members shown were an arbitrary prefix. They are ignored.
 
+**For a `scatter` plot, whenever you set `expand_by`, also set `"facet_by": "expansion"`.** Do not generate a scatter plot with `expand_by` and any other `facet_by` (or none), in particular one whose points are colored by the expansion without being faceted by it. Every entity then appears many times in the same panel, which readers find confusing, and the reader cannot select points on such a plot (selecting points to ask about them is only available when each entity is one point per panel).
+
 ```json
 {
   "version": 2,

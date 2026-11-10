@@ -48,6 +48,7 @@ import {
   resolveAnnotationTail,
   RegressionLine,
   widenExtentsToAxisRange,
+  isDragmode,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
 import installFacetSelectionDragLayer, {
@@ -88,6 +89,11 @@ interface Props {
   onClickPoint?: (pointIndex: number, ctrlKey: boolean) => void;
   onMultiselect?: (pointIndices: number[]) => void;
   onClickResetSelection?: () => void;
+  // Opt-in (the embedded view). Keeps Plotly's own box and lasso buttons in the
+  // modebar and follows the mode they pick: dragmode is React state here (see
+  // `dragmode` below), so without this a modebar click would be undone by the
+  // next re-render. Data Explorer leaves it off and uses its own toolbar.
+  modebarSelectionTools?: boolean;
   pointVisibility?: boolean[];
   showIdentityLine?: boolean;
   regressionLines?: RegressionLine[] | null;
@@ -148,6 +154,7 @@ interface Props {
 }
 
 type PlotlyType = typeof Plotly;
+
 type PropsWithPlotly = Props & { Plotly: PlotlyType };
 
 const calcPlotHeight = (plot: HTMLDivElement) => {
@@ -220,6 +227,7 @@ function PrototypeScatterPlot({
   onClickPoint = () => {},
   onMultiselect = () => {},
   onClickResetSelection = () => {},
+  modebarSelectionTools = false,
   onLoad = () => {},
   customHoverinfo = undefined,
   hideXAxis = false,
@@ -828,7 +836,9 @@ function PrototypeScatterPlot({
       edits: { annotationTail: true },
 
       displaylogo: false,
-      modeBarButtonsToRemove: ["select2d", "lasso2d"],
+      modeBarButtonsToRemove: modebarSelectionTools
+        ? []
+        : ["select2d", "lasso2d"],
     };
 
     Plotly.react(plot, plotlyData, layout, config);
@@ -945,7 +955,12 @@ function PrototypeScatterPlot({
       moveSelectedPointsOnTopOfLines(plot);
     });
 
-    on("plotly_relayout", () => {
+    on("plotly_relayout", (e) => {
+      // The modebar changed the drag mode itself; make our state follow it.
+      if (modebarSelectionTools && isDragmode(e?.dragmode)) {
+        plot.setDragmode(e.dragmode);
+      }
+
       // A zoom/resize invalidates the pixel-space committed marquees, so drop
       // the additive (shift-select) state along with the stored axes.
       const cfg = (plot as any).__facetSel as FacetSelectionConfig | undefined;
@@ -1340,6 +1355,7 @@ function PrototypeScatterPlot({
     xAxisFontSize,
     yAxisFontSize,
     enforceSingleFacetSelection,
+    modebarSelectionTools,
     selectionRegions,
     selectionAxis,
     shapes,

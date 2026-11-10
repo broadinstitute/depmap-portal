@@ -7,15 +7,22 @@ import {
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
 } from "@depmap/types";
+import type { PlotSelection } from "./PlotSelection";
 import DensityLoader from "../../loaders/DensityLoader";
 
 interface Props {
   data: DataExplorerPlotResponse | null;
   height: number;
   plotConfig: DataExplorerPlotConfig;
+  selection?: PlotSelection;
 }
 
-function EmbeddedDensity1DPlot({ data, height, plotConfig }: Props) {
+function EmbeddedDensity1DPlot({
+  data,
+  height,
+  plotConfig,
+  selection = undefined,
+}: Props) {
   const { plotStyles } = useDataExplorerSettings();
   const {
     pointSize,
@@ -95,6 +102,12 @@ function EmbeddedDensity1DPlot({ data, height, plotConfig }: Props) {
         annotationFontSize={annotationFontSize}
         xAxisFontSize={xAxisFontSize}
         yAxisFontSize={yAxisFontSize}
+        // As in Data Explorer: under facet_by "expansion" a selection gesture
+        // stays within one track.
+        enforceSingleFacetSelection={
+          Boolean(selection) && plotConfig.facet_by === "expansion"
+        }
+        {...selection}
       />
     </PlotlyLoaderProvider>
   );

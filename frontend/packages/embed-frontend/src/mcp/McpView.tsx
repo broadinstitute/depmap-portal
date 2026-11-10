@@ -6,7 +6,8 @@ import {
   DataExplorerPlotResponse,
   LinRegInfo,
 } from "@depmap/types";
-import { PlotView } from "../components/Plot";
+import ReadyPlot, { LINK_ROW_HEIGHT } from "./ReadyPlot";
+import { hostAcceptsMessages } from "./selection";
 import { EMBEDDED_PLOT_STYLES } from "../utils/embeddedPlotStyles";
 import { codeGenerationBlocked } from "./codegen";
 import {
@@ -34,7 +35,6 @@ export const MAX_RECOVERY_ATTEMPTS = 3;
 export const RECOVERY_STABLE_MS = 10000;
 
 const DEFAULT_HEIGHT = 480;
-const LINK_ROW_HEIGHT = 28;
 const GET_PLOT_DATA_TOOL = "get_plot_data";
 
 // Shown in place of "Loading plot data…" once a load has taken this long.
@@ -137,6 +137,8 @@ function McpView() {
   const [slow, setSlow] = useState(false);
   const [gaveUp, setGaveUp] = useState(false);
   const [blocked] = useState(() => codeGenerationBlocked());
+  // Whether the host accepts a view's `ui/message`. Known only once connected.
+  const [canSendMessages, setCanSendMessages] = useState(false);
   const inHost = window.parent !== window;
 
   const appRef = useRef<App | null>(null);
@@ -248,7 +250,13 @@ function McpView() {
 
     app
       .connect()
-      .then(syncHeight)
+      .then(() => {
+        syncHeight();
+
+        if (!unmounted) {
+          setCanSendMessages(hostAcceptsMessages(app));
+        }
+      })
       .catch((e: unknown) => {
         if (!unmounted) {
           setState({
@@ -606,18 +614,14 @@ function McpView() {
   } else if (state.kind === "error") {
     content = <Message>Cannot render plot. {state.message}</Message>;
   } else {
-    // `height` is the plot's height. The document is always exactly that
-    // plus the link row (a function of the plot and link alone), so what
-    // autoResize reports never depends on a previous report. The placeholder
-    // used while off screen has the same height for the same reason.
-    const totalHeight = height + (link ? LINK_ROW_HEIGHT : 0);
-
-    let plot: React.ReactNode;
-
-    if (!visible) {
-      plot = null;
-    } else if (gaveUp) {
-      plot = (
+    // `height` is the plot's height. ReadyPlot makes the document exactly that
+    // plus the row under the plot (a function of the plot and host alone), so
+    // what autoResize reports never depends on a previous report. The
+    // placeholder used while off screen has the same height for the same
+    // reason. It is keyed by the request so a selection never outlives its
+    // data.
+    const fallback =
+      visible && gaveUp ? (
         <div
           role="button"
           tabIndex={0}
@@ -627,33 +631,37 @@ function McpView() {
         >
           Plot unavailable, click to retry
         </div>
-      );
-    } else {
-      plot = (
-        <PlotView
-          key={plotKey}
-          plotConfig={state.data.plot_config}
-          data={state.data}
-          linreg_by_group={state.data.linreg_by_group}
-          height={height}
-        />
-      );
-    }
+      ) : null;
 
     content = (
       <DataExplorerSettingsContext.Provider value={settings}>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            width: "100%",
-            height: totalHeight,
-            overflow: "hidden",
+        <ReadyPlot
+          key={`${request?.id}:${attempt}`}
+          data={state.data}
+          height={height}
+          link={link}
+          plotKey={plotKey}
+          showPlot={visible && !gaveUp}
+          fallback={fallback}
+          canSendMessages={canSendMessages}
+          onOpenLink={(url) => {
+            // A sandboxed iframe can't navigate on its own; ask the host.
+            if (!appRef.current) {
+              return false;
+            }
+
+            appRef.current.openLink({ url });
+            return true;
           }}
-        >
-          <div style={{ flex: "1 1 auto", minHeight: 0 }}>{plot}</div>
-          {linkRow}
-        </div>
+          sendMessage={(text) =>
+            appRef.current
+              ? appRef.current.sendMessage({
+                  role: "user",
+                  content: [{ type: "text", text }],
+                })
+              : Promise.resolve({ isError: true })
+          }
+        />
       </DataExplorerSettingsContext.Provider>
     );
   }
