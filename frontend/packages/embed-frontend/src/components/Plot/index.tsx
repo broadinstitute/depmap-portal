@@ -8,7 +8,7 @@ import {
 import LoadingSpinner from "../LoadingSpinner";
 import EmbeddedDensity1DPlot from "./EmbeddedDensity1DPlot";
 import EmbeddedWaterfallPlot from "./EmbeddedWaterfallPlot";
-import EmbeddedScatterPlot from "./EmbeddedScatterPlot";
+import EmbeddedScatterPlot, { ScatterSelection } from "./EmbeddedScatterPlot";
 import EmbeddedCorrelationHeatmap from "./EmbeddedCorrelationHeatmap";
 
 interface PlotViewProps {
@@ -16,6 +16,8 @@ interface PlotViewProps {
   data: DataExplorerPlotResponse;
   linreg_by_group?: LinRegInfo[] | null;
   height: number;
+  // Scatter only; other plot types ignore it.
+  selection?: ScatterSelection;
 }
 
 // Presentational only: renders already-fetched data. Shared by every surface,
@@ -25,6 +27,7 @@ export function PlotView({
   data,
   linreg_by_group = null,
   height,
+  selection = undefined,
 }: PlotViewProps) {
   switch (plotConfig.plot_type) {
     case "density_1d":
@@ -43,6 +46,7 @@ export function PlotView({
           height={height}
           linreg_by_group={linreg_by_group}
           plotConfig={plotConfig}
+          selection={selection}
         />
       );
 

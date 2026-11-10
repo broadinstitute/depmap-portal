@@ -13,13 +13,27 @@ import {
   DataExplorerPlotResponse,
   LinRegInfo,
 } from "@depmap/types";
+import type ExtendedPlotType from "@depmap/data-explorer-2/src/components/DataExplorerPage/ExtendedPlotType";
 import ScatterLoader from "../../loaders/ScatterLoader";
+
+// Selection state owned by the caller, from Data Explorer's own useSelection
+// hook. When omitted the plot is display-only, as it always was.
+export interface ScatterSelection {
+  selectedPoints: Set<number>;
+  pointsToAnnotate: Set<number>;
+  selectionCount: number;
+  onClickPoint: (pointIndex: number, ctrlKey: boolean) => void;
+  onMultiselect: (pointIndices: number[]) => void;
+  onClickResetSelection: () => void;
+  onLoad: (plot: ExtendedPlotType) => void;
+}
 
 interface Props {
   data: DataExplorerPlotResponse | null;
   height: number;
   linreg_by_group: LinRegInfo[] | null;
   plotConfig: DataExplorerPlotConfig;
+  selection?: ScatterSelection;
 }
 
 function canShowIdentityLine(data: DataExplorerPlotResponse | null) {
@@ -48,6 +62,7 @@ function EmbeddedScatterPlot({
   height,
   linreg_by_group,
   plotConfig,
+  selection = undefined,
 }: Props) {
   const { plotStyles } = useDataExplorerSettings();
   const {
@@ -149,6 +164,7 @@ function EmbeddedScatterPlot({
             xAxisFontSize={xAxisFontSize}
             yAxisFontSize={yAxisFontSize}
             showBuiltinLegend={showBuiltinLegend}
+            {...selection}
           />
         ) : (
           // hasFacetOptionsEnabled intentionally left unset here: this
@@ -174,7 +190,6 @@ function EmbeddedScatterPlot({
             yLabel={formattedData?.yLabel || ""}
             showIdentityLine={showIdentityLine}
             regressionLines={regressionLines}
-            onClickResetSelection={() => {}}
             legendForDownload={legendForDownload}
             pointSize={pointSize}
             pointOpacity={pointOpacity}
@@ -184,6 +199,8 @@ function EmbeddedScatterPlot({
             xAxisFontSize={xAxisFontSize}
             yAxisFontSize={yAxisFontSize}
             showBuiltinLegend={showBuiltinLegend}
+            onClickResetSelection={() => {}}
+            {...selection}
           />
         ))}
     </PlotlyLoaderProvider>
