@@ -8,6 +8,9 @@ on:
       - "breadbox-client/**"
       - ".github/workflows/build_breadbox_client.yaml"
       - "breadbox-client-generator/**"
+      - ".github/actions/prepare-breadbox/**"
+      - ".github/actions/prepare-breadbox-client/**"
+  workflow_dispatch:
 
 env:
   ARTIFACT_REGISTRY_REPO: us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-breadbox
