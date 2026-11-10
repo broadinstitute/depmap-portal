@@ -33,6 +33,29 @@ from breadbox.service import dataset as dataset_service
 
 
 class TestPost:
+    def test_hdf5_upload_requires_admin(
+        self, client: TestClient, minimal_db: SessionWithUser, private_group, settings,
+    ):
+        json_body = {
+            "format": "matrix",
+            "name": "a dataset",
+            "units": "a unit",
+            "feature_type": "generic",
+            "sample_type": "depmap_model",
+            "data_type": "User upload",
+            "file_ids": ["dummy"],
+            "dataset_md5": "0" * 32,
+            "is_transient": False,
+            "group_id": private_group["id"],
+            "value_type": "continuous",
+            "data_file_format": "hdf5",
+            "description": "a dataset",
+            "version": "v1",
+        }
+        non_admin = {"X-Forwarded-User": "someone@private-group.com"}
+        r = client.post("/dataset-v2/", json=json_body, headers=non_admin)
+        assert r.status_code == 403, r.text
+
     def test_upload_data_as_parquet(
         self,
         client: TestClient,

@@ -250,15 +250,48 @@ def data_slicer_download():
             - do not name the other query parameter "file"
     """
     filename_for_user = request.args.get(
-        "name"
+        "name", ""
     )  # this args MUST be named "name". the value needs to end with .csv. see docstring
     file_path_from_compute_results_dir = request.args.get(
-        "file_path"
+        "file_path", ""
     )  # there should not also be args named "file"
 
-    full_file_path = os.path.join(
-        current_app.config["COMPUTE_RESULTS_ROOT"], file_path_from_compute_results_dir
+    # `name` is only used as the download filename shown to the user, so it must
+    # be a bare filename: no path separators, no traversal, no null bytes.
+    if (
+        not filename_for_user
+        or "/" in filename_for_user
+        or "\\" in filename_for_user
+        or ".." in filename_for_user
+        # reject control characters (incl. CR/LF and null) so the name can never
+        # affect the Content-Disposition header, regardless of framework behavior
+        or any(ord(c) < 0x20 or ord(c) == 0x7F for c in filename_for_user)
+    ):
+        abort(400, "Invalid name")
+
+    # `file_path` is generated server side as <YYYYMMDD>/<task_id>/export.csv
+    # (relative to the compute results dir). Reject anything else.
+    if (
+        "\0" in file_path_from_compute_results_dir
+        or "\\" in file_path_from_compute_results_dir
+        or file_path_from_compute_results_dir.startswith("/")
+    ):
+        abort(400, "Invalid file_path")
+    parts = file_path_from_compute_results_dir.split("/")
+    if len(parts) != 3 or any(p in ("", ".", "..") or ".." in p for p in parts):
+        abort(400, "Invalid file_path")
+
+    # Resolve the final path and confirm it is still inside the results dir.
+    # realpath (rather than abspath) also collapses symlinks.
+    results_root = os.path.realpath(current_app.config["COMPUTE_RESULTS_ROOT"])
+    full_file_path = os.path.realpath(
+        os.path.join(results_root, file_path_from_compute_results_dir)
     )
+    if not full_file_path.startswith(results_root + os.sep):
+        abort(400, "Invalid file_path")
+
+    if not os.path.isfile(full_file_path):
+        abort(404, "File not found")
 
     return send_file(
         full_file_path,
