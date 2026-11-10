@@ -4327,3 +4327,13 @@ export function getSolidColorGroups(args: {
   // no-facet-at-all case (that one never reaches small multiples).
   return [{ color: NEUTRAL_FACET_FILL, includes: () => true }];
 }
+
+// True for the drag modes the plots' own `setDragmode` accepts. Used to follow a
+// change made from Plotly's modebar (see `modebarSelectionTools`).
+export const isDragmode = (
+  value: unknown
+): value is "zoom" | "pan" | "select" | "lasso" =>
+  value === "zoom" ||
+  value === "pan" ||
+  value === "select" ||
+  value === "lasso";

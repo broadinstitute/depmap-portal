@@ -48,6 +48,7 @@ import {
   resolveAnnotationTail,
   RegressionLine,
   widenExtentsToAxisRange,
+  isDragmode,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
 import installFacetSelectionDragLayer, {
@@ -153,13 +154,7 @@ interface Props {
 }
 
 type PlotlyType = typeof Plotly;
-const isDragmode = (
-  value: unknown
-): value is "zoom" | "pan" | "select" | "lasso" =>
-  value === "zoom" ||
-  value === "pan" ||
-  value === "select" ||
-  value === "lasso";
+value === "pan" || value === "select" || value === "lasso";
 
 type PropsWithPlotly = Props & { Plotly: PlotlyType };
 

@@ -40,6 +40,7 @@ import {
   releaseWebglContexts,
   resolveAnnotationTail,
   truncateFacetLabel,
+  isDragmode,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
 import installFacetSelectionDragLayer, {
@@ -113,6 +114,11 @@ interface Props {
   onClickPoint?: (pointIndex: number, ctrlKey: boolean) => void;
   onMultiselect?: (pointIndices: number[]) => void;
   onClickResetSelection?: () => void;
+  // Opt-in (the embedded view). Keeps Plotly's own box and lasso buttons in the
+  // modebar and follows the mode they pick: dragmode is React state here (see
+  // `dragmode` below), so without this a modebar click would be undone by the
+  // next re-render. Data Explorer leaves it off and uses its own toolbar.
+  modebarSelectionTools?: boolean;
   pointVisibility?: boolean[];
   useSemiOpaqueViolins?: boolean;
   onLoad?: (plot: ExtendedPlotType) => void;
@@ -257,6 +263,7 @@ function PrototypeDensity1D({
   onClickPoint = () => {},
   onMultiselect = () => {},
   onClickResetSelection = () => {},
+  modebarSelectionTools = false,
   onLoad = () => {},
   hiddenLegendValues = new Set(),
   hiddenFacetValues = new Set(),
@@ -920,7 +927,9 @@ function PrototypeDensity1D({
       responsive: true,
       edits: { annotationTail: true },
       displaylogo: false,
-      modeBarButtonsToRemove: ["select2d", "lasso2d"],
+      modeBarButtonsToRemove: modebarSelectionTools
+        ? []
+        : ["select2d", "lasso2d"],
     };
 
     Plotly.react(plot, plotlyData, layout, config);
@@ -1041,7 +1050,12 @@ function PrototypeDensity1D({
       movePointsBehindViolinPlot(plot);
     });
 
-    on("plotly_relayout", () => {
+    on("plotly_relayout", (e) => {
+      // The modebar changed the drag mode itself; make our state follow it.
+      if (modebarSelectionTools && isDragmode(e?.dragmode)) {
+        plot.setDragmode(e.dragmode);
+      }
+
       // A zoom/resize invalidates the pixel-space committed marquees, so drop
       // the additive (shift-select) state along with the stored axes.
       const cfg = (plot as any).__facetSel as FacetSelectionConfig | undefined;
@@ -1531,6 +1545,7 @@ function PrototypeDensity1D({
     pointVisibility,
     useSemiOpaqueViolins,
     dragmode,
+    modebarSelectionTools,
     hiddenLegendValues,
     hiddenFacetValues,
     pointSize,

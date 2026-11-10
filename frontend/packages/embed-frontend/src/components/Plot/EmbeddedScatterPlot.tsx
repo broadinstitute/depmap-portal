@@ -13,27 +13,15 @@ import {
   DataExplorerPlotResponse,
   LinRegInfo,
 } from "@depmap/types";
+import type { PlotSelection } from "./PlotSelection";
 import ScatterLoader from "../../loaders/ScatterLoader";
-
-// Selection state owned by the caller, from Data Explorer's own useSelection
-// hook. When omitted the plot is display-only, as it always was.
-export interface ScatterSelection {
-  selectedPoints: Set<number>;
-  pointsToAnnotate: Set<number>;
-  selectionCount: number;
-  onClickPoint: (pointIndex: number, ctrlKey: boolean) => void;
-  onMultiselect: (pointIndices: number[]) => void;
-  onClickResetSelection: () => void;
-  // Keep Plotly's own box and lasso buttons and follow them.
-  modebarSelectionTools: boolean;
-}
 
 interface Props {
   data: DataExplorerPlotResponse | null;
   height: number;
   linreg_by_group: LinRegInfo[] | null;
   plotConfig: DataExplorerPlotConfig;
-  selection?: ScatterSelection;
+  selection?: PlotSelection;
 }
 
 function canShowIdentityLine(data: DataExplorerPlotResponse | null) {

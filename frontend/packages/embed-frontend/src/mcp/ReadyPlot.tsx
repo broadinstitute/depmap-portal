@@ -68,7 +68,9 @@ function ReadyPlot({
   sendMessage,
 }: Props) {
   const plotConfig = data.plot_config;
-  const isScatter = plotConfig.plot_type === "scatter";
+  // Plot types that can be selected on.
+  const isSelectable =
+    plotConfig.plot_type === "scatter" || plotConfig.plot_type === "density_1d";
 
   // Data Explorer's own selection logic, so a selection here means exactly
   // what it means there.
@@ -82,7 +84,7 @@ function ReadyPlot({
     clearSelection,
   } = useSelection(data, plotConfig.facet_by);
 
-  const offered = canSendMessages && isScatter;
+  const offered = canSendMessages && isSelectable;
   // A point is an (entity, member) pair, so a selection has no single meaning.
   const selectionOff = offered && pairGrained;
   const selectionOn = offered && !pairGrained;
@@ -98,7 +100,7 @@ function ReadyPlot({
     setSendFailed(false);
   }, [entities]);
 
-  const scatterSelection = useMemo(
+  const plotSelection = useMemo(
     () =>
       selectionOn
         ? {
@@ -154,7 +156,7 @@ function ReadyPlot({
         data={data}
         linreg_by_group={data.linreg_by_group}
         height={height}
-        selection={scatterSelection}
+        selection={plotSelection}
       />
     );
   }
