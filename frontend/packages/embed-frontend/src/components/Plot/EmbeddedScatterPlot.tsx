@@ -13,7 +13,6 @@ import {
   DataExplorerPlotResponse,
   LinRegInfo,
 } from "@depmap/types";
-import type ExtendedPlotType from "@depmap/data-explorer-2/src/components/DataExplorerPage/ExtendedPlotType";
 import ScatterLoader from "../../loaders/ScatterLoader";
 
 // Selection state owned by the caller, from Data Explorer's own useSelection
@@ -25,7 +24,8 @@ export interface ScatterSelection {
   onClickPoint: (pointIndex: number, ctrlKey: boolean) => void;
   onMultiselect: (pointIndices: number[]) => void;
   onClickResetSelection: () => void;
-  onLoad: (plot: ExtendedPlotType) => void;
+  // Keep Plotly's own box and lasso buttons and follow them.
+  modebarSelectionTools: boolean;
 }
 
 interface Props {

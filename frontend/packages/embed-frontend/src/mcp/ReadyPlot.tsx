@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import useSelection from "@depmap/data-explorer-2/src/components/DataExplorerPage/hooks/useSelection";
-import type ExtendedPlotType from "@depmap/data-explorer-2/src/components/DataExplorerPage/ExtendedPlotType";
 import {
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
@@ -19,14 +18,6 @@ import {
 // McpView protect: the document height is a function of the plot (and of
 // whether the row exists) alone.
 export const LINK_ROW_HEIGHT = 28;
-
-type Dragmode = "zoom" | "select" | "lasso";
-
-const DRAGMODES: { mode: Dragmode; label: string; title: string }[] = [
-  { mode: "zoom", label: "Zoom", title: "Drag to zoom" },
-  { mode: "select", label: "Box", title: "Drag to select points in a box" },
-  { mode: "lasso", label: "Lasso", title: "Drag to select points freehand" },
-];
 
 type PlotData = DataExplorerPlotResponse & {
   plot_config: DataExplorerPlotConfig;
@@ -53,17 +44,17 @@ interface Props {
   sendMessage: (text: string) => Promise<SendMessageResult>;
 }
 
-const smallButton = (active: boolean): React.CSSProperties => ({
+const buttonStyle: React.CSSProperties = {
   border: "1px solid #ccc",
   borderRadius: 3,
-  background: active ? "#e6e6e6" : "#fff",
+  background: "#fff",
   padding: "0 8px",
   height: 22,
   lineHeight: "20px",
   marginRight: 4,
   cursor: "pointer",
   fontSize: 12,
-});
+};
 
 function ReadyPlot({
   data,
@@ -96,16 +87,7 @@ function ReadyPlot({
   const selectionOff = offered && pairGrained;
   const selectionOn = offered && !pairGrained;
 
-  const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
-  const [dragmode, setDragmode] = useState<Dragmode>("zoom");
   const [sendFailed, setSendFailed] = useState(false);
-
-  // Re-applied whenever the plot is redrawn (a remount starts in zoom mode).
-  useEffect(() => {
-    if (selectionOn) {
-      plotElement?.setDragmode(dragmode);
-    }
-  }, [selectionOn, plotElement, dragmode]);
 
   const entities = useMemo(() => selectedEntities(data, selectedPoints), [
     data,
@@ -126,7 +108,7 @@ function ReadyPlot({
             onClickPoint: handleClickPoint,
             onMultiselect: handleMultiselect,
             onClickResetSelection: clearSelection,
-            onLoad: setPlotElement,
+            modebarSelectionTools: true,
           }
         : undefined,
     [
@@ -210,29 +192,24 @@ function ReadyPlot({
           <div style={{ flex: "1 1 auto", minWidth: 0, ...ellipsis }}>
             {selectionOn && (
               <>
-                {DRAGMODES.map(({ mode, label, title }) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    title={title}
-                    style={smallButton(dragmode === mode)}
-                    onClick={() => setDragmode(mode)}
-                  >
-                    {label}
-                  </button>
-                ))}
                 {entities.length > 0 && (
                   <button
                     type="button"
                     disabled={overCap}
                     style={{
-                      ...smallButton(false),
+                      ...buttonStyle,
                       cursor: overCap ? "not-allowed" : "pointer",
                     }}
                     onClick={ask}
                   >
                     {buttonLabel(entities.length, data.index_display_name)}
                   </button>
+                )}
+                {entities.length === 0 && (
+                  <span style={{ color: "#666", fontSize: 12 }}>
+                    Use the box or lasso tool in the plot&apos;s toolbar to
+                    select points.
+                  </span>
                 )}
                 {sendFailed && (
                   <span style={{ color: "#a94442", fontSize: 12 }}>
