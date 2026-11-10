@@ -133,13 +133,6 @@ def setup_middleware(app, CONFIG):
             _no_content_response, {CONFIG.APPLICATION_ROOT: app.wsgi_app}
         )
 
-    from flask_hunter_profile.middleware import ProfilingMiddleware
-    from flask_hunter_profile.service import Config
-
-    app.wsgi_app = ProfilingMiddleware(
-        app.wsgi_app, Config(CONFIG.PROFILE_DIR, CONFIG.PROFILE_COOKIE_NAME)
-    )
-
     return app
 
 
