@@ -70,7 +70,9 @@ function ReadyPlot({
   const plotConfig = data.plot_config;
   // Plot types that can be selected on.
   const isSelectable =
-    plotConfig.plot_type === "scatter" || plotConfig.plot_type === "density_1d";
+    plotConfig.plot_type === "scatter" ||
+    plotConfig.plot_type === "density_1d" ||
+    plotConfig.plot_type === "waterfall";
 
   // Data Explorer's own selection logic, so a selection here means exactly
   // what it means there.

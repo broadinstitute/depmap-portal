@@ -7,15 +7,22 @@ import {
 } from "@depmap/types";
 import PrototypeScatterPlot from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/PrototypeScatterPlot";
 import { useDataExplorerSettings } from "@depmap/data-explorer-2/src/contexts/DataExplorerSettingsContext";
+import type { PlotSelection } from "./PlotSelection";
 import ScatterLoader from "../../loaders/ScatterLoader";
 
 interface Props {
   data: DataExplorerPlotResponse | null;
   height: number;
   plotConfig: DataExplorerPlotConfig;
+  selection?: PlotSelection;
 }
 
-function DataExplorerWaterfallPlot({ data, height, plotConfig }: Props) {
+function DataExplorerWaterfallPlot({
+  data,
+  height,
+  plotConfig,
+  selection = undefined,
+}: Props) {
   const { plotStyles } = useDataExplorerSettings();
   const {
     pointSize,
@@ -33,6 +40,7 @@ function DataExplorerWaterfallPlot({ data, height, plotConfig }: Props) {
     contLegendKeys,
     colorMap,
     hasFacetOptionsEnabled,
+    selectionRegions,
   } = useWaterfallPlotData(data, plotConfig, palette);
 
   if (!formattedData) {
@@ -75,6 +83,15 @@ function DataExplorerWaterfallPlot({ data, height, plotConfig }: Props) {
         annotationFontSize={annotationFontSize}
         xAxisFontSize={xAxisFontSize}
         yAxisFontSize={yAxisFontSize}
+        // Selection, wired as in Data Explorer: the x-clusters are the regions
+        // a drag may not cross, and under facet_by "expansion" a gesture stays
+        // within one of them. Only when a selection is supplied.
+        selectionAxis="x"
+        selectionRegions={selection ? selectionRegions : undefined}
+        enforceSingleFacetSelection={
+          Boolean(selection) && plotConfig.facet_by === "expansion"
+        }
+        {...selection}
       />
     </PlotlyLoaderProvider>
   );

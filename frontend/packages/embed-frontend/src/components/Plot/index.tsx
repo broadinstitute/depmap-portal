@@ -17,7 +17,7 @@ interface PlotViewProps {
   data: DataExplorerPlotResponse;
   linreg_by_group?: LinRegInfo[] | null;
   height: number;
-  // Scatter and density_1d only; other plot types ignore it.
+  // Scatter, density_1d and waterfall only; other plot types ignore it.
   selection?: PlotSelection;
 }
 
@@ -58,6 +58,7 @@ export function PlotView({
           data={data}
           height={height}
           plotConfig={plotConfig}
+          selection={selection}
         />
       );
 
