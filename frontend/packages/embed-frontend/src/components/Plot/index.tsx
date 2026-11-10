@@ -9,7 +9,7 @@ import LoadingSpinner from "../LoadingSpinner";
 import EmbeddedDensity1DPlot from "./EmbeddedDensity1DPlot";
 import EmbeddedWaterfallPlot from "./EmbeddedWaterfallPlot";
 import EmbeddedScatterPlot from "./EmbeddedScatterPlot";
-import type { PlotSelection } from "./PlotSelection";
+import type { HeatmapSelection, PlotSelection } from "./PlotSelection";
 import EmbeddedCorrelationHeatmap from "./EmbeddedCorrelationHeatmap";
 
 interface PlotViewProps {
@@ -19,6 +19,8 @@ interface PlotViewProps {
   height: number;
   // Scatter, density_1d and waterfall only; other plot types ignore it.
   selection?: PlotSelection;
+  // The correlation heatmap selects differently (a click on a cell).
+  heatmapSelection?: HeatmapSelection;
 }
 
 // Presentational only: renders already-fetched data. Shared by every surface,
@@ -29,6 +31,7 @@ export function PlotView({
   linreg_by_group = null,
   height,
   selection = undefined,
+  heatmapSelection = undefined,
 }: PlotViewProps) {
   switch (plotConfig.plot_type) {
     case "density_1d":
@@ -68,6 +71,7 @@ export function PlotView({
           data={data}
           height={height}
           plotConfig={plotConfig}
+          selection={heatmapSelection}
         />
       );
 

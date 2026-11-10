@@ -69,7 +69,9 @@ function ReadyPlot({
 }: Props) {
   const plotConfig = data.plot_config;
   // Plot types that can be selected on.
+  const isHeatmap = plotConfig.plot_type === "correlation_heatmap";
   const isSelectable =
+    isHeatmap ||
     plotConfig.plot_type === "scatter" ||
     plotConfig.plot_type === "density_1d" ||
     plotConfig.plot_type === "waterfall";
@@ -88,15 +90,29 @@ function ReadyPlot({
 
   const offered = canSendMessages && isSelectable;
   // A point is an (entity, member) pair, so a selection has no single meaning.
-  const selectionOff = offered && pairGrained;
-  const selectionOn = offered && !pairGrained;
+  // (The heatmap is never expanded and has its own selection, below.)
+  const selectionOff = offered && !isHeatmap && pairGrained;
+  const selectionOn = offered && (isHeatmap || !pairGrained);
 
   const [sendFailed, setSendFailed] = useState(false);
+  // The heatmap's selection: the ids of the pair of entities in a clicked cell.
+  const [heatmapIds, setHeatmapIds] = useState<Set<string> | null>(null);
 
-  const entities = useMemo(() => selectedEntities(data, selectedPoints), [
-    data,
-    selectedPoints,
-  ]);
+  const entities = useMemo(() => {
+    if (!isHeatmap) {
+      return selectedEntities(data, selectedPoints);
+    }
+
+    const points = new Set<number>();
+
+    (data.index_ids ?? []).forEach((id, i) => {
+      if (heatmapIds?.has(id)) {
+        points.add(i);
+      }
+    });
+
+    return selectedEntities(data, points);
+  }, [data, isHeatmap, selectedPoints, heatmapIds]);
 
   useEffect(() => {
     setSendFailed(false);
@@ -104,7 +120,7 @@ function ReadyPlot({
 
   const plotSelection = useMemo(
     () =>
-      selectionOn
+      selectionOn && !isHeatmap
         ? {
             selectedPoints,
             pointsToAnnotate,
@@ -124,6 +140,17 @@ function ReadyPlot({
       handleMultiselect,
       clearSelection,
     ]
+  );
+
+  const heatmapSelection = useMemo(
+    () =>
+      selectionOn && isHeatmap
+        ? {
+            selectedLabels: heatmapIds ?? new Set<string>(),
+            onSelectLabels: (ids: string[]) => setHeatmapIds(new Set(ids)),
+          }
+        : undefined,
+    [selectionOn, isHeatmap, heatmapIds]
   );
 
   const hasRow = Boolean(link) || offered;
@@ -159,6 +186,7 @@ function ReadyPlot({
         linreg_by_group={data.linreg_by_group}
         height={height}
         selection={plotSelection}
+        heatmapSelection={heatmapSelection}
       />
     );
   }
@@ -211,8 +239,9 @@ function ReadyPlot({
                 )}
                 {entities.length === 0 && (
                   <span style={{ color: "#666", fontSize: 12 }}>
-                    Use the box or lasso tool in the plot&apos;s toolbar to
-                    select points.
+                    {isHeatmap
+                      ? "Click a cell to select the pair it compares."
+                      : "Use the box or lasso tool in the plot's toolbar to select points."}
                   </span>
                 )}
                 {sendFailed && (

@@ -10,3 +10,10 @@ export interface PlotSelection {
   // Keep Plotly's own box and lasso buttons and follow them.
   modebarSelectionTools: boolean;
 }
+
+// The correlation heatmap's own selection, from Data Explorer: clicking a cell
+// selects the pair of entities (by id) it compares.
+export interface HeatmapSelection {
+  selectedLabels: Set<string>;
+  onSelectLabels: (ids: string[]) => void;
+}
