@@ -46,8 +46,8 @@ interface Props {
   showPlot: boolean;
   // Shown in place of the plot when WebGL could not be recovered.
   fallback: React.ReactNode;
-  // True only in a host known to turn a message into an unsent draft.
-  canDraftMessages: boolean;
+  // True when the host declares it accepts `ui/message` text.
+  canSendMessages: boolean;
   // Returns false when there is no host to ask, so the link just navigates.
   onOpenLink: (url: string) => boolean;
   sendMessage: (text: string) => Promise<SendMessageResult>;
@@ -72,7 +72,7 @@ function ReadyPlot({
   plotKey,
   showPlot,
   fallback,
-  canDraftMessages,
+  canSendMessages,
   onOpenLink,
   sendMessage,
 }: Props) {
@@ -91,7 +91,7 @@ function ReadyPlot({
     clearSelection,
   } = useSelection(data, plotConfig.facet_by);
 
-  const offered = canDraftMessages && isScatter;
+  const offered = canSendMessages && isScatter;
   // A point is an (entity, member) pair, so a selection has no single meaning.
   const selectionOff = offered && pairGrained;
   const selectionOn = offered && !pairGrained;

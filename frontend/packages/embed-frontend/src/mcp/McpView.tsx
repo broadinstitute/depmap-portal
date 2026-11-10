@@ -7,7 +7,7 @@ import {
   LinRegInfo,
 } from "@depmap/types";
 import ReadyPlot, { LINK_ROW_HEIGHT } from "./ReadyPlot";
-import { hostAcceptsDraftMessages } from "./selection";
+import { hostAcceptsMessages } from "./selection";
 import { EMBEDDED_PLOT_STYLES } from "../utils/embeddedPlotStyles";
 import { codeGenerationBlocked } from "./codegen";
 import {
@@ -137,9 +137,8 @@ function McpView() {
   const [slow, setSlow] = useState(false);
   const [gaveUp, setGaveUp] = useState(false);
   const [blocked] = useState(() => codeGenerationBlocked());
-  // Whether the host turns a view's message into an unsent draft. Known only
-  // once connected.
-  const [canDraftMessages, setCanDraftMessages] = useState(false);
+  // Whether the host accepts a view's `ui/message`. Known only once connected.
+  const [canSendMessages, setCanSendMessages] = useState(false);
   const inHost = window.parent !== window;
 
   const appRef = useRef<App | null>(null);
@@ -255,7 +254,7 @@ function McpView() {
         syncHeight();
 
         if (!unmounted) {
-          setCanDraftMessages(hostAcceptsDraftMessages(app));
+          setCanSendMessages(hostAcceptsMessages(app));
         }
       })
       .catch((e: unknown) => {
@@ -644,7 +643,7 @@ function McpView() {
           plotKey={plotKey}
           showPlot={visible && !gaveUp}
           fallback={fallback}
-          canDraftMessages={canDraftMessages}
+          canSendMessages={canSendMessages}
           onOpenLink={(url) => {
             // A sandboxed iframe can't navigate on its own; ask the host.
             if (!appRef.current) {

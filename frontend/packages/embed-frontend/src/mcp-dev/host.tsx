@@ -16,12 +16,6 @@ import {
 const VIEW_URL = "/embed/mcp-view";
 const GET_PLOT_DATA_TOOL = "get_plot_data";
 
-// `?host=Delphi` makes this host report that name and accept `ui/message`,
-// which is what the view needs before it offers "Ask about these N …". The
-// message it sends appears in the log; nothing is drafted or sent.
-const HOST_NAME =
-  new URLSearchParams(window.location.search).get("host") || "dev-host";
-
 interface LogEntry {
   id: number;
   dir: "host→view" | "view→host";
@@ -88,12 +82,14 @@ function Host() {
       if (msg.method === "ui/initialize") {
         reply({
           protocolVersion: msg.params.protocolVersion,
-          hostInfo: { name: HOST_NAME, version: "0" },
+          hostInfo: { name: "dev-host", version: "0" },
           hostCapabilities: {
             serverTools: {},
             openLinks: {},
             updateModelContext: { text: {} },
-            ...(HOST_NAME === "Delphi" ? { message: { text: {} } } : {}),
+            // Enables the point-selection button. The message the view sends
+            // is only logged; nothing is drafted or sent.
+            message: { text: {} },
           },
           hostContext: { containerDimensions: { maxHeight: 800 } },
         });

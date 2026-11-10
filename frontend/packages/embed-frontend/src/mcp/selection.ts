@@ -4,25 +4,17 @@ import type { DataExplorerPlotResponse } from "@depmap/types";
 // guess, expected to change; this is the only place it is defined.
 export const MAX_SELECTED_ENTITIES = 50;
 
-// Hosts known to turn a view's message into an UNSENT draft in the message
-// box. Anywhere else, sendMessage may send immediately (ChatGPT does) or is
-// unverified (claude.ai), so the selection feature is not offered. Widen this
-// list only after a host has been checked.
-export const DRAFT_MESSAGE_HOSTS: readonly string[] = ["Delphi"];
-
+// The selection feature is offered by any host that declares it accepts
+// `ui/message` text. Hosts differ in what they do with it: Delphi (and,
+// we expect, claude.ai) put it in the message box as a draft, but ChatGPT sends
+// it at once, which is accepted for now. Neither claude.ai nor ChatGPT has been
+// verified for this feature.
 interface HostLike {
-  getHostVersion(): { name?: string } | undefined;
   getHostCapabilities(): { message?: { text?: unknown } } | undefined;
 }
 
-export function hostAcceptsDraftMessages(app: HostLike | null) {
-  const name = app?.getHostVersion()?.name;
-
-  return Boolean(
-    name &&
-      DRAFT_MESSAGE_HOSTS.includes(name) &&
-      app?.getHostCapabilities()?.message?.text
-  );
+export function hostAcceptsMessages(app: HostLike | null) {
+  return Boolean(app?.getHostCapabilities()?.message?.text);
 }
 
 export interface SelectedEntity {

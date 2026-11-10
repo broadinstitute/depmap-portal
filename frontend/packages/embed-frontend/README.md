@@ -80,10 +80,9 @@ yarn dev   # Breadbox on :8000
 `McpView` (`/embed/mcp-view`, hot reloaded), turns the query params into the
 tool result, and answers `get_plot_data` with data fetched from Breadbox. Any
 other tool call is only logged (expand a row in the message log to see its
-shape). Add `&host=Delphi` to have it report that name and accept
-`ui/message`, which the view needs before it shows the point-selection button
-(the message it sends appears in the log). These entries exist only in
-`webpack.dev.js`. It is not a conformant
+shape). It declares `ui/message` support, so the point-selection
+button shows on scatter plots; the message it sends appears in the log. These
+entries exist only in `webpack.dev.js`. It is not a conformant
 host.
 
 To try it without a host, use the fake host in `mcp-harness/`. It plays the
