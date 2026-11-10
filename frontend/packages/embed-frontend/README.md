@@ -69,6 +69,20 @@ This needs `static/embed/` to already exist from a full `yarn build`, since the
 check also confirms the regular embed assets survived. To check a file
 elsewhere: `node scripts/check-mcp-build.js path/to/mcp.html`.
 
+For day-to-day UI work, use the hot-reloaded dev host instead of building:
+
+```bash
+yarn dev   # Breadbox on :8000
+# http://localhost:8002/embed/mcp?<same query params as /embed/plot>
+```
+
+`/embed/mcp` is a minimal fake host (`src/mcp-dev/host.tsx`) that frames
+`McpView` (`/embed/mcp-view`, hot reloaded), turns the query params into the
+tool result, and answers `get_plot_data` with data fetched from Breadbox. Any
+other tool call is only logged (expand a row in the message log to see its
+shape). These entries exist only in `webpack.dev.js`. It is not a conformant
+host.
+
 To try it without a host, use the fake host in `mcp-harness/`. It plays the
 host side of the MCP Apps handshake and answers `tools/call` with a canned
 `/temp/plot-data` response:
