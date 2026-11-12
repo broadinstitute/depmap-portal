@@ -1821,3 +1821,225 @@ def test_reference_graph_hides_private_tables(
 
     assert "private_screen_table" not in screen_table_ids("anyone@example.com")
     assert "private_screen_table" in screen_table_ids("someone@private-group.com")
+
+
+def _reachable_fixture(db, settings):
+    """
+    pair --CtrlArmScreenID/TestArmScreenID--> screen
+    screen --ModelConditionID--> mcond --ModelID--> model, and screen --ModelID--> model
+    pair also has a supplemental table with a direct ModelID and a list-valued
+    ScreenList.
+    """
+    admin = settings.admin_users[0]
+    text = AnnotationType.text
+
+    def add_type(name, extra_cols, refs, rows):
+        cols = {"ID": text, "label": text, **extra_cols}
+        factories.add_dimension_type(
+            db,
+            settings,
+            user=admin,
+            name=name,
+            display_name=name.title(),
+            id_column="ID",
+            axis="sample",
+            annotation_type_mapping=cols,
+            reference_column_mappings=refs,
+            metadata_df=pd.DataFrame(
+                {"ID": [r[0] for r in rows], "label": [r[0] for r in rows]}
+                | {col: [r[i + 1] for r in rows] for i, col in enumerate(extra_cols)}
+            ),
+        )
+
+    add_type("rmodel", {"Lineage": text}, {}, [("M1", "Breast"), ("M2", "Lung")])
+    add_type(
+        "rmcond", {"ModelID": text}, {"ModelID": "rmodel"}, [("C1", "M1"), ("C2", "M2")]
+    )
+    add_type(
+        "rscreen",
+        {"ModelID": text, "ModelConditionID": text},
+        {"ModelID": "rmodel", "ModelConditionID": "rmcond"},
+        [("S1", "M1", "C1"), ("S2", "M2", "C2")],
+    )
+    add_type(
+        "rpair",
+        {"CtrlArmScreenID": text, "TestArmScreenID": text},
+        {"CtrlArmScreenID": "rscreen", "TestArmScreenID": "rscreen"},
+        [("P1", "S1", "S2")],
+    )
+    factories.tabular_dataset(
+        db,
+        settings,
+        given_id="rpair_extra",
+        name="Pair extra",
+        index_type_name="rpair",
+        data_df=pd.DataFrame(
+            {
+                "ID": ["P1"],
+                "label": ["P1"],
+                "ModelID": ["M1"],
+                "ScreenList": ['["S1", "S2"]'],
+            }
+        ),
+        columns_metadata={
+            "ID": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+            "ModelID": ColumnMetadata(
+                col_type=AnnotationType.text, references="rmodel"
+            ),
+            "ScreenList": ColumnMetadata(
+                col_type=AnnotationType.list_strings, references="rscreen"
+            ),
+        },
+    )
+
+
+def _route(routes, start, columns):
+    return next(
+        r
+        for r in routes
+        if r["start_table"] == start and [h["column"] for h in r["hops"]] == columns
+    )
+
+
+def test_reachable_routes(client: TestClient, minimal_db, settings):
+    _reachable_fixture(minimal_db, settings)
+    headers = {"X-Forwarded-Email": "anyone@example.com"}
+
+    response = client.get("types/dimensions/rpair/reachable", headers=headers)
+    assert_status_ok(response)
+    body = response.json()
+    routes = body["routes"]
+    primary_id = next(r["start_table"] for r in routes if not r["hops"])
+
+    # The two arms are distinct routes to the same table.
+    ctrl = _route(routes, primary_id, ["CtrlArmScreenID"])
+    test = _route(routes, primary_id, ["TestArmScreenID"])
+    assert ctrl["tables"][0]["slice_query_template"] != (
+        test["tables"][0]["slice_query_template"]
+    )
+
+    # Multi-hop route with the template nested innermost-first.
+    deep = _route(
+        routes, primary_id, ["CtrlArmScreenID", "ModelConditionID", "ModelID"]
+    )
+    (model_table,) = deep["tables"]
+    template = model_table["slice_query_template"]
+    assert template["dataset_id"] == model_table["slice_dataset_id"]
+    assert template["identifier_type"] == "column"
+    chain = template["reindex_through"]
+    assert chain["identifier"] == "ModelID"
+    assert chain["reindex_through"]["identifier"] == "ModelConditionID"
+    assert (
+        chain["reindex_through"]["reindex_through"]["identifier"] == "CtrlArmScreenID"
+    )
+    assert chain["reindex_through"]["reindex_through"].get("reindex_through") is None
+    assert "Lineage" in [c["name"] for c in model_table["columns"]]
+    assert model_table["offered_by_picker"] is True
+
+    # screen -> model: the direct ModelID is a shortcut, so it is listed but not
+    # offered by the picker; the route through the condition is.
+    via_cond = _route(
+        routes, primary_id, ["CtrlArmScreenID", "ModelConditionID", "ModelID"]
+    )
+    direct = _route(routes, primary_id, ["CtrlArmScreenID", "ModelID"])
+    assert via_cond["tables"][0]["offered_by_picker"] is True
+    assert direct["tables"][0]["offered_by_picker"] is False
+
+    # Supplemental start table, with a list-valued hop.
+    listed = _route(routes, "rpair_extra", ["ScreenList"])
+    assert listed["hops"][0]["cardinality"] == "list"
+    assert listed["result_is_list"] is True
+    assert _route(routes, primary_id, ["CtrlArmScreenID"])["result_is_list"] is False
+
+    # A hub has no outgoing routes: model only lists its own table.
+    hub = client.get("types/dimensions/rmodel/reachable", headers=headers).json()
+    assert all(not r["hops"] for r in hub["routes"])
+
+
+def test_reachable_max_depth(client: TestClient, minimal_db, settings):
+    _reachable_fixture(minimal_db, settings)
+    headers = {"X-Forwarded-Email": "anyone@example.com"}
+
+    def depths(max_depth):
+        r = client.get(
+            f"types/dimensions/rpair/reachable?max_depth={max_depth}", headers=headers
+        )
+        assert_status_ok(r)
+        return {len(route["hops"]) for route in r.json()["routes"]}
+
+    assert depths(0) == {0}
+    assert depths(1) == {0, 1}
+    assert max(depths(9)) == 3  # the graph's longest chain
+
+    assert (
+        client.get(
+            "types/dimensions/rpair/reachable?max_depth=10", headers=headers
+        ).status_code
+        == 422
+    )
+    assert (
+        client.get("types/dimensions/nope/reachable", headers=headers).status_code
+        == 404
+    )
+
+
+def test_reachable_templates_resolve(client: TestClient, minimal_db, settings):
+    """Every route and column the endpoint advertises must resolve."""
+    _reachable_fixture(minimal_db, settings)
+    headers = {"X-Forwarded-Email": "anyone@example.com"}
+    body = client.get(
+        "types/dimensions/rpair/reachable?max_depth=9", headers=headers
+    ).json()
+
+    checked = 0
+    for route in body["routes"]:
+        for table in route["tables"]:
+            for column in table["columns"]:
+                query = {
+                    **table["slice_query_template"],
+                    "identifier": column["name"],
+                }
+                response = client.post(
+                    "/datasets/dimension/data", json=query, headers=headers
+                )
+                assert response.status_code == 200, (
+                    route["hops"],
+                    query,
+                    response.text,
+                )
+                checked += 1
+
+    assert checked > 20
+
+
+def test_reachable_hides_private_tables(
+    client: TestClient, minimal_db, settings, private_group
+):
+    _reachable_fixture(minimal_db, settings)
+    factories.tabular_dataset(
+        minimal_db,
+        settings,
+        given_id="rpair_private",
+        index_type_name="rpair",
+        group_id=private_group["id"],
+        data_df=pd.DataFrame({"ID": ["P1"], "label": ["P1"], "SecretModel": ["M1"]}),
+        columns_metadata={
+            "ID": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+            "SecretModel": ColumnMetadata(
+                col_type=AnnotationType.text, references="rmodel"
+            ),
+        },
+        user=settings.admin_users[0],
+    )
+
+    def start_tables(email):
+        response = client.get(
+            "types/dimensions/rpair/reachable", headers={"X-Forwarded-Email": email}
+        )
+        assert_status_ok(response)
+        return {r["start_table"] for r in response.json()["routes"]}
+
+    assert "rpair_private" not in start_tables("anyone@example.com")
+    assert "rpair_private" in start_tables("someone@private-group.com")

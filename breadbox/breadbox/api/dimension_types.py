@@ -37,7 +37,9 @@ from breadbox.models.dataset import AnnotationType, DimensionType as DimensionTy
 from breadbox.crud.cache_invalidation import GET_DATASETS, DIMENSION_TYPES
 import breadbox.service.dataset as dataset_service
 from breadbox.service import reference_graph as reference_graph_service
+from breadbox.service import reachable as reachable_service
 from breadbox.schemas.types import (
+    ReachableTables,
     DimensionTypeReferenceGraph,
     DimensionType,
     UpdateDimensionType,
@@ -617,6 +619,38 @@ def get_dimension_type_reference_graph(
     Derived from the datasets visible to the caller.
     """
     return reference_graph_service.get_reference_graph(db, user)
+
+
+@router.get(
+    "/dimensions/{name}/reachable",
+    operation_id="get_dimension_type_reachable",
+    response_model=ReachableTables,
+)
+def get_dimension_type_reachable(
+    name: str,
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+    user: Annotated[str, Depends(get_user)],
+    max_depth: Annotated[
+        int,
+        Query(
+            ge=0,
+            le=reachable_service.MAX_HOPS,
+            description="Maximum number of FK hops. The resolver allows at most 9.",
+        ),
+    ] = 4,
+):
+    """
+    Every table reachable from the given dimension type by following forward FK
+    columns, grouped by route (the FK columns taken). Each table carries a
+    `slice_query_template`: set its `identifier` to one of the table's columns
+    and use it verbatim as a SliceQuery. Do not build chains by hand.
+
+    Derived from the datasets visible to the caller.
+    """
+    try:
+        return reachable_service.get_reachable(db, user, name, max_depth)
+    except KeyError:
+        raise HTTPException(404, f"Dimension type {name} not found")
 
 
 @router.get(

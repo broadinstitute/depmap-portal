@@ -197,3 +197,69 @@ class ReferenceGraphNode(BaseModel):
 
 class DimensionTypeReferenceGraph(BaseModel):
     dimension_types: List[ReferenceGraphNode]
+
+
+class ReachableColumn(TypedDict):
+    name: str
+    col_type: str
+
+
+class SliceQueryChainNode(BaseModel):
+    """One object of a `reindex_through` chain. The innermost node is the first hop taken from the index type."""
+
+    dataset_id: str
+    identifier: str
+    identifier_type: Literal["column"] = "column"
+    reindex_through: Optional["SliceQueryChainNode"] = Field(None,)
+
+
+class SliceQueryTemplate(BaseModel):
+    """
+    A SliceQuery missing only its `identifier`. Set `identifier` to one of the
+    table's `columns` and use the result verbatim; add no other fields.
+    """
+
+    dataset_id: str
+    identifier_type: Literal["column"] = "column"
+    reindex_through: Optional[SliceQueryChainNode] = Field(None,)
+
+
+class ReachableTable(BaseModel):
+    id: str
+    given_id: Optional[str] = Field(None,)
+    slice_dataset_id: str
+    name: str
+    is_primary: bool
+    offered_by_picker: bool = Field(
+        description="True if the Data Explorer annotation picker offers this exact route to this table. "
+        "Other routes resolve and render but are not highlighted in the picker; prefer offered ones."
+    )
+    columns: List[ReachableColumn]
+    slice_query_template: SliceQueryTemplate
+
+
+class ReachableHop(BaseModel):
+    source_dataset_id: str = Field(
+        description="`slice_dataset_id` of the table holding the FK column."
+    )
+    column: str
+    target_type: str
+    cardinality: Literal["scalar", "list"]
+
+
+class ReachableRoute(BaseModel):
+    start_table: str = Field(
+        description="`slice_dataset_id` of the table, indexed by the requested type, that the first hop starts from."
+    )
+    hops: List[ReachableHop]
+    result_is_list: bool = Field(
+        description="True if any hop is list-valued. Values then come back as lists: "
+        "test them with has_any / in_context, never ==."
+    )
+    tables: List[ReachableTable]
+
+
+class ReachableTables(BaseModel):
+    index_type: str
+    max_depth: int
+    routes: List[ReachableRoute]
