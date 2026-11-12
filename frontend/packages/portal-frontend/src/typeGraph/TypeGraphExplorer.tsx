@@ -339,16 +339,27 @@ function TypeGraphExplorer() {
                   }
                   stroke="#555"
                 />
-                <text
-                  y={-6 - nodeRadius(degree)}
-                  textAnchor="middle"
-                  fontSize={10}
-                >
-                  {name}
-                </text>
               </g>
             );
           })}
+          {Object.entries(positions).map(([name, p]) => (
+            <text
+              key={name}
+              x={p.x}
+              y={p.y - 6 - nodeRadius(inDegree.get(name) ?? 0)}
+              textAnchor="middle"
+              fontSize={13}
+              fontWeight={600}
+              fill="#111"
+              stroke="#fff"
+              strokeWidth={4}
+              strokeLinejoin="round"
+              paintOrder="stroke"
+              style={{ pointerEvents: "none" }}
+            >
+              {name}
+            </text>
+          ))}
         </svg>
         <div style={{ color: "#666", marginTop: 6, maxWidth: SIZE }}>
           Arrows point from the referencing type to the referenced type. Dashed
