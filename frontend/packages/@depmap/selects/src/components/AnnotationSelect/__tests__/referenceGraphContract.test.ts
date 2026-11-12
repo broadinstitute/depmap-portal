@@ -22,7 +22,8 @@ const readFixture = (name: string) =>
   JSON.parse(fs.readFileSync(path.join(FIXTURE_DIR, name), "utf8"));
 
 const SCHEMA = readFixture("schema.json");
-const REACHABLE: Record<string, any> = readFixture("reachable.json");
+// One line per reachable table; see _contract_projection in tests/api/test_types.py.
+const REACHABLE: Record<string, string[]> = readFixture("reachable.json");
 
 const DIM_TYPES = SCHEMA.dimension_types as any[];
 const DATASETS = SCHEMA.tabular_datasets as any[];
@@ -111,17 +112,40 @@ function backendQueries(indexType: string) {
   const offered = new Map<string, SliceQuery>();
   const unoffered = new Map<string, SliceQuery>();
 
-  for (const route of REACHABLE[indexType].routes) {
-    for (const table of route.tables) {
-      for (const column of table.columns) {
-        const query = {
-          ...table.slice_query_template,
-          identifier: column.name,
-        } as SliceQuery;
-        const bucket = table.offered_by_picker ? offered : unoffered;
+  const columnsBySliceId = new Map<string, string[]>();
+  DATASETS.forEach((d) =>
+    columnsBySliceId.set(d.given_id || d.id, Object.keys(d.columns_metadata))
+  );
 
-        bucket.set(serializeSliceQuery(query), query);
+  for (const line of REACHABLE[indexType]) {
+    const [flag, hops, end] = line.split(" | ");
+
+    for (const column of columnsBySliceId.get(end) ?? []) {
+      // Steps run innermost first, so each step wraps the chain built so far.
+      let chain: SliceQuery | undefined;
+
+      for (const step of hops ? hops.split(" > ") : []) {
+        const [dataset_id, identifier] = step.split(".");
+
+        chain = {
+          dataset_id,
+          identifier,
+          identifier_type: "column",
+          ...(chain && { reindex_through: chain }),
+        };
       }
+
+      // The outermost object is the data column.
+      const query: SliceQuery = {
+        dataset_id: end,
+        identifier: column,
+        identifier_type: "column",
+        ...(chain && { reindex_through: chain }),
+      };
+
+      const bucket = flag === "offered" ? offered : unoffered;
+
+      bucket.set(serializeSliceQuery(query), query);
     }
   }
 

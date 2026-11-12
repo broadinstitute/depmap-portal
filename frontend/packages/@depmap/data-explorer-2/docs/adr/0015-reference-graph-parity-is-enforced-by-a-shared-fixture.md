@@ -33,7 +33,8 @@ The two cannot share code. They can share a schema and an expected answer.
    resolves. The script regenerates it from a running Breadbox. The snapshot in
    the original handoff was stale, so nothing is written by hand.
 2. **One expected-answer fixture, owned by Breadbox.** `reachable.json` holds
-   the endpoint's output for every dimension type at the maximum depth. A
+   the endpoint's output for every dimension type at the maximum depth, reduced
+   to one line per reachable table. A
    Python test rebuilds it from `schema.json` and fails on any difference;
    `UPDATE_CONTRACT_FIXTURES=1` accepts a change.
 3. **The Jest test replays the picker.** For each type and start table it runs
@@ -71,8 +72,10 @@ The two cannot share code. They can share a schema and an expected answer.
 - **Bad:** schema changes in production do not fail anything until someone
   refreshes `schema.json`. The contract covers the rules, not the live data,
   and a shape that only exists outside the chosen roots is not tested.
-- **Bad:** `reachable.json` is still about 90 KB and churns when the schema is
-  refreshed.
+- **Neutral:** `reachable.json` is a projection, one line per reachable table
+  (flag, hops, end table, cardinality), with columns taken from `schema.json`.
+  It holds the templates' chains, which is what is compared, but it is not the
+  raw endpoint response.
 - **Bad:** the live schema has no door nested inside an auto-traversed table,
   so the latent bubbled-door picker bug from ADR 0014 is not exercised here.
 - **Neutral:** `groupColumns` still sorts display names with `localeCompare`;

@@ -2077,6 +2077,43 @@ def _contract_tables():
     return tables
 
 
+def _contract_projection(reachable):
+    """
+    One line per reachable table, so the fixture stays small and diffs well:
+
+        offered | first_hop_table.fk > next_hop_table.fk | end_table | list
+
+    The hops are the template's own `reindex_through` chain read innermost
+    first, so what is checked is the SliceQuery a caller would use. Columns are
+    not repeated; they come from schema.json. `list` is present when
+    `result_is_list` is true.
+    """
+    lines = []
+    for route in reachable.routes:
+        for table in route.tables:
+            template = table.slice_query_template
+            steps = []
+            node = template.reindex_through
+            while node is not None:
+                assert node.identifier_type == "column"
+                steps.append(f"{node.dataset_id}.{node.identifier}")
+                node = node.reindex_through
+            steps.reverse()
+            assert template.identifier_type == "column"
+            assert [h.column for h in route.hops] == [s.split(".", 1)[1] for s in steps]
+            lines.append(
+                " | ".join(
+                    [
+                        "offered" if table.offered_by_picker else "not offered",
+                        " > ".join(steps),
+                        template.dataset_id,
+                        "list" if route.result_is_list else "scalar",
+                    ]
+                )
+            )
+    return sorted(lines)
+
+
 def test_reachable_matches_contract_fixture():
     """
     reachable.json is the other half of the cross-language contract test: the
@@ -2088,7 +2125,7 @@ def test_reachable_matches_contract_fixture():
     """
     tables = _contract_tables()
     actual = {
-        dim: json.loads(build_reachable(tables, dim, MAX_HOPS).model_dump_json())
+        dim: _contract_projection(build_reachable(tables, dim, MAX_HOPS))
         for dim in sorted(tables)
     }
     path = CONTRACT_DIR / "reachable.json"
