@@ -1491,6 +1491,8 @@ By default a var must live on the same `dimension_type` as the context that uses
 
 The mental model: the outer query names the value you actually want, and `reindex_through` names the bridge — the foreign-key column that re-keys that value. The composed result is indexed by the dimension type at the **innermost** end of the chain, which is your context's `dimension_type`.
 
+Do not work out chains by hand. Which chains exist, and which of them Data Explorer can display, is answered by a Breadbox endpoint; see [Choosing a chain](#choosing-a-chain) below. The examples that follow explain what a chain means.
+
 For example, a context over `screen` can read the lineage of each screen's model. OncotreeLineage lives on the model metadata; the screen metadata's ModelID column is the bridge from screen to model:
 
 ```json
@@ -1564,24 +1566,55 @@ If a bridge column is a `list_strings` column — each row holding a list of for
 
 Each antibody's `target_entrez_id` is a list of genes; the var resolves to the de-duplicated list of those genes' chromosome arms, and `has_any` matches antibodies that hit 14q or 10q.
 
-##### Discovering available foreign keys
+##### Choosing a chain
 
-To build a `reindex_through` chain you need to know which foreign-key columns exist and which dimension type each points at. There is not yet a dedicated endpoint that returns the relationship graph between dimension types, so for now this is derived from ordinary dataset metadata.
+Ask Breadbox which chains exist instead of assembling them from `references` metadata. For the context's `dimension_type` (the index type the chain starts from), call the [reachable endpoint](https://cds.team/depmap/breadbox/docs#/types/get_dimension_type_reachable):
 
-Request the dataset list from the `/datasets` endpoint and look at the tabular datasets. Each tabular dataset reports metadata for its columns, and a column is usable as a `reindex_through` hop precisely when its metadata declares a `references` target. The value of `references` is the name of the dimension type the column points at:
+```
+GET /types/dimensions/{dimension_type}/reachable
+```
+
+It returns every table you can reach by following foreign keys from that type, as a list of `routes`. Each route has:
+
+- **start_table** — the table at `dimension_type` that holds the first foreign-key column.
+- **hops** — the foreign-key columns followed, in order. Each has `column`, `target_type`, and `cardinality` (`"scalar"` or `"list"`).
+- **result_is_list** — `true` if any hop is list-valued.
+- **tables** — the tables you land on, each with its `columns` and a ready-made `slice_query_template`.
+
+A route with no hops is a table at the index type itself, which needs no `reindex_through`.
+
+To use one, take the `slice_query_template` of the table you want, **copy it verbatim**, and add one field: `identifier`, set to the name of one of that table's `columns`. The template already has the right `dataset_id`, `identifier_type`, and nested `reindex_through`. Do not edit, reorder, or rebuild the chain. The one change to make is to drop any `reindex_through` whose value is `null`; leave the key out.
+
+For a context over `screen`, the route that follows `ModelConditionID` then `ModelID` lands on the model metadata table. Its template, with `identifier: "OncotreeLineage"` added (one of that table's columns), is:
 
 ```json
 {
-  "ModelID": {
-    "col_type": "text",
-    "references": "depmap_model"
+  "dataset_id": "depmap_model_metadata",
+  "identifier": "OncotreeLineage",
+  "identifier_type": "column",
+  "reindex_through": {
+    "dataset_id": "modelcondition_metadata",
+    "identifier": "ModelID",
+    "identifier_type": "column",
+    "reindex_through": {
+      "dataset_id": "screen_metadata",
+      "identifier": "ModelConditionID",
+      "identifier_type": "column"
+    }
   }
 }
 ```
 
-A foreign-key column in a tabular dataset's column metadata: ModelID `references` the `depmap_model` dimension type, so it can bridge from this dataset's dimension type to `depmap_model`.
+The outermost object is the value you read; the innermost is the first hop from `screen`.
 
-To assemble a chain, link these foreign-key columns together so that each hop — a column used with `identifier_type: "column"` — references the next dimension type along the path from your context's `dimension_type` to the dataset holding the value you want. Because chains cannot skip levels, a single hop exists only where a column references the adjacent dimension type directly; if two dimension types are not connected by such a column, there is no one-step path between them.
+Rules for choosing among the routes:
+
+- **Only use tables with `offered_by_picker: true`.** Breadbox accepts more chains than Data Explorer can show as a selection. A link built from any other route still resolves, but the UI cannot display it as the selected value. Some redundant routes are deliberately not offered: a table reached by a direct column when a longer route through an intermediate type gives the same result, for example.
+- **Several routes can reach the same table** (for example the control and test arm of a `screen_pair`, which each point at a screen). They are different questions, not duplicates. Choose by what the user asked for, using the foreign-key column names in `hops`. Do not guess; if the request does not say which, ask.
+- **Check `result_is_list`.** When it is `true`, the variable resolves to a list, so test it with `in_context` or `has_any`, never `==` or `in`.
+- **A type with no routes that have hops is not reachable.** There is no way to read other types' columns from it. Do not invent a chain.
+- Chains are limited in depth. The endpoint takes an optional `max_depth` (default 4) and never returns a chain the API would reject.
+- The endpoint returns only datasets the caller may read. Use only what it returns.
 
 ### contexts [object] (optional)
 
