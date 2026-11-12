@@ -22,7 +22,7 @@ executor-template dsub {
   "type": "async-delegate",
   "resources": { "slots": "100" },
   "HELPER_PATH": "{{ parameters.helper_path | default('/usr/bin/python3 /helper.py') }}",
-  "COMMAND_TEMPLATE": """DSUB_CLOUD_SDK_IMAGE={{ config.DSUB_CLOUD_SDK_IMAGE }} {{ config.DSUB_EXE_PATH }} \
+  "COMMAND_TEMPLATE": """env DSUB_CLOUD_SDK_IMAGE={{ config.DSUB_CLOUD_SDK_IMAGE }} {{ config.DSUB_EXE_PATH }} \
       --provider google-batch \
       --project {{ config.DEFAULT_GCP_PROJECT }} \
       --location us-central1 \
