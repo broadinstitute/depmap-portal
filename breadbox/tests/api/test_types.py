@@ -1690,3 +1690,134 @@ def test_get_dimension_type_identifiers_etag(client: TestClient, minimal_db, set
     fourth = client.get(url, headers={**headers, "If-None-Match": etag})
     assert fourth.status_code == 200
     assert fourth.headers["ETag"] != etag
+
+
+def _reference_graph_fixture(db, settings):
+    admin = settings.admin_users[0]
+    factories.feature_type(db, admin, "gene", display_name="Gene")
+    factories.sample_type(
+        db,
+        admin,
+        "screen",
+        display_name="Screen",
+        given_ids=["S1"],
+        metadata_given_id="screen_metadata",
+    )
+    return factories.tabular_dataset(
+        db,
+        settings,
+        index_type_name="screen",
+        given_id="screen_extras",
+        name="Screen extras",
+        data_df=pd.DataFrame(
+            {
+                "id": ["S1"],
+                "label": ["S1"],
+                "GeneID": ["G1"],
+                "Genes": [json.dumps(["G1", "G2"])],
+            }
+        ),
+        columns_metadata={
+            "id": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+            "GeneID": ColumnMetadata(col_type=AnnotationType.text, references="gene"),
+            "Genes": ColumnMetadata(
+                col_type=AnnotationType.list_strings, references="gene"
+            ),
+        },
+    )
+
+
+def test_reference_graph(client: TestClient, minimal_db, settings):
+    _reference_graph_fixture(minimal_db, settings)
+
+    response = client.get(
+        "types/dimensions/reference-graph",
+        headers={"X-Forwarded-Email": "anyone@example.com"},
+    )
+    assert_status_ok(response)
+    nodes = {n["name"]: n for n in response.json()["dimension_types"]}
+
+    screen = nodes["screen"]
+    assert screen["display_name"] == "Screen"
+    primary, extras = screen["tables"]
+    assert primary["is_primary"] is True
+    assert primary["slice_dataset_id"] == "screen_metadata"
+    assert primary["references"] == []
+    assert screen["metadata_dataset_id"] == primary["id"]
+
+    assert extras["is_primary"] is False
+    assert extras["slice_dataset_id"] == "screen_extras"
+    assert extras["references"] == [
+        {"column": "GeneID", "target_type": "gene", "cardinality": "scalar"},
+        {"column": "Genes", "target_type": "gene", "cardinality": "list"},
+    ]
+
+    # a type with no tables and no references (a hub) is still listed
+    assert nodes["gene"]["tables"] == []
+    assert nodes["gene"]["metadata_dataset_id"] is None
+
+
+def test_reference_graph_slice_dataset_id_falls_back_to_id(
+    client: TestClient, minimal_db, settings
+):
+    dataset = _reference_graph_fixture(minimal_db, settings)
+    other = factories.tabular_dataset(
+        minimal_db,
+        settings,
+        index_type_name="screen",
+        data_df=pd.DataFrame({"id": ["S1"], "label": ["S1"]}),
+        columns_metadata={
+            "id": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+        },
+    )
+
+    response = client.get(
+        "types/dimensions/reference-graph",
+        headers={"X-Forwarded-Email": "anyone@example.com"},
+    )
+    tables = {
+        t["id"]: t
+        for t in next(
+            n for n in response.json()["dimension_types"] if n["name"] == "screen"
+        )["tables"]
+    }
+    assert tables[other.id]["given_id"] is None
+    assert tables[other.id]["slice_dataset_id"] == other.id
+    assert tables[dataset.id]["slice_dataset_id"] == "screen_extras"
+
+
+def test_reference_graph_hides_private_tables(
+    client: TestClient, minimal_db, settings, private_group
+):
+    _reference_graph_fixture(minimal_db, settings)
+    factories.tabular_dataset(
+        minimal_db,
+        settings,
+        index_type_name="screen",
+        given_id="private_screen_table",
+        group_id=private_group["id"],
+        data_df=pd.DataFrame({"id": ["S1"], "label": ["S1"], "SecretGeneID": ["G1"]}),
+        columns_metadata={
+            "id": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+            "SecretGeneID": ColumnMetadata(
+                col_type=AnnotationType.text, references="gene"
+            ),
+        },
+        user=settings.admin_users[0],
+    )
+
+    def screen_table_ids(email):
+        response = client.get(
+            "types/dimensions/reference-graph", headers={"X-Forwarded-Email": email},
+        )
+        assert_status_ok(response)
+        screen = next(
+            n for n in response.json()["dimension_types"] if n["name"] == "screen"
+        )
+        return {t["slice_dataset_id"] for t in screen["tables"]}
+
+    assert "private_screen_table" not in screen_table_ids("anyone@example.com")
+    assert "private_screen_table" in screen_table_ids("someone@private-group.com")

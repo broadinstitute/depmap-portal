@@ -155,3 +155,45 @@ class IdMappingInsanity(BaseModel):
     working until we pull the bandaid off and delete all the depreciated endpoints."""
 
     id_mapping: IdMapping
+
+
+class ReferenceEdge(BaseModel):
+    """A column whose values are IDs of another dimension type."""
+
+    column: str
+    target_type: str
+    cardinality: Literal["scalar", "list"] = Field(
+        description="'list' when each cell holds several target IDs (col_type list_strings). "
+        "Hopping through a list-valued column yields list-shaped results."
+    )
+
+
+class ReferenceGraphTable(BaseModel):
+    """A tabular dataset indexed by a dimension type."""
+
+    id: str
+    given_id: Optional[str] = Field(None,)
+    slice_dataset_id: str = Field(
+        description="The value to use as `dataset_id` in a SliceQuery: `given_id` if set, otherwise `id`."
+    )
+    name: str
+    data_type: str
+    is_primary: bool = Field(
+        description="True for the dimension type's metadata dataset (`metadata_dataset_id`)."
+    )
+    references: List[ReferenceEdge]
+
+
+class ReferenceGraphNode(BaseModel):
+    name: str
+    display_name: str
+    axis: Literal["feature", "sample"]
+    metadata_dataset_id: Optional[str] = Field(
+        None,
+        description="Id of the primary table, or null if there is none or it is not visible to the caller.",
+    )
+    tables: List[ReferenceGraphTable]
+
+
+class DimensionTypeReferenceGraph(BaseModel):
+    dimension_types: List[ReferenceGraphNode]
