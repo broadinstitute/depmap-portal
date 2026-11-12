@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Literal, Optional, Tuple, cast
 
 from breadbox.crud import dimension_types as type_crud
 from breadbox.crud.dataset import get_datasets
@@ -111,7 +111,7 @@ def get_reference_graph(db: SessionWithUser, user: str) -> DimensionTypeReferenc
             ReferenceGraphNode(
                 name=dim_type.name,
                 display_name=dim_type.display_name,
-                axis=dim_type.axis,
+                axis=cast(Literal["feature", "sample"], dim_type.axis),
                 metadata_dataset_id=primary.id if primary else None,
                 tables=[
                     ReferenceGraphTable(
@@ -128,6 +128,7 @@ def get_reference_graph(db: SessionWithUser, user: str) -> DimensionTypeReferenc
                                 cardinality=c.cardinality,
                             )
                             for c in t.edges
+                            if c.references is not None
                         ],
                     )
                     for t in tables
