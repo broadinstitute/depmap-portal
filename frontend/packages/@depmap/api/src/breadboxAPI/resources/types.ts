@@ -1,5 +1,7 @@
 import {
   DimensionType,
+  DimensionTypeReferenceGraph,
+  ReachableTables,
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
 } from "@depmap/types";
@@ -48,6 +50,22 @@ export function getDimensionTypeIdentifiers(
 ) {
   return getJson<Identifiers>(
     uri`/types/dimensions/${dimTypeName}/identifiers`,
+    params
+  );
+}
+
+export function getDimensionTypeReferenceGraph() {
+  return getJson<DimensionTypeReferenceGraph>(
+    "/types/dimensions/reference-graph"
+  );
+}
+
+export function getDimensionTypeReachable(
+  dimTypeName: string,
+  params?: { max_depth?: number }
+) {
+  return getJson<ReachableTables>(
+    uri`/types/dimensions/${dimTypeName}/reachable`,
     params
   );
 }

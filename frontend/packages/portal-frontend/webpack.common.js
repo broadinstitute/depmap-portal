@@ -28,6 +28,7 @@ module.exports = {
     anchorScreenDashboard: "./src/apps/anchorScreenDashboard.tsx",
     resistanceScreenDashboard: "./src/apps/resistanceScreenDashboard.tsx",
     doseViabilityPrototype: "./src/apps/doseViabilityPrototype.tsx",
+    typeGraph: "./src/apps/typeGraph.tsx",
     geneTea: "./src/apps/geneTea.tsx",
     custom_analyses: "./src/apps/custom_analyses.tsx",
     transcriptExplorer: "./src/apps/transcriptExplorer.tsx",

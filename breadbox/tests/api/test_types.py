@@ -10,6 +10,8 @@ from breadbox.models.dataset import (
 )
 from tests import factories
 import json
+import os
+from pathlib import Path
 import numpy as np
 from tests.factories import feature_type_with_metadata
 from io import BytesIO
@@ -19,6 +21,8 @@ from breadbox.schemas.dataset import ColumnMetadata
 import pandas as pd
 from ..utils import assert_status_ok, assert_status_not_ok
 from breadbox.service.search import _get_datatypes_referencing
+from breadbox.service.reachable import MAX_HOPS, build_reachable
+from breadbox.service.reference_graph import LoadedColumn, LoadedTable
 
 
 def test_all_dimension_type_methods(client: TestClient, minimal_db, settings):
@@ -1690,3 +1694,443 @@ def test_get_dimension_type_identifiers_etag(client: TestClient, minimal_db, set
     fourth = client.get(url, headers={**headers, "If-None-Match": etag})
     assert fourth.status_code == 200
     assert fourth.headers["ETag"] != etag
+
+
+def _reference_graph_fixture(db, settings):
+    admin = settings.admin_users[0]
+    factories.feature_type(db, admin, "gene", display_name="Gene")
+    factories.sample_type(
+        db,
+        admin,
+        "screen",
+        display_name="Screen",
+        given_ids=["S1"],
+        metadata_given_id="screen_metadata",
+    )
+    return factories.tabular_dataset(
+        db,
+        settings,
+        index_type_name="screen",
+        given_id="screen_extras",
+        name="Screen extras",
+        data_df=pd.DataFrame(
+            {
+                "id": ["S1"],
+                "label": ["S1"],
+                "GeneID": ["G1"],
+                "Genes": [json.dumps(["G1", "G2"])],
+            }
+        ),
+        columns_metadata={
+            "id": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+            "GeneID": ColumnMetadata(col_type=AnnotationType.text, references="gene"),
+            "Genes": ColumnMetadata(
+                col_type=AnnotationType.list_strings, references="gene"
+            ),
+        },
+    )
+
+
+def test_reference_graph(client: TestClient, minimal_db, settings):
+    _reference_graph_fixture(minimal_db, settings)
+
+    response = client.get(
+        "types/dimensions/reference-graph",
+        headers={"X-Forwarded-Email": "anyone@example.com"},
+    )
+    assert_status_ok(response)
+    nodes = {n["name"]: n for n in response.json()["dimension_types"]}
+
+    screen = nodes["screen"]
+    assert screen["display_name"] == "Screen"
+    primary, extras = screen["tables"]
+    assert primary["is_primary"] is True
+    assert primary["slice_dataset_id"] == "screen_metadata"
+    assert primary["references"] == []
+    assert screen["metadata_dataset_id"] == primary["id"]
+
+    assert extras["is_primary"] is False
+    assert extras["slice_dataset_id"] == "screen_extras"
+    assert extras["references"] == [
+        {"column": "GeneID", "target_type": "gene", "cardinality": "scalar"},
+        {"column": "Genes", "target_type": "gene", "cardinality": "list"},
+    ]
+
+    # a type with no tables and no references (a hub) is still listed
+    assert nodes["gene"]["tables"] == []
+    assert nodes["gene"]["metadata_dataset_id"] is None
+
+
+def test_reference_graph_slice_dataset_id_falls_back_to_id(
+    client: TestClient, minimal_db, settings
+):
+    dataset = _reference_graph_fixture(minimal_db, settings)
+    other = factories.tabular_dataset(
+        minimal_db,
+        settings,
+        index_type_name="screen",
+        data_df=pd.DataFrame({"id": ["S1"], "label": ["S1"]}),
+        columns_metadata={
+            "id": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+        },
+    )
+
+    response = client.get(
+        "types/dimensions/reference-graph",
+        headers={"X-Forwarded-Email": "anyone@example.com"},
+    )
+    tables = {
+        t["id"]: t
+        for t in next(
+            n for n in response.json()["dimension_types"] if n["name"] == "screen"
+        )["tables"]
+    }
+    assert tables[other.id]["given_id"] is None
+    assert tables[other.id]["slice_dataset_id"] == other.id
+    assert tables[dataset.id]["slice_dataset_id"] == "screen_extras"
+
+
+def test_reference_graph_hides_private_tables(
+    client: TestClient, minimal_db, settings, private_group
+):
+    _reference_graph_fixture(minimal_db, settings)
+    factories.tabular_dataset(
+        minimal_db,
+        settings,
+        index_type_name="screen",
+        given_id="private_screen_table",
+        group_id=private_group["id"],
+        data_df=pd.DataFrame({"id": ["S1"], "label": ["S1"], "SecretGeneID": ["G1"]}),
+        columns_metadata={
+            "id": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+            "SecretGeneID": ColumnMetadata(
+                col_type=AnnotationType.text, references="gene"
+            ),
+        },
+        user=settings.admin_users[0],
+    )
+
+    def screen_table_ids(email):
+        response = client.get(
+            "types/dimensions/reference-graph", headers={"X-Forwarded-Email": email},
+        )
+        assert_status_ok(response)
+        screen = next(
+            n for n in response.json()["dimension_types"] if n["name"] == "screen"
+        )
+        return {t["slice_dataset_id"] for t in screen["tables"]}
+
+    assert "private_screen_table" not in screen_table_ids("anyone@example.com")
+    assert "private_screen_table" in screen_table_ids("someone@private-group.com")
+
+
+def _reachable_fixture(db, settings):
+    """
+    pair --CtrlArmScreenID/TestArmScreenID--> screen
+    screen --ModelConditionID--> mcond --ModelID--> model, and screen --ModelID--> model
+    pair also has a supplemental table with a direct ModelID and a list-valued
+    ScreenList.
+    """
+    admin = settings.admin_users[0]
+    text = AnnotationType.text
+
+    def add_type(name, extra_cols, refs, rows):
+        cols = {"ID": text, "label": text, **extra_cols}
+        factories.add_dimension_type(
+            db,
+            settings,
+            user=admin,
+            name=name,
+            display_name=name.title(),
+            id_column="ID",
+            axis="sample",
+            annotation_type_mapping=cols,
+            reference_column_mappings=refs,
+            metadata_df=pd.DataFrame(
+                {"ID": [r[0] for r in rows], "label": [r[0] for r in rows]}
+                | {col: [r[i + 1] for r in rows] for i, col in enumerate(extra_cols)}
+            ),
+        )
+
+    add_type("rmodel", {"Lineage": text}, {}, [("M1", "Breast"), ("M2", "Lung")])
+    add_type(
+        "rmcond", {"ModelID": text}, {"ModelID": "rmodel"}, [("C1", "M1"), ("C2", "M2")]
+    )
+    add_type(
+        "rscreen",
+        {"ModelID": text, "ModelConditionID": text},
+        {"ModelID": "rmodel", "ModelConditionID": "rmcond"},
+        [("S1", "M1", "C1"), ("S2", "M2", "C2")],
+    )
+    add_type(
+        "rpair",
+        {"CtrlArmScreenID": text, "TestArmScreenID": text},
+        {"CtrlArmScreenID": "rscreen", "TestArmScreenID": "rscreen"},
+        [("P1", "S1", "S2")],
+    )
+    factories.tabular_dataset(
+        db,
+        settings,
+        given_id="rpair_extra",
+        name="Pair extra",
+        index_type_name="rpair",
+        data_df=pd.DataFrame(
+            {
+                "ID": ["P1"],
+                "label": ["P1"],
+                "ModelID": ["M1"],
+                "ScreenList": ['["S1", "S2"]'],
+            }
+        ),
+        columns_metadata={
+            "ID": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+            "ModelID": ColumnMetadata(
+                col_type=AnnotationType.text, references="rmodel"
+            ),
+            "ScreenList": ColumnMetadata(
+                col_type=AnnotationType.list_strings, references="rscreen"
+            ),
+        },
+    )
+
+
+def _route(routes, start, columns):
+    return next(
+        r
+        for r in routes
+        if r["start_table"] == start and [h["column"] for h in r["hops"]] == columns
+    )
+
+
+def test_reachable_routes(client: TestClient, minimal_db, settings):
+    _reachable_fixture(minimal_db, settings)
+    headers = {"X-Forwarded-Email": "anyone@example.com"}
+
+    response = client.get("types/dimensions/rpair/reachable", headers=headers)
+    assert_status_ok(response)
+    body = response.json()
+    routes = body["routes"]
+    primary_id = next(r["start_table"] for r in routes if not r["hops"])
+
+    # The two arms are distinct routes to the same table.
+    ctrl = _route(routes, primary_id, ["CtrlArmScreenID"])
+    test = _route(routes, primary_id, ["TestArmScreenID"])
+    assert ctrl["tables"][0]["slice_query_template"] != (
+        test["tables"][0]["slice_query_template"]
+    )
+
+    # Multi-hop route with the template nested innermost-first.
+    deep = _route(
+        routes, primary_id, ["CtrlArmScreenID", "ModelConditionID", "ModelID"]
+    )
+    (model_table,) = deep["tables"]
+    template = model_table["slice_query_template"]
+    assert template["dataset_id"] == model_table["slice_dataset_id"]
+    assert template["identifier_type"] == "column"
+    chain = template["reindex_through"]
+    assert chain["identifier"] == "ModelID"
+    assert chain["reindex_through"]["identifier"] == "ModelConditionID"
+    assert (
+        chain["reindex_through"]["reindex_through"]["identifier"] == "CtrlArmScreenID"
+    )
+    assert chain["reindex_through"]["reindex_through"].get("reindex_through") is None
+    assert "Lineage" in [c["name"] for c in model_table["columns"]]
+    assert model_table["offered_by_picker"] is True
+
+    # screen -> model: the direct ModelID is a shortcut, so it is listed but not
+    # offered by the picker; the route through the condition is.
+    via_cond = _route(
+        routes, primary_id, ["CtrlArmScreenID", "ModelConditionID", "ModelID"]
+    )
+    direct = _route(routes, primary_id, ["CtrlArmScreenID", "ModelID"])
+    assert via_cond["tables"][0]["offered_by_picker"] is True
+    assert direct["tables"][0]["offered_by_picker"] is False
+
+    # Supplemental start table, with a list-valued hop.
+    listed = _route(routes, "rpair_extra", ["ScreenList"])
+    assert listed["hops"][0]["cardinality"] == "list"
+    assert listed["result_is_list"] is True
+    assert _route(routes, primary_id, ["CtrlArmScreenID"])["result_is_list"] is False
+
+    # A hub has no outgoing routes: model only lists its own table.
+    hub = client.get("types/dimensions/rmodel/reachable", headers=headers).json()
+    assert all(not r["hops"] for r in hub["routes"])
+
+
+def test_reachable_max_depth(client: TestClient, minimal_db, settings):
+    _reachable_fixture(minimal_db, settings)
+    headers = {"X-Forwarded-Email": "anyone@example.com"}
+
+    def depths(max_depth):
+        r = client.get(
+            f"types/dimensions/rpair/reachable?max_depth={max_depth}", headers=headers
+        )
+        assert_status_ok(r)
+        return {len(route["hops"]) for route in r.json()["routes"]}
+
+    assert depths(0) == {0}
+    assert depths(1) == {0, 1}
+    assert max(depths(9)) == 3  # the graph's longest chain
+
+    assert (
+        client.get(
+            "types/dimensions/rpair/reachable?max_depth=10", headers=headers
+        ).status_code
+        == 422
+    )
+    assert (
+        client.get("types/dimensions/nope/reachable", headers=headers).status_code
+        == 404
+    )
+
+
+def test_reachable_templates_resolve(client: TestClient, minimal_db, settings):
+    """Every route and column the endpoint advertises must resolve."""
+    _reachable_fixture(minimal_db, settings)
+    headers = {"X-Forwarded-Email": "anyone@example.com"}
+    body = client.get(
+        "types/dimensions/rpair/reachable?max_depth=9", headers=headers
+    ).json()
+
+    checked = 0
+    for route in body["routes"]:
+        for table in route["tables"]:
+            for column in table["columns"]:
+                query = {
+                    **table["slice_query_template"],
+                    "identifier": column["name"],
+                }
+                response = client.post(
+                    "/datasets/dimension/data", json=query, headers=headers
+                )
+                assert response.status_code == 200, (
+                    route["hops"],
+                    query,
+                    response.text,
+                )
+                checked += 1
+
+    assert checked > 20
+
+
+def test_reachable_hides_private_tables(
+    client: TestClient, minimal_db, settings, private_group
+):
+    _reachable_fixture(minimal_db, settings)
+    factories.tabular_dataset(
+        minimal_db,
+        settings,
+        given_id="rpair_private",
+        index_type_name="rpair",
+        group_id=private_group["id"],
+        data_df=pd.DataFrame({"ID": ["P1"], "label": ["P1"], "SecretModel": ["M1"]}),
+        columns_metadata={
+            "ID": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+            "SecretModel": ColumnMetadata(
+                col_type=AnnotationType.text, references="rmodel"
+            ),
+        },
+        user=settings.admin_users[0],
+    )
+
+    def start_tables(email):
+        response = client.get(
+            "types/dimensions/rpair/reachable", headers={"X-Forwarded-Email": email}
+        )
+        assert_status_ok(response)
+        return {r["start_table"] for r in response.json()["routes"]}
+
+    assert "rpair_private" not in start_tables("anyone@example.com")
+    assert "rpair_private" in start_tables("someone@private-group.com")
+
+
+CONTRACT_DIR = Path(__file__).parent.parent / "fixtures" / "reference_graph"
+
+
+def _contract_tables():
+    """Tables from the checked-in copy of the live schema, as the service sees them."""
+    schema = json.loads((CONTRACT_DIR / "schema.json").read_text())
+    primary = {t["name"]: t["metadata_dataset_id"] for t in schema["dimension_types"]}
+    tables = {name: [] for name in primary}
+    for d in schema["tabular_datasets"]:
+        tables[d["index_type_name"]].append(
+            LoadedTable(
+                id=d["id"],
+                given_id=d["given_id"],
+                name=d["name"],
+                data_type="",
+                index_type=d["index_type_name"],
+                is_primary=primary[d["index_type_name"]] == d["id"],
+                columns=tuple(
+                    LoadedColumn(name, m["col_type"], m["references"])
+                    for name, m in sorted(d["columns_metadata"].items())
+                ),
+            )
+        )
+    for group in tables.values():
+        group.sort(key=lambda t: (not t.is_primary, t.name, t.id))
+    return tables
+
+
+def _contract_projection(reachable):
+    """
+    One line per reachable table, so the fixture stays small and diffs well:
+
+        offered | first_hop_table.fk > next_hop_table.fk | end_table | list
+
+    The hops are the template's own `reindex_through` chain read innermost
+    first, so what is checked is the SliceQuery a caller would use. Columns are
+    not repeated; they come from schema.json. `list` is present when
+    `result_is_list` is true.
+    """
+    lines = []
+    for route in reachable.routes:
+        for table in route.tables:
+            template = table.slice_query_template
+            steps = []
+            node = template.reindex_through
+            while node is not None:
+                assert node.identifier_type == "column"
+                steps.append(f"{node.dataset_id}.{node.identifier}")
+                node = node.reindex_through
+            steps.reverse()
+            assert template.identifier_type == "column"
+            assert [h.column for h in route.hops] == [s.split(".", 1)[1] for s in steps]
+            lines.append(
+                " | ".join(
+                    [
+                        "offered" if table.offered_by_picker else "not offered",
+                        " > ".join(steps),
+                        template.dataset_id,
+                        "list" if route.result_is_list else "scalar",
+                    ]
+                )
+            )
+    return sorted(lines)
+
+
+def test_reachable_matches_contract_fixture():
+    """
+    reachable.json is the other half of the cross-language contract test: the
+    Jest test AnnotationSelect/__tests__/referenceGraphContract.test.ts checks
+    that the annotation picker agrees with it. Any change to what the endpoint
+    returns for the live schema shows up here as a diff. To accept a change:
+
+        UPDATE_CONTRACT_FIXTURES=1 pytest tests/api/test_types.py -k contract
+    """
+    tables = _contract_tables()
+    actual = {
+        dim: _contract_projection(build_reachable(tables, dim, MAX_HOPS))
+        for dim in sorted(tables)
+    }
+    path = CONTRACT_DIR / "reachable.json"
+
+    if os.environ.get("UPDATE_CONTRACT_FIXTURES"):
+        path.write_text(json.dumps(actual, indent=1, sort_keys=True) + "\n")
+
+    assert actual == json.loads(path.read_text())

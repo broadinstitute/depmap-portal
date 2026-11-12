@@ -308,6 +308,74 @@ function findTableByDatasetId(
 }
 
 /**
+ * Whether a SliceQuery can be followed through the loaded schema.
+ */
+export type ValueResolution =
+  | { resolved: true }
+  | { resolved: false; reason: string };
+
+/**
+ * Checks that every step of a value exists in the loaded schema: the dataset
+ * is a known table, it is indexed by the type the previous hop landed on,
+ * the column exists, and each intermediate column is a foreign key.
+ *
+ * Links outlive the data they point at (a dataset can be removed, hidden, or
+ * not visible to the viewer), so a value can be well formed and still lead
+ * nowhere. This says nothing about whether the picker *offers* the route; a
+ * resolvable route the picker does not offer is still rendered and labelled
+ * normally.
+ */
+export function checkValueResolves(
+  query: SliceQuery,
+  index_type: string,
+  tablesByDim: Record<string, TableDescriptor[]>
+): ValueResolution {
+  const steps = flattenSliceQuery(query);
+  let expectedDim = index_type;
+
+  for (let i = 0; i < steps.length; i++) {
+    const { dataset_id: datasetId, identifier } = steps[i];
+    const match = findTableByDatasetId(datasetId, tablesByDim);
+
+    if (!match) {
+      return {
+        resolved: false,
+        reason: `Dataset "${datasetId}" is not available`,
+      };
+    }
+
+    if (match.dimType !== expectedDim) {
+      return {
+        resolved: false,
+        reason: `Dataset "${datasetId}" is not indexed by "${expectedDim}"`,
+      };
+    }
+
+    const meta = match.table.columns[identifier];
+
+    if (!meta) {
+      return {
+        resolved: false,
+        reason: `Column "${identifier}" is not in "${match.table.name}"`,
+      };
+    }
+
+    if (i < steps.length - 1) {
+      if (!meta.references) {
+        return {
+          resolved: false,
+          reason: `Column "${identifier}" does not reference another type`,
+        };
+      }
+
+      expectedDim = meta.references;
+    }
+  }
+
+  return { resolved: true };
+}
+
+/**
  * Navigation state derived from a SliceQuery value.
  */
 export interface DerivedNavState {

@@ -29,6 +29,17 @@ export type {
 } from "./src/DimensionType";
 
 export type {
+  ReferenceEdge,
+  ReferenceGraphTable,
+  ReferenceGraphNode,
+  DimensionTypeReferenceGraph,
+  SliceQueryChainNode,
+  ReachableTable,
+  ReachableRoute,
+  ReachableTables,
+} from "./src/ReferenceGraph";
+
+export type {
   Dataset,
   AddCustDatasetArgs,
   DatasetParams,

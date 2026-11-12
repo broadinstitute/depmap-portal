@@ -1,0 +1,99 @@
+{
+  "ModelCondition": [
+    "offered |  | modelcondition_metadata | scalar",
+    "offered | modelcondition_metadata.ModelID | depmap_model_metadata | scalar"
+  ],
+  "antibody_v2": [
+    "offered |  | antibody_v2_metadata | scalar",
+    "offered | antibody_v2_metadata.target_entrez_id | gene_metadata | list",
+    "offered | antibody_v2_metadata.target_entrez_id | uniprot_gene_sc_localization_annotations | list"
+  ],
+  "compound_v2": [
+    "offered |  | compound_v2_metadata | scalar",
+    "offered | compound_v2_metadata.EntrezIDsOfTargets | gene_metadata | list",
+    "offered | compound_v2_metadata.EntrezIDsOfTargets | uniprot_gene_sc_localization_annotations | list"
+  ],
+  "depmap_model": ["offered |  | depmap_model_metadata | scalar"],
+  "gene": [
+    "offered |  | gene_metadata | scalar",
+    "offered |  | uniprot_gene_sc_localization_annotations | scalar"
+  ],
+  "gene_pair": [
+    "offered |  | gene_pair_metadata | scalar",
+    "offered | gene_pair_metadata.gene_1 | gene_metadata | scalar",
+    "offered | gene_pair_metadata.gene_1 | uniprot_gene_sc_localization_annotations | scalar",
+    "offered | gene_pair_metadata.gene_2 | gene_metadata | scalar",
+    "offered | gene_pair_metadata.gene_2 | uniprot_gene_sc_localization_annotations | scalar",
+    "offered | gene_pair_metadata.single_gene | gene_metadata | scalar",
+    "offered | gene_pair_metadata.single_gene | uniprot_gene_sc_localization_annotations | scalar"
+  ],
+  "generic": [],
+  "protein_v5": [
+    "offered |  | protein_v5_metadata | scalar",
+    "offered | protein_v5_metadata.EntrezID | gene_metadata | scalar",
+    "offered | protein_v5_metadata.EntrezID | uniprot_gene_sc_localization_annotations | scalar"
+  ],
+  "sanger_combination_combo_fit_feature": [
+    "offered |  | sanger_combination_combo_fit_feature_metadata | scalar",
+    "offered | sanger_combination_combo_fit_feature_metadata.anch_drug_id > sgdc_compound_metadata.CompoundID > compound_v2_metadata.EntrezIDsOfTargets | gene_metadata | list",
+    "offered | sanger_combination_combo_fit_feature_metadata.anch_drug_id > sgdc_compound_metadata.CompoundID > compound_v2_metadata.EntrezIDsOfTargets | uniprot_gene_sc_localization_annotations | list",
+    "offered | sanger_combination_combo_fit_feature_metadata.anch_drug_id > sgdc_compound_metadata.CompoundID | compound_v2_metadata | scalar",
+    "offered | sanger_combination_combo_fit_feature_metadata.anch_drug_id | sgdc_compound_metadata | scalar",
+    "offered | sanger_combination_combo_fit_feature_metadata.lib_drug_id > sgdc_compound_metadata.CompoundID > compound_v2_metadata.EntrezIDsOfTargets | gene_metadata | list",
+    "offered | sanger_combination_combo_fit_feature_metadata.lib_drug_id > sgdc_compound_metadata.CompoundID > compound_v2_metadata.EntrezIDsOfTargets | uniprot_gene_sc_localization_annotations | list",
+    "offered | sanger_combination_combo_fit_feature_metadata.lib_drug_id > sgdc_compound_metadata.CompoundID | compound_v2_metadata | scalar",
+    "offered | sanger_combination_combo_fit_feature_metadata.lib_drug_id | sgdc_compound_metadata | scalar"
+  ],
+  "screen": [
+    "not offered | screen_metadata.ModelID | depmap_model_metadata | scalar",
+    "offered |  | screen_metadata | scalar",
+    "offered | screen_metadata.ModelConditionID > modelcondition_metadata.ModelID | depmap_model_metadata | scalar",
+    "offered | screen_metadata.ModelConditionID | modelcondition_metadata | scalar"
+  ],
+  "screen_pair": [
+    "not offered | PairedAnchorScreenTable.CtrlArmScreenID > screen_metadata.ModelID | depmap_model_metadata | scalar",
+    "not offered | PairedAnchorScreenTable.TestArmScreenID > screen_metadata.ModelID | depmap_model_metadata | scalar",
+    "not offered | PairedResScreenTable.CtrlArmScreenID > screen_metadata.ModelID | depmap_model_metadata | scalar",
+    "not offered | PairedResScreenTable.TestArmScreenID > screen_metadata.ModelID | depmap_model_metadata | scalar",
+    "not offered | screen_pair_metadata.CtrlArmScreenID > screen_metadata.ModelID | depmap_model_metadata | scalar",
+    "not offered | screen_pair_metadata.TestArmScreenID > screen_metadata.ModelID | depmap_model_metadata | scalar",
+    "offered |  | PairedAnchorScreenTable | scalar",
+    "offered |  | PairedResScreenTable | scalar",
+    "offered |  | screen_pair_metadata | scalar",
+    "offered | PairedAnchorScreenTable.CtrlArmScreenID > screen_metadata.ModelConditionID > modelcondition_metadata.ModelID | depmap_model_metadata | scalar",
+    "offered | PairedAnchorScreenTable.CtrlArmScreenID > screen_metadata.ModelConditionID | modelcondition_metadata | scalar",
+    "offered | PairedAnchorScreenTable.CtrlArmScreenID | screen_metadata | scalar",
+    "offered | PairedAnchorScreenTable.ModelID | depmap_model_metadata | scalar",
+    "offered | PairedAnchorScreenTable.TestArmScreenID > screen_metadata.ModelConditionID > modelcondition_metadata.ModelID | depmap_model_metadata | scalar",
+    "offered | PairedAnchorScreenTable.TestArmScreenID > screen_metadata.ModelConditionID | modelcondition_metadata | scalar",
+    "offered | PairedAnchorScreenTable.TestArmScreenID | screen_metadata | scalar",
+    "offered | PairedResScreenTable.CtrlArmModelID | depmap_model_metadata | scalar",
+    "offered | PairedResScreenTable.CtrlArmScreenID > screen_metadata.ModelConditionID > modelcondition_metadata.ModelID | depmap_model_metadata | scalar",
+    "offered | PairedResScreenTable.CtrlArmScreenID > screen_metadata.ModelConditionID | modelcondition_metadata | scalar",
+    "offered | PairedResScreenTable.CtrlArmScreenID | screen_metadata | scalar",
+    "offered | PairedResScreenTable.TestArmModelID | depmap_model_metadata | scalar",
+    "offered | PairedResScreenTable.TestArmScreenID > screen_metadata.ModelConditionID > modelcondition_metadata.ModelID | depmap_model_metadata | scalar",
+    "offered | PairedResScreenTable.TestArmScreenID > screen_metadata.ModelConditionID | modelcondition_metadata | scalar",
+    "offered | PairedResScreenTable.TestArmScreenID | screen_metadata | scalar",
+    "offered | screen_pair_metadata.CtrlArmScreenID > screen_metadata.ModelConditionID > modelcondition_metadata.ModelID | depmap_model_metadata | scalar",
+    "offered | screen_pair_metadata.CtrlArmScreenID > screen_metadata.ModelConditionID | modelcondition_metadata | scalar",
+    "offered | screen_pair_metadata.CtrlArmScreenID | screen_metadata | scalar",
+    "offered | screen_pair_metadata.TestArmScreenID > screen_metadata.ModelConditionID > modelcondition_metadata.ModelID | depmap_model_metadata | scalar",
+    "offered | screen_pair_metadata.TestArmScreenID > screen_metadata.ModelConditionID | modelcondition_metadata | scalar",
+    "offered | screen_pair_metadata.TestArmScreenID | screen_metadata | scalar"
+  ],
+  "sgdc_compound": [
+    "offered |  | sgdc_compound_metadata | scalar",
+    "offered | sgdc_compound_metadata.CompoundID > compound_v2_metadata.EntrezIDsOfTargets | gene_metadata | list",
+    "offered | sgdc_compound_metadata.CompoundID > compound_v2_metadata.EntrezIDsOfTargets | uniprot_gene_sc_localization_annotations | list",
+    "offered | sgdc_compound_metadata.CompoundID | compound_v2_metadata | scalar"
+  ],
+  "transcript": [
+    "not offered | transcript_metadata.entrez_id | gene_metadata | scalar",
+    "not offered | transcript_metadata.entrez_id | uniprot_gene_sc_localization_annotations | scalar",
+    "offered |  | transcript_metadata | scalar",
+    "offered | transcript_metadata.UniprotID > protein_v5_metadata.EntrezID | gene_metadata | scalar",
+    "offered | transcript_metadata.UniprotID > protein_v5_metadata.EntrezID | uniprot_gene_sc_localization_annotations | scalar",
+    "offered | transcript_metadata.UniprotID | protein_v5_metadata | scalar"
+  ]
+}
