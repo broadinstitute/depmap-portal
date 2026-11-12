@@ -21,6 +21,25 @@ BASE_URL = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8000"
 OUT = Path(__file__).parent / "schema.json"
 PLAIN_COLUMNS_KEPT = 3
 
+# The contract needs representative cases, not the whole schema. Each root is
+# kept together with everything it references, so every reference resolves.
+#   screen_pair                       doors (two arms), supplemental start tables,
+#                                     multi-hop chain, several routes to depmap_model
+#   transcript                        reaches a hub two ways (directly and via protein)
+#   antibody_v2                       list-valued reference
+#   gene_pair                         three references to one type
+#   sanger_combination_combo_fit_feature
+#                                     two references to one type, then a chain
+#   generic                           a type with no primary table
+ROOT_TYPES = [
+    "screen_pair",
+    "transcript",
+    "antibody_v2",
+    "gene_pair",
+    "sanger_combination_combo_fit_feature",
+    "generic",
+]
+
 
 def get(path):
     request = urllib.request.Request(
@@ -31,6 +50,24 @@ def get(path):
 
 
 def main():
+    all_types = get("/types/dimensions")
+    all_datasets = [d for d in get("/datasets/") if d["format"] == "tabular_dataset"]
+
+    kept = set()
+    pending = list(ROOT_TYPES)
+    while pending:
+        name = pending.pop()
+        if name in kept:
+            continue
+        kept.add(name)
+        for d in all_datasets:
+            if d["index_type_name"] == name:
+                pending.extend(
+                    m["references"]
+                    for m in d["columns_metadata"].values()
+                    if m.get("references")
+                )
+
     dimension_types = [
         {
             "name": t["name"],
@@ -39,12 +76,13 @@ def main():
             "axis": t["axis"],
             "metadata_dataset_id": t["metadata_dataset_id"],
         }
-        for t in sorted(get("/types/dimensions"), key=lambda t: t["name"])
+        for t in sorted(all_types, key=lambda t: t["name"])
+        if t["name"] in kept
     ]
 
     datasets = []
-    for d in get("/datasets/"):
-        if d["format"] != "tabular_dataset":
+    for d in all_datasets:
+        if d["index_type_name"] not in kept:
             continue
         columns = d["columns_metadata"]
         refs = sorted(c for c, m in columns.items() if m.get("references"))

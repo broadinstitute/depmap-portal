@@ -1,25 +1,11 @@
 {
   "dimension_types": [
     {
-      "axis": "feature",
-      "display_name": "MetMap site",
-      "id_column": "label",
-      "metadata_dataset_id": "4dceb931-fcf7-4437-8f5a-0ba64d1bc2df",
-      "name": "MetMap site"
-    },
-    {
       "axis": "sample",
       "display_name": "Model Condition",
       "id_column": "label",
       "metadata_dataset_id": "ca1eba69-3335-460f-b7d0-2f4874cc379a",
       "name": "ModelCondition"
-    },
-    {
-      "axis": "sample",
-      "display_name": "DEPRECATED Screen metadata",
-      "id_column": "label",
-      "metadata_dataset_id": "1fd25355-04cc-4f15-b13b-4907b7cd841d",
-      "name": "Screen metadata"
     },
     {
       "axis": "feature",
@@ -30,45 +16,10 @@
     },
     {
       "axis": "feature",
-      "display_name": "RPPA Antibody",
-      "id_column": "Protein",
-      "metadata_dataset_id": "eeaf61a5-c6c1-4493-89a6-0def8febba7d",
-      "name": "antibody_v3"
-    },
-    {
-      "axis": "feature",
-      "display_name": "ccle_proteomics",
-      "id_column": "Protein_Id",
-      "metadata_dataset_id": "a7725a21-7897-4f48-abfb-68a31469fdc0",
-      "name": "ccle_proteomics"
-    },
-    {
-      "axis": "feature",
-      "display_name": "Compound at dose",
-      "id_column": "CompoundDoseID",
-      "metadata_dataset_id": "8568fdba-d05f-450b-846e-c35becf7eceb",
-      "name": "compound_dose"
-    },
-    {
-      "axis": "feature",
-      "display_name": "Compound Sample",
-      "id_column": "SampleID",
-      "metadata_dataset_id": "0c93c449-a030-49ff-9bb8-fb63d3475136",
-      "name": "compound_sample"
-    },
-    {
-      "axis": "feature",
       "display_name": "Compound",
       "id_column": "CompoundID",
       "metadata_dataset_id": "41966b7d-1117-4e45-8ed0-108ff0b165bf",
       "name": "compound_v2"
-    },
-    {
-      "axis": "feature",
-      "display_name": "ctd2_sample",
-      "id_column": "SampleID",
-      "metadata_dataset_id": "53c5bed1-595d-40b8-bcc1-3e6f58b971b2",
-      "name": "ctd2_sample"
     },
     {
       "axis": "sample",
@@ -100,38 +51,10 @@
     },
     {
       "axis": "feature",
-      "display_name": "Molecular Signature",
-      "id_column": "Signature_ID",
-      "metadata_dataset_id": "445e6c1f-9dd9-4479-b147-34ac268f18ca",
-      "name": "molecular_signature"
-    },
-    {
-      "axis": "sample",
-      "display_name": "prelim_screen_pairs",
-      "id_column": "label",
-      "metadata_dataset_id": "b4f43e07-33fb-4bf8-9cc5-ad73f81a8e40",
-      "name": "prelim_screen_pairs"
-    },
-    {
-      "axis": "feature",
       "display_name": "Protein",
       "id_column": "UniprotID",
       "metadata_dataset_id": "768cacc3-3f96-482e-aaae-f487bbcba898",
       "name": "protein_v5"
-    },
-    {
-      "axis": "feature",
-      "display_name": "RRBS Feature",
-      "id_column": "label",
-      "metadata_dataset_id": "3f99dad3-a176-4948-9cf8-fe9000188f65",
-      "name": "rrbs_metadata_v2"
-    },
-    {
-      "axis": "feature",
-      "display_name": "sanger_combination_anchor_viability_feature",
-      "id_column": "index",
-      "metadata_dataset_id": "ed6a0860-a127-4623-b02e-8d9e2d91fa1a",
-      "name": "sanger_combination_anchor_viability_feature"
     },
     {
       "axis": "feature",
@@ -141,39 +64,11 @@
       "name": "sanger_combination_combo_fit_feature"
     },
     {
-      "axis": "feature",
-      "display_name": "sanger_combination_combo_viability_feature",
-      "id_column": "index",
-      "metadata_dataset_id": "cc04948f-ec1d-45d6-be27-79b9f58ad524",
-      "name": "sanger_combination_combo_viability_feature"
-    },
-    {
-      "axis": "feature",
-      "display_name": "sanger_combination_library_fit_feature",
-      "id_column": "index",
-      "metadata_dataset_id": "af36018a-9f3e-4d21-a641-be7c4b55b593",
-      "name": "sanger_combination_library_fit_feature"
-    },
-    {
-      "axis": "feature",
-      "display_name": "sanger_combination_library_viability_feature",
-      "id_column": "index",
-      "metadata_dataset_id": "a0151da6-52ae-45e9-aa5f-aac4f7ee964e",
-      "name": "sanger_combination_library_viability_feature"
-    },
-    {
       "axis": "sample",
       "display_name": "CRISPR Screen",
       "id_column": "label",
       "metadata_dataset_id": "56d697eb-00fe-44a9-9ae9-0eea2db25ddb",
       "name": "screen"
-    },
-    {
-      "axis": "sample",
-      "display_name": "CRISPR (+NextGen Models) Screen",
-      "id_column": "ScreenID",
-      "metadata_dataset_id": "a48ad317-f1da-4844-b2ba-ac1e842fccf7",
-      "name": "screen_nextgen"
     },
     {
       "axis": "sample",
@@ -195,36 +90,9 @@
       "id_column": "ID",
       "metadata_dataset_id": "9e013d5b-b648-4f29-86d3-0e0453932e48",
       "name": "transcript"
-    },
-    {
-      "axis": "sample",
-      "display_name": "Tumor",
-      "id_column": "TumorSampleID",
-      "metadata_dataset_id": "9107927e-23e9-49bf-a644-ec7f8263ad50",
-      "name": "tumor"
-    },
-    {
-      "axis": "feature",
-      "display_name": "Virus Gene",
-      "id_column": "ID",
-      "metadata_dataset_id": "7e091151-08ba-4d7e-8091-c213511f1787",
-      "name": "viral_gene"
     }
   ],
   "tabular_datasets": [
-    {
-      "columns_metadata": {
-        "label": {
-          "col_type": "text",
-          "references": null
-        }
-      },
-      "format": "tabular_dataset",
-      "given_id": "metmap_site_metadata",
-      "id": "4dceb931-fcf7-4437-8f5a-0ba64d1bc2df",
-      "index_type_name": "MetMap site",
-      "name": "MetMap site metadata"
-    },
     {
       "columns_metadata": {
         "AnchorDaysWithDrug": {
@@ -249,19 +117,6 @@
       "id": "ca1eba69-3335-460f-b7d0-2f4874cc379a",
       "index_type_name": "ModelCondition",
       "name": "ModelCondition metadata"
-    },
-    {
-      "columns_metadata": {
-        "label": {
-          "col_type": "text",
-          "references": null
-        }
-      },
-      "format": "tabular_dataset",
-      "given_id": "screen_metadata_metadata",
-      "id": "1fd25355-04cc-4f15-b13b-4907b7cd841d",
-      "index_type_name": "Screen metadata",
-      "name": "Screen metadata metadata"
     },
     {
       "columns_metadata": {
@@ -290,102 +145,6 @@
     },
     {
       "columns_metadata": {
-        "Catalog_Number": {
-          "col_type": "text",
-          "references": null
-        },
-        "Company": {
-          "col_type": "text",
-          "references": null
-        },
-        "Phase": {
-          "col_type": "text",
-          "references": null
-        },
-        "uniprot_ids": {
-          "col_type": "list_strings",
-          "references": "protein_v5"
-        }
-      },
-      "format": "tabular_dataset",
-      "given_id": "antibody_v3_metadata",
-      "id": "eeaf61a5-c6c1-4493-89a6-0def8febba7d",
-      "index_type_name": "antibody_v3",
-      "name": "antibody_v3 metadata"
-    },
-    {
-      "columns_metadata": {
-        "Canonical_Uniprot_Acc": {
-          "col_type": "text",
-          "references": null
-        },
-        "Protein_Id": {
-          "col_type": "text",
-          "references": null
-        },
-        "Uniprot_Acc": {
-          "col_type": "text",
-          "references": null
-        }
-      },
-      "format": "tabular_dataset",
-      "given_id": "ccle_proteomics_metadata",
-      "id": "a7725a21-7897-4f48-abfb-68a31469fdc0",
-      "index_type_name": "ccle_proteomics",
-      "name": "ccle_proteomics metadata"
-    },
-    {
-      "columns_metadata": {
-        "CompoundDoseID": {
-          "col_type": "text",
-          "references": null
-        },
-        "CompoundID": {
-          "col_type": "text",
-          "references": "compound_v2"
-        },
-        "Dose": {
-          "col_type": "continuous",
-          "references": null
-        },
-        "DoseUnit": {
-          "col_type": "text",
-          "references": null
-        }
-      },
-      "format": "tabular_dataset",
-      "given_id": "compound_dose_metadata",
-      "id": "8568fdba-d05f-450b-846e-c35becf7eceb",
-      "index_type_name": "compound_dose",
-      "name": "compound_dose metadata"
-    },
-    {
-      "columns_metadata": {
-        "CompoundID": {
-          "col_type": "text",
-          "references": "compound_v2"
-        },
-        "CompoundName": {
-          "col_type": "text",
-          "references": null
-        },
-        "DoseUnit": {
-          "col_type": "text",
-          "references": null
-        },
-        "SampleID": {
-          "col_type": "text",
-          "references": null
-        }
-      },
-      "format": "tabular_dataset",
-      "given_id": "compound_sample_metadata",
-      "id": "0c93c449-a030-49ff-9bb8-fb63d3475136",
-      "index_type_name": "compound_sample",
-      "name": "compound_sample metadata"
-    },
-    {
-      "columns_metadata": {
         "ChEMBLID": {
           "col_type": "text",
           "references": null
@@ -408,27 +167,6 @@
       "id": "41966b7d-1117-4e45-8ed0-108ff0b165bf",
       "index_type_name": "compound_v2",
       "name": "compound_v2 metadata"
-    },
-    {
-      "columns_metadata": {
-        "CompoundID": {
-          "col_type": "text",
-          "references": "compound_v2"
-        },
-        "SampleID": {
-          "col_type": "text",
-          "references": null
-        },
-        "label": {
-          "col_type": "text",
-          "references": null
-        }
-      },
-      "format": "tabular_dataset",
-      "given_id": "ctd2_sample_metadata",
-      "id": "53c5bed1-595d-40b8-bcc1-3e6f58b971b2",
-      "index_type_name": "ctd2_sample",
-      "name": "ctd2_sample metadata"
     },
     {
       "columns_metadata": {
@@ -528,36 +266,6 @@
     },
     {
       "columns_metadata": {
-        "Signature_ID": {
-          "col_type": "text",
-          "references": null
-        },
-        "label": {
-          "col_type": "text",
-          "references": null
-        }
-      },
-      "format": "tabular_dataset",
-      "given_id": "molecular_signature_metadata",
-      "id": "445e6c1f-9dd9-4479-b147-34ac268f18ca",
-      "index_type_name": "molecular_signature",
-      "name": "molecular_signature metadata"
-    },
-    {
-      "columns_metadata": {
-        "label": {
-          "col_type": "text",
-          "references": null
-        }
-      },
-      "format": "tabular_dataset",
-      "given_id": "prelim_screen_pairs_metadata",
-      "id": "b4f43e07-33fb-4bf8-9cc5-ad73f81a8e40",
-      "index_type_name": "prelim_screen_pairs",
-      "name": "prelim_screen_pairs metadata"
-    },
-    {
-      "columns_metadata": {
         "EntrezID": {
           "col_type": "text",
           "references": "gene"
@@ -580,52 +288,6 @@
       "id": "768cacc3-3f96-482e-aaae-f487bbcba898",
       "index_type_name": "protein_v5",
       "name": "protein_v5 metadata"
-    },
-    {
-      "columns_metadata": {
-        "CpG_sites_hg19": {
-          "col_type": "text",
-          "references": null
-        },
-        "gene": {
-          "col_type": "text",
-          "references": "gene"
-        },
-        "label": {
-          "col_type": "text",
-          "references": null
-        }
-      },
-      "format": "tabular_dataset",
-      "given_id": "rrbs_metadata_v2_metadata",
-      "id": "3f99dad3-a176-4948-9cf8-fe9000188f65",
-      "index_type_name": "rrbs_metadata_v2",
-      "name": "rrbs_metadata_v2 metadata"
-    },
-    {
-      "columns_metadata": {
-        "anch_conc": {
-          "col_type": "text",
-          "references": null
-        },
-        "anch_drug_id": {
-          "col_type": "text",
-          "references": "sgdc_compound"
-        },
-        "index": {
-          "col_type": "text",
-          "references": null
-        },
-        "label": {
-          "col_type": "text",
-          "references": null
-        }
-      },
-      "format": "tabular_dataset",
-      "given_id": "sanger_combination_anchor_viability_feature_metadata",
-      "id": "ed6a0860-a127-4623-b02e-8d9e2d91fa1a",
-      "index_type_name": "sanger_combination_anchor_viability_feature",
-      "name": "sanger_combination_anchor_viability_feature metadata"
     },
     {
       "columns_metadata": {
@@ -658,73 +320,6 @@
     },
     {
       "columns_metadata": {
-        "anch_drug_id": {
-          "col_type": "text",
-          "references": "sgdc_compound"
-        },
-        "index": {
-          "col_type": "text",
-          "references": null
-        },
-        "label": {
-          "col_type": "text",
-          "references": null
-        },
-        "lib_drug_id": {
-          "col_type": "text",
-          "references": "sgdc_compound"
-        }
-      },
-      "format": "tabular_dataset",
-      "given_id": "sanger_combination_combo_viability_feature_metadata",
-      "id": "cc04948f-ec1d-45d6-be27-79b9f58ad524",
-      "index_type_name": "sanger_combination_combo_viability_feature",
-      "name": "sanger_combination_combo_viability_feature metadata"
-    },
-    {
-      "columns_metadata": {
-        "index": {
-          "col_type": "text",
-          "references": null
-        },
-        "label": {
-          "col_type": "text",
-          "references": null
-        },
-        "lib_drug_id": {
-          "col_type": "text",
-          "references": "sgdc_compound"
-        }
-      },
-      "format": "tabular_dataset",
-      "given_id": "sanger_combination_library_fit_feature_metadata",
-      "id": "af36018a-9f3e-4d21-a641-be7c4b55b593",
-      "index_type_name": "sanger_combination_library_fit_feature",
-      "name": "sanger_combination_library_fit_feature metadata"
-    },
-    {
-      "columns_metadata": {
-        "index": {
-          "col_type": "text",
-          "references": null
-        },
-        "label": {
-          "col_type": "text",
-          "references": null
-        },
-        "lib_drug_id": {
-          "col_type": "text",
-          "references": "sgdc_compound"
-        }
-      },
-      "format": "tabular_dataset",
-      "given_id": "sanger_combination_library_viability_feature_metadata",
-      "id": "a0151da6-52ae-45e9-aa5f-aac4f7ee964e",
-      "index_type_name": "sanger_combination_library_viability_feature",
-      "name": "sanger_combination_library_viability_feature metadata"
-    },
-    {
-      "columns_metadata": {
         "CanInclude": {
           "col_type": "text",
           "references": null
@@ -751,35 +346,6 @@
       "id": "56d697eb-00fe-44a9-9ae9-0eea2db25ddb",
       "index_type_name": "screen",
       "name": "screen metadata"
-    },
-    {
-      "columns_metadata": {
-        "GrowthPattern": {
-          "col_type": "text",
-          "references": null
-        },
-        "HasCNData": {
-          "col_type": "text",
-          "references": null
-        },
-        "HasExprData": {
-          "col_type": "text",
-          "references": null
-        },
-        "ModelConditionID": {
-          "col_type": "text",
-          "references": "ModelCondition"
-        },
-        "ModelID": {
-          "col_type": "text",
-          "references": "depmap_model"
-        }
-      },
-      "format": "tabular_dataset",
-      "given_id": "screen_nextgen_metadata",
-      "id": "a48ad317-f1da-4844-b2ba-ac1e842fccf7",
-      "index_type_name": "screen_nextgen",
-      "name": "screen_nextgen metadata"
     },
     {
       "columns_metadata": {
@@ -929,48 +495,6 @@
       "id": "9e013d5b-b648-4f29-86d3-0e0453932e48",
       "index_type_name": "transcript",
       "name": "transcript metadata"
-    },
-    {
-      "columns_metadata": {
-        "AJCC Clinical Group Stage": {
-          "col_type": "text",
-          "references": null
-        },
-        "Cancer Type": {
-          "col_type": "text",
-          "references": null
-        },
-        "Cancer Type Detailed": {
-          "col_type": "text",
-          "references": null
-        }
-      },
-      "format": "tabular_dataset",
-      "given_id": "tumor_metadata",
-      "id": "9107927e-23e9-49bf-a644-ec7f8263ad50",
-      "index_type_name": "tumor",
-      "name": "tumor metadata"
-    },
-    {
-      "columns_metadata": {
-        "Gene": {
-          "col_type": "text",
-          "references": null
-        },
-        "GenomeAccession": {
-          "col_type": "text",
-          "references": null
-        },
-        "ID": {
-          "col_type": "text",
-          "references": null
-        }
-      },
-      "format": "tabular_dataset",
-      "given_id": "viral_gene_metadata",
-      "id": "7e091151-08ba-4d7e-8091-c213511f1787",
-      "index_type_name": "viral_gene",
-      "name": "viral_gene metadata"
     }
   ]
 }

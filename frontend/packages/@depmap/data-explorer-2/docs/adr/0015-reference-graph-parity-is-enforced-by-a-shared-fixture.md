@@ -25,9 +25,13 @@ The two cannot share code. They can share a schema and an expected answer.
 
 1. **One schema fixture, from the live API.** `schema.json` is a trimmed copy of
    `/types/dimensions` and `/datasets` (reference columns plus a few ordinary
-   ones, anonymous caller). `refresh_schema.py` regenerates it from a running
-   Breadbox. The snapshot in the original handoff was stale, so nothing is
-   written by hand.
+   ones, anonymous caller). It covers a representative set of cases rather than
+   the whole schema: `refresh_schema.py` lists a few root types, each chosen
+   for the shape it exercises (doors, supplemental start tables, multi-hop
+   chains, several routes to one type, list-valued references, a type with no
+   primary table), and keeps everything they reference so every reference
+   resolves. The script regenerates it from a running Breadbox. The snapshot in
+   the original handoff was stale, so nothing is written by hand.
 2. **One expected-answer fixture, owned by Breadbox.** `reachable.json` holds
    the endpoint's output for every dimension type at the maximum depth. A
    Python test rebuilds it from `schema.json` and fails on any difference;
@@ -65,8 +69,9 @@ The two cannot share code. They can share a schema and an expected answer.
   supplemental start tables and multi-route targets are covered without
   contriving them.
 - **Bad:** schema changes in production do not fail anything until someone
-  refreshes `schema.json`. The contract covers the rules, not the live data.
-- **Bad:** `reachable.json` is about 150 KB and churns when the schema is
+  refreshes `schema.json`. The contract covers the rules, not the live data,
+  and a shape that only exists outside the chosen roots is not tested.
+- **Bad:** `reachable.json` is still about 90 KB and churns when the schema is
   refreshed.
 - **Bad:** the live schema has no door nested inside an auto-traversed table,
   so the latent bubbled-door picker bug from ADR 0014 is not exercised here.
