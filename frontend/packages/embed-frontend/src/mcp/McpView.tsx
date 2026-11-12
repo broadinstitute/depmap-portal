@@ -7,7 +7,11 @@ import {
   LinRegInfo,
 } from "@depmap/types";
 import ReadyPlot, { LINK_ROW_HEIGHT } from "./ReadyPlot";
-import { hostAcceptsMessages } from "./selection";
+import {
+  hostAcceptsMessages,
+  hostSupportsDraft,
+  messageParams,
+} from "./selection";
 import { EMBEDDED_PLOT_STYLES } from "../utils/embeddedPlotStyles";
 import { codeGenerationBlocked } from "./codegen";
 import {
@@ -139,6 +143,8 @@ function McpView() {
   const [blocked] = useState(() => codeGenerationBlocked());
   // Whether the host accepts a view's `ui/message`. Known only once connected.
   const [canSendMessages, setCanSendMessages] = useState(false);
+  // Whether the host can take the message as an unsent draft.
+  const [canDraft, setCanDraft] = useState(false);
   const inHost = window.parent !== window;
 
   const appRef = useRef<App | null>(null);
@@ -255,6 +261,7 @@ function McpView() {
 
         if (!unmounted) {
           setCanSendMessages(hostAcceptsMessages(app));
+          setCanDraft(hostSupportsDraft(app));
         }
       })
       .catch((e: unknown) => {
@@ -655,10 +662,7 @@ function McpView() {
           }}
           sendMessage={(text) =>
             appRef.current
-              ? appRef.current.sendMessage({
-                  role: "user",
-                  content: [{ type: "text", text }],
-                })
+              ? appRef.current.sendMessage(messageParams(text, canDraft))
               : Promise.resolve({ isError: true })
           }
         />

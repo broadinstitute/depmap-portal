@@ -10,11 +10,35 @@ export const MAX_SELECTED_ENTITIES = 50;
 // it at once, which is accepted for now. Neither claude.ai nor ChatGPT has been
 // verified for this feature.
 interface HostLike {
-  getHostCapabilities(): { message?: { text?: unknown } } | undefined;
+  getHostCapabilities():
+    | { message?: { text?: unknown }; experimental?: unknown }
+    | undefined;
 }
 
 export function hostAcceptsMessages(app: HostLike | null) {
   return Boolean(app?.getHostCapabilities()?.message?.text);
+}
+
+// ChatGPT advertises `experimental["openai/message"] = { draft: {} }`: the
+// message can go into the composer unsent. The value is an empty object, so
+// test for the key. Detected by capability, never by host name.
+export function hostSupportsDraft(app: HostLike | null) {
+  const exp = app?.getHostCapabilities()?.experimental as
+    | Record<string, { draft?: unknown } | undefined>
+    | undefined;
+
+  return exp?.["openai/message"]?.draft !== undefined;
+}
+
+// The `ui/message` params. With draft support, `_meta` asks the host to leave
+// the text in the composer. The ext-apps type for params omits `_meta`, though
+// `App.sendMessage` forwards it as given.
+export function messageParams(text: string, draft: boolean) {
+  return {
+    role: "user" as const,
+    content: [{ type: "text" as const, text }],
+    ...(draft ? { _meta: { "openai/message": { send: false } } } : {}),
+  };
 }
 
 export interface SelectedEntity {

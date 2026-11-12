@@ -14,6 +14,7 @@ const mockApp = {
   getHostCapabilities: jest.fn(() => ({})),
   updateModelContext: jest.fn(() => Promise.resolve({})),
   openLink: jest.fn(),
+  sendMessage: jest.fn(() => Promise.resolve({})),
 };
 
 jest.mock("@modelcontextprotocol/ext-apps", () => ({
@@ -21,12 +22,14 @@ jest.mock("@modelcontextprotocol/ext-apps", () => ({
 }));
 
 const plotLifecycle = { mounts: 0, unmounts: 0 };
+const mockPlotProps: { current: any } = { current: null };
 
 jest.mock("../../components/Plot", () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires, global-require
   const R = require("react");
   return {
     PlotView: (props: unknown) => {
+      mockPlotProps.current = props;
       R.useEffect(() => {
         plotLifecycle.mounts += 1;
         return () => {
@@ -131,6 +134,8 @@ beforeEach(() => {
   mockApp.callServerTool.mockReset();
   mockApp.getHostCapabilities.mockReset().mockReturnValue({});
   mockApp.updateModelContext.mockReset().mockResolvedValue({});
+  mockApp.sendMessage.mockReset().mockResolvedValue({});
+  mockPlotProps.current = null;
   mockApp.ontoolresult = undefined;
   container = document.createElement("div");
   document.body.appendChild(container);
@@ -446,5 +451,76 @@ describe("WebGL context loss", () => {
 
     // Only the remount from coming back into view.
     expect(plotLifecycle.mounts).toBe(2);
+  });
+});
+
+describe("selection button", () => {
+  const SELECTABLE = {
+    plot_config: { plot_type: "scatter", normalized: true },
+    index_ids: ["ACH-1", "ACH-2"],
+    index_labels: ["a", "b"],
+    index_display_name: "Cell Line",
+  };
+  const EXPECTED_TEXT = "I selected 1 cell line in the plot:\n- a (ACH-1)";
+
+  async function mountWithHost(caps: object) {
+    mockApp.getHostCapabilities.mockReturnValue(caps);
+    mockApp.callServerTool.mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify(SELECTABLE) }],
+    });
+    await mountAndDeliver(toolResult());
+    await act(async () => {
+      mockPlotProps.current.selection.onMultiselect([0]);
+    });
+  }
+
+  const findButton = () =>
+    Array.from(container.querySelectorAll("button")).find((b) =>
+      /Ask about/.test(b.textContent || "")
+    );
+
+  async function click() {
+    await act(async () => {
+      findButton()!.click();
+    });
+  }
+
+  it("sends a draft (send: false) when the host declares the draft capability", async () => {
+    await mountWithHost({
+      message: { text: {} },
+      experimental: { "openai/message": { draft: {} } },
+    });
+    await click();
+
+    expect(mockApp.sendMessage).toHaveBeenCalledTimes(1);
+    expect(mockApp.sendMessage).toHaveBeenCalledWith({
+      role: "user",
+      content: [{ type: "text", text: EXPECTED_TEXT }],
+      _meta: { "openai/message": { send: false } },
+    });
+  });
+
+  it("sends a plain message, with no _meta, without the draft capability", async () => {
+    await mountWithHost({ message: { text: {} } });
+    await click();
+
+    expect(mockApp.sendMessage).toHaveBeenCalledTimes(1);
+    const params = mockApp.sendMessage.mock.calls[0][0] as object;
+    expect(params).toEqual({
+      role: "user",
+      content: [{ type: "text", text: EXPECTED_TEXT }],
+    });
+    expect("_meta" in params).toBe(false);
+  });
+
+  it("shows no button when the host declares neither message text nor draft", async () => {
+    mockApp.getHostCapabilities.mockReturnValue({});
+    mockApp.callServerTool.mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify(SELECTABLE) }],
+    });
+    await mountAndDeliver(toolResult());
+
+    expect(mockPlotProps.current.selection).toBeUndefined();
+    expect(findButton()).toBeUndefined();
   });
 });
