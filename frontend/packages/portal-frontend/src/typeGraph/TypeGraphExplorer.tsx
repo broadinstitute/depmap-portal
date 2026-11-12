@@ -17,6 +17,13 @@ const ARROW_GAP = 2;
 
 const nodeRadius = (inDegree: number) => 6 + Math.min(inDegree, 8);
 
+function nodeFill(isSelected: boolean, isHighlighted: boolean) {
+  if (isSelected) return "#1565c0";
+  if (isHighlighted) return "#ffb300";
+
+  return "#fff";
+}
+
 interface Edge {
   from: string;
   to: string;
@@ -334,9 +341,7 @@ function TypeGraphExplorer() {
               >
                 <circle
                   r={nodeRadius(degree)}
-                  fill={
-                    name === selected ? "#1565c0" : dim ? "#ffb300" : "#fff"
-                  }
+                  fill={nodeFill(name === selected, Boolean(dim))}
                   stroke="#555"
                 />
               </g>
