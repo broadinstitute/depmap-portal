@@ -10,6 +10,8 @@ from breadbox.models.dataset import (
 )
 from tests import factories
 import json
+import os
+from pathlib import Path
 import numpy as np
 from tests.factories import feature_type_with_metadata
 from io import BytesIO
@@ -19,6 +21,8 @@ from breadbox.schemas.dataset import ColumnMetadata
 import pandas as pd
 from ..utils import assert_status_ok, assert_status_not_ok
 from breadbox.service.search import _get_datatypes_referencing
+from breadbox.service.reachable import MAX_HOPS, build_reachable
+from breadbox.service.reference_graph import LoadedColumn, LoadedTable
 
 
 def test_all_dimension_type_methods(client: TestClient, minimal_db, settings):
@@ -2043,3 +2047,53 @@ def test_reachable_hides_private_tables(
 
     assert "rpair_private" not in start_tables("anyone@example.com")
     assert "rpair_private" in start_tables("someone@private-group.com")
+
+
+CONTRACT_DIR = Path(__file__).parent.parent / "fixtures" / "reference_graph"
+
+
+def _contract_tables():
+    """Tables from the checked-in copy of the live schema, as the service sees them."""
+    schema = json.loads((CONTRACT_DIR / "schema.json").read_text())
+    primary = {t["name"]: t["metadata_dataset_id"] for t in schema["dimension_types"]}
+    tables = {name: [] for name in primary}
+    for d in schema["tabular_datasets"]:
+        tables[d["index_type_name"]].append(
+            LoadedTable(
+                id=d["id"],
+                given_id=d["given_id"],
+                name=d["name"],
+                data_type="",
+                index_type=d["index_type_name"],
+                is_primary=primary[d["index_type_name"]] == d["id"],
+                columns=tuple(
+                    LoadedColumn(name, m["col_type"], m["references"])
+                    for name, m in sorted(d["columns_metadata"].items())
+                ),
+            )
+        )
+    for group in tables.values():
+        group.sort(key=lambda t: (not t.is_primary, t.name, t.id))
+    return tables
+
+
+def test_reachable_matches_contract_fixture():
+    """
+    reachable.json is the other half of the cross-language contract test: the
+    Jest test AnnotationSelect/__tests__/referenceGraphContract.test.ts checks
+    that the annotation picker agrees with it. Any change to what the endpoint
+    returns for the live schema shows up here as a diff. To accept a change:
+
+        UPDATE_CONTRACT_FIXTURES=1 pytest tests/api/test_types.py -k contract
+    """
+    tables = _contract_tables()
+    actual = {
+        dim: json.loads(build_reachable(tables, dim, MAX_HOPS).model_dump_json())
+        for dim in sorted(tables)
+    }
+    path = CONTRACT_DIR / "reachable.json"
+
+    if os.environ.get("UPDATE_CONTRACT_FIXTURES"):
+        path.write_text(json.dumps(actual, indent=1, sort_keys=True) + "\n")
+
+    assert actual == json.loads(path.read_text())
