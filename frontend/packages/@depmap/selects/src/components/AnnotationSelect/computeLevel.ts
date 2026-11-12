@@ -19,10 +19,156 @@ export interface LevelResult {
   columns: ColumnEntry[];
 }
 
+interface FkGroup {
+  targetDim: string;
+  cols: string[];
+}
+
+interface Claim {
+  parentDim: string;
+  throughCol: string;
+  /** FK columns from the root to this dim, for tie-breaking. */
+  path: string[];
+}
+
+/**
+ * Plans which dim types get auto-traversed, and by which FK column.
+ *
+ * A single FK is dropped as a redundant shortcut when its target is also
+ * reachable through another FK in the same table (e.g. `screen.ModelID` when
+ * `screen.ModelConditionID` leads to a table that references the same
+ * model). Links minted through a shortcut would break if the denormalized
+ * column were ever removed, so the longer route is the canonical one. If two
+ * FKs reach each other, neither is treated as a shortcut.
+ *
+ * Routes that remain are resolved breadth-first (shortest first). Ties between
+ * routes of equal length are broken alphabetically by the FK column names
+ * along the route, first hop first (then by parent dim name), so the result
+ * never depends on column declaration order.
+ *
+ * At each dim, FKs to targets that are already claimed (at this depth or a
+ * shallower one) or in `visited` are ignored before counting, so a target
+ * with 2+ remaining FKs is a door and one with exactly 1 is a candidate for
+ * auto-traversal.
+ */
+function planTraversal(
+  startDim: string,
+  startTable: TableDescriptor,
+  tablesByDim: Record<string, TableDescriptor[]>,
+  dimTypeMap: Record<string, DimensionTypeDescriptor>,
+  visited: Set<string>
+) {
+  const claims = new Map<string, Claim>();
+  const fkGroupsByDim = new Map<string, FkGroup[]>();
+  const excluded = new Set(visited);
+  let level = [startDim];
+
+  const tableFor = (dim: string) => {
+    if (dim === startDim) return startTable;
+    const primaryId = dimTypeMap[dim]?.metadata_dataset_id ?? null;
+    return (tablesByDim[dim] ?? []).find((t) => t.id === primaryId) ?? null;
+  };
+
+  // Every dim reachable by following forward FKs from `from`, ignoring dims
+  // that are already excluded.
+  const reachableFrom = (from: string) => {
+    const seen = new Set<string>();
+    const stack = [from];
+
+    while (stack.length > 0) {
+      const cur = stack.pop() as string;
+
+      for (const meta of Object.values(tableFor(cur)?.columns ?? {})) {
+        const target = meta.references;
+
+        if (target && !excluded.has(target) && !seen.has(target)) {
+          seen.add(target);
+          stack.push(target);
+        }
+      }
+    }
+
+    return seen;
+  };
+
+  while (level.length > 0) {
+    const candidates = new Map<string, Claim[]>();
+
+    for (const dim of level) {
+      const table = tableFor(dim);
+      const groups: FkGroup[] = [];
+      const byTarget: Record<string, FkGroup> = {};
+
+      for (const [colName, meta] of Object.entries(table?.columns ?? {})) {
+        const target = meta.references;
+
+        if (target && !excluded.has(target)) {
+          if (!byTarget[target]) {
+            byTarget[target] = { targetDim: target, cols: [] };
+            groups.push(byTarget[target]);
+          }
+          byTarget[target].cols.push(colName);
+        }
+      }
+
+      fkGroupsByDim.set(dim, groups);
+
+      const singles = groups.filter((g) => g.cols.length === 1);
+      const reach = new Map(
+        singles.map((g) => [g.targetDim, reachableFrom(g.targetDim)])
+      );
+      const isShortcut = (g: FkGroup) =>
+        singles.some(
+          (h) =>
+            h !== g &&
+            reach.get(h.targetDim)?.has(g.targetDim) &&
+            !reach.get(g.targetDim)?.has(h.targetDim)
+        );
+
+      for (const g of singles) {
+        if (!isShortcut(g)) {
+          const list = candidates.get(g.targetDim) ?? [];
+          list.push({
+            parentDim: dim,
+            throughCol: g.cols[0],
+            path: [...(claims.get(dim)?.path ?? []), g.cols[0]],
+          });
+          candidates.set(g.targetDim, list);
+        }
+      }
+    }
+
+    const next: string[] = [];
+
+    for (const [target, list] of candidates) {
+      const winner = [...list].sort(
+        (a, b) =>
+          a.path.join("\u0000").localeCompare(b.path.join("\u0000")) ||
+          a.parentDim.localeCompare(b.parentDim)
+      )[0];
+      claims.set(target, winner);
+      next.push(target);
+    }
+
+    // Claim after the whole level is processed so that sibling order cannot
+    // influence door counting at this depth.
+    next.sort();
+    next.forEach((d) => excluded.add(d));
+    level = next;
+  }
+
+  return { claims, fkGroupsByDim };
+}
+
 /**
  * Walks FK references from a dimension type's primary metadata table,
  * auto-traversing one-to-one relationships and surfacing many-to-one
  * relationships as "doors" the user clicks through.
+ *
+ * When several routes reach the same dim type, redundant shortcut FKs are
+ * dropped first, then the shortest route wins and ties go to the
+ * alphabetically first FK column (see `planTraversal`). Losing routes are not
+ * offered.
  *
  * @param dimType        The dimension type name to start from.
  * @param index_type     The picker's root dimension type. Used to suppress
@@ -34,6 +180,7 @@ export interface LevelResult {
  * @param dimTypeMap     Dimension type name → descriptor (for display names,
  *                       metadata_dataset_id, etc.).
  * @param visited        Set of dim type names already traversed (cycle guard).
+ *                       Every dim reached is added to it.
  * @param startTable     Optional override table. When provided, use this
  *                       instead of finding the primary metadata table.
  *                       Used when a non-primary source table is selected.
@@ -48,118 +195,102 @@ export default function computeLevel(
 ): LevelResult {
   visited.add(dimType);
 
-  const dimInfo = dimTypeMap[dimType];
-  const dimDisplayName = dimInfo?.display_name ?? dimType;
-  const tables = tablesByDim[dimType] ?? [];
+  const rootMetadataId = dimTypeMap[dimType]?.metadata_dataset_id ?? null;
+  const rootTable =
+    startTable ??
+    (tablesByDim[dimType] ?? []).find((t) => t.id === rootMetadataId) ??
+    null;
 
-  // Find the active table: explicit startTable or primary metadata.
-  const metadataDatasetId = dimInfo?.metadata_dataset_id ?? null;
-  const activeTable =
-    startTable ?? tables.find((t) => t.id === metadataDatasetId) ?? null;
+  const plan = rootTable
+    ? planTraversal(dimType, rootTable, tablesByDim, dimTypeMap, visited)
+    : null;
 
-  // Supplemental tables at this dim type (everything except the active
-  // table). Skipped entirely when this dim is the picker's index_type,
-  // since those tables are already offered in the source picker.
-  const supplementalTables: SupplementalTable[] =
-    dimType === index_type
-      ? []
-      : tables
-          .filter((t) => t.id !== (activeTable?.id ?? metadataDatasetId))
-          .map((t) => {
-            const colCount = Object.keys(t.columns).length;
+  const walk = (dim: string, override?: TableDescriptor): LevelResult => {
+    const dimInfo = dimTypeMap[dim];
+    const dimDisplayName = dimInfo?.display_name ?? dim;
+    const tables = tablesByDim[dim] ?? [];
 
-            return {
-              dimType,
+    const metadataDatasetId = dimInfo?.metadata_dataset_id ?? null;
+    const activeTable =
+      override ?? tables.find((t) => t.id === metadataDatasetId) ?? null;
+
+    // Supplemental tables at this dim type (everything except the active
+    // table). Skipped entirely when this dim is the picker's index_type,
+    // since those tables are already offered in the source picker.
+    const supplementalTables: SupplementalTable[] =
+      dim === index_type
+        ? []
+        : tables
+            .filter((t) => t.id !== (activeTable?.id ?? metadataDatasetId))
+            .map((t) => ({
+              dimType: dim,
               dimDisplayName,
               table: t,
-              columnCount: colCount,
+              columnCount: Object.keys(t.columns).length,
               autoPath: [],
-            };
+            }));
+
+    if (!activeTable || !plan) {
+      return { doors: [], supplementalTables, columns: [] };
+    }
+
+    const columns: ColumnEntry[] = Object.keys(activeTable.columns).map(
+      (colName) => ({
+        columnName: colName,
+        dimType: dim,
+        dimDisplayName,
+        tableName: activeTable.name,
+        tableId: activeTable.id,
+        tableGivenId: activeTable.given_id,
+        autoPath: [],
+      })
+    );
+    const doors: Door[] = [];
+
+    for (const { targetDim, cols } of plan.fkGroupsByDim.get(dim) ?? []) {
+      if (cols.length >= 2) {
+        // Many-to-one: emit as doors (user chooses which FK to traverse).
+        const targetDisplayName =
+          dimTypeMap[targetDim]?.display_name ?? targetDim;
+
+        for (const colName of cols) {
+          doors.push({
+            columnName: colName,
+            targetDim,
+            targetDimDisplayName: targetDisplayName,
           });
+        }
+      } else {
+        const claim = plan.claims.get(targetDim);
+        const throughCol = cols[0];
 
-  if (!activeTable) {
-    return { doors: [], supplementalTables, columns: [] };
-  }
+        // Only the winning route traverses; losing routes are dropped.
+        if (claim?.parentDim === dim && claim.throughCol === throughCol) {
+          const deeper = walk(targetDim);
+          const hop = { throughCol, toDim: targetDim };
 
-  // Collect columns and FK references from the active table.
-  const columns: ColumnEntry[] = [];
-  const doors: Door[] = [];
+          for (const col of deeper.columns) {
+            columns.push({ ...col, autoPath: [hop, ...col.autoPath] });
+          }
 
-  // Group FK columns by their target dim type to determine cardinality.
-  const fksByTarget: Record<string, string[]> = {};
+          // Deeper doors become doors at this level too, since the user
+          // can't interact with auto-traversed hops.
+          doors.push(...deeper.doors);
 
-  for (const [colName, meta] of Object.entries(activeTable.columns)) {
-    if (meta.references && !visited.has(meta.references)) {
-      if (!fksByTarget[meta.references]) {
-        fksByTarget[meta.references] = [];
-      }
-      fksByTarget[meta.references].push(colName);
-    }
-  }
-
-  // Emit leaf columns from the active table.
-  for (const colName of Object.keys(activeTable.columns)) {
-    columns.push({
-      columnName: colName,
-      dimType,
-      dimDisplayName,
-      tableName: activeTable.name,
-      tableId: activeTable.id,
-      tableGivenId: activeTable.given_id,
-      autoPath: [],
-    });
-  }
-
-  // Process FK groups. Use a shared visited set so parallel auto-traversals
-  // don't independently reach the same dim type (the first path wins).
-  for (const [targetDim, fkCols] of Object.entries(fksByTarget)) {
-    const targetDisplayName = dimTypeMap[targetDim]?.display_name ?? targetDim;
-
-    if (fkCols.length >= 2) {
-      // Many-to-one: emit as doors (user chooses which FK to traverse).
-      for (const colName of fkCols) {
-        doors.push({
-          columnName: colName,
-          targetDim,
-          targetDimDisplayName: targetDisplayName,
-        });
-      }
-    } else if (!visited.has(targetDim)) {
-      // One-to-one: auto-traverse silently. The visited check here guards
-      // against a dim type already claimed by an earlier sibling traversal.
-      const throughCol = fkCols[0];
-      const deeper = computeLevel(
-        targetDim,
-        index_type,
-        tablesByDim,
-        dimTypeMap,
-        visited
-      );
-
-      // Prepend this hop to each deeper column's autoPath.
-      for (const col of deeper.columns) {
-        columns.push({
-          ...col,
-          autoPath: [{ throughCol, toDim: targetDim }, ...col.autoPath],
-        });
-      }
-
-      // Merge deeper doors (these become doors at the current level too,
-      // since the user can't interact with auto-traversed hops).
-      doors.push(...deeper.doors);
-
-      // Merge deeper supplemental tables, prepending this hop to their
-      // autoPath so callers know how they were reached.
-      for (const st of deeper.supplementalTables) {
-        supplementalTables.push({
-          ...st,
-          autoPath: [{ throughCol, toDim: targetDim }, ...st.autoPath],
-        });
+          for (const st of deeper.supplementalTables) {
+            supplementalTables.push({ ...st, autoPath: [hop, ...st.autoPath] });
+          }
+        }
       }
     }
-  }
 
-  return { doors, supplementalTables, columns };
+    return { doors, supplementalTables, columns };
+  };
+
+  const result = walk(dimType, startTable);
+  plan?.claims.forEach((_, dim) => visited.add(dim));
+
+  return result;
 }
 
 /**

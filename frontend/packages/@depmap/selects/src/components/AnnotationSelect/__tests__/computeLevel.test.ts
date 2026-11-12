@@ -300,3 +300,121 @@ describe("computeLevel", () => {
     ]);
   });
 });
+
+const tbl = (
+  id: string,
+  columns: Record<string, string | null>
+): TableDescriptor =>
+  ({
+    id,
+    given_id: id,
+    name: id,
+    columns: Object.fromEntries(
+      Object.entries(columns).map(([k, ref]) => [
+        k,
+        ref ? { col_type: "text", references: ref } : { col_type: "text" },
+      ])
+    ),
+  } as any);
+
+const dim = (name: string): DimensionTypeDescriptor =>
+  ({
+    name,
+    display_name: name,
+    id_column: "id",
+    axis: "sample",
+    metadata_dataset_id: `${name}_md`,
+  } as any);
+
+const ROUTE_DIM_TYPES: Record<string, DimensionTypeDescriptor> = {
+  screen: dim("screen"),
+  model_condition: dim("model_condition"),
+  depmap_model: dim("depmap_model"),
+};
+
+const ROUTE_LEAF_TABLES = {
+  model_condition: [tbl("model_condition_md", { ModelID: "depmap_model" })],
+  depmap_model: [tbl("depmap_model_md", { lineage: null })],
+};
+
+describe("computeLevel route choice", () => {
+  const run = (screenCols: Record<string, string | null>) =>
+    computeLevel(
+      "screen",
+      "screen",
+      { screen: [tbl("screen_md", screenCols)], ...ROUTE_LEAF_TABLES },
+      ROUTE_DIM_TYPES,
+      new Set()
+    );
+
+  const lineagePath = (result: ReturnType<typeof computeLevel>) =>
+    result.columns.find((c) => c.columnName === "lineage")?.autoPath;
+
+  const VIA_CONDITION = [
+    { throughCol: "ModelConditionID", toDim: "model_condition" },
+    { throughCol: "ModelID", toDim: "depmap_model" },
+  ];
+
+  it("treats the direct ModelID as a shortcut when ModelID is declared first", () => {
+    const result = run({
+      ModelID: "depmap_model",
+      ModelConditionID: "model_condition",
+    });
+
+    expect(lineagePath(result)).toEqual(VIA_CONDITION);
+  });
+
+  it("treats the direct ModelID as a shortcut when ModelConditionID is declared first", () => {
+    const result = run({
+      ModelConditionID: "model_condition",
+      ModelID: "depmap_model",
+    });
+
+    expect(lineagePath(result)).toEqual(VIA_CONDITION);
+    expect(
+      result.columns.filter((c) => c.tableId === "depmap_model_md")
+    ).toHaveLength(1);
+  });
+
+  it("keeps the direct route when nothing else reaches the target", () => {
+    const result = run({ ModelID: "depmap_model" });
+
+    expect(lineagePath(result)).toEqual([
+      { throughCol: "ModelID", toDim: "depmap_model" },
+    ]);
+  });
+
+  it("does not drop either FK when two dims reference each other", () => {
+    const tables = {
+      start: [tbl("start_md", { to_a: "a", to_b: "b" })],
+      a: [tbl("a_md", { to_b: "b" })],
+      b: [tbl("b_md", { to_a: "a" })],
+    };
+    const dims = { start: dim("start"), a: dim("a"), b: dim("b") };
+    const result = computeLevel("start", "start", tables, dims, new Set());
+    const dimsReached = new Set(result.columns.map((c) => c.dimType));
+
+    expect(dimsReached).toEqual(new Set(["start", "a", "b"]));
+  });
+
+  it("breaks equal-length ties alphabetically by FK column name", () => {
+    const tables = {
+      start: [tbl("start_md", { zz: "mid_a", aa: "mid_b" })],
+      mid_a: [tbl("mid_a_md", { to_end: "end" })],
+      mid_b: [tbl("mid_b_md", { to_end: "end" })],
+      end: [tbl("end_md", { v: null })],
+    };
+    const dims = {
+      start: dim("start"),
+      mid_a: dim("mid_a"),
+      mid_b: dim("mid_b"),
+      end: dim("end"),
+    };
+    const result = computeLevel("start", "start", tables, dims, new Set());
+
+    expect(result.columns.find((c) => c.dimType === "end")?.autoPath).toEqual([
+      { throughCol: "aa", toDim: "mid_b" },
+      { throughCol: "to_end", toDim: "end" },
+    ]);
+  });
+});

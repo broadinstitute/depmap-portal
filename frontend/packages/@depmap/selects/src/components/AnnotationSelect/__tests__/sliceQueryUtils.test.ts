@@ -1,5 +1,6 @@
 import { SliceQuery } from "@depmap/types";
 import { buildSliceQuery, deriveNavStateFromValue } from "../sliceQueryUtils";
+import computeLevel from "../computeLevel";
 import type { DimensionTypeDescriptor, TableDescriptor } from "../types";
 
 const DIM_TYPES: Record<string, DimensionTypeDescriptor> = {
@@ -311,5 +312,59 @@ describe("buildSliceQuery + deriveNavStateFromValue round-trip", () => {
     );
 
     expect(rebuilt).toEqual(initial);
+  });
+});
+
+describe("deriveNavStateFromValue vs computeLevel door counting", () => {
+  // A → B (x); B → A twice (p, q). computeLevel ignores B's FKs to A because
+  // A is already visited, so it never offers p or q.
+  // deriveNavStateFromValue counts every FK in the table, so it treats a
+  // value that hops through p as a door.
+  const mk = (id: string, columns: Record<string, string | null>) =>
+    ({
+      id,
+      given_id: id,
+      name: id,
+      columns: Object.fromEntries(
+        Object.entries(columns).map(([k, ref]) => [
+          k,
+          ref ? { col_type: "text", references: ref } : { col_type: "text" },
+        ])
+      ),
+    } as any);
+  const d = (name: string) =>
+    ({ name, display_name: name, metadata_dataset_id: `${name}_md` } as any);
+
+  const TABLES = {
+    a: [mk("a_md", { x: "b", v: null })],
+    b: [mk("b_md", { p: "a", q: "a" })],
+  };
+  const DIMS = { a: d("a"), b: d("b") };
+
+  it("computeLevel offers no door for B's duplicate FKs to an already-visited dim", () => {
+    const level = computeLevel("a", "a", TABLES, DIMS, new Set());
+
+    expect(level.doors).toEqual([]);
+  });
+
+  it("deriveNavStateFromValue reports a door hop for the same FKs", () => {
+    const query: SliceQuery = {
+      dataset_id: "a_md",
+      identifier: "v",
+      identifier_type: "column",
+      reindex_through: {
+        dataset_id: "b_md",
+        identifier: "p",
+        identifier_type: "column",
+        reindex_through: {
+          dataset_id: "a_md",
+          identifier: "x",
+          identifier_type: "column",
+        },
+      },
+    };
+    const nav = deriveNavStateFromValue(query, "a", TABLES, DIMS);
+
+    expect(nav.hops).toEqual([{ throughCol: "p", toDim: "a" }]);
   });
 });
