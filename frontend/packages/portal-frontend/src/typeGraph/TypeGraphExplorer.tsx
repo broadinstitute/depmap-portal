@@ -13,6 +13,9 @@ import type {
 const SIZE = 620;
 const CENTER = SIZE / 2;
 const RING = 250;
+const ARROW_GAP = 2;
+
+const nodeRadius = (inDegree: number) => 6 + Math.min(inDegree, 8);
 
 interface Edge {
   from: string;
@@ -209,6 +212,14 @@ function TypeGraphExplorer() {
 
   const edges = useMemo(() => (graph ? buildEdges(graph) : []), [graph]);
 
+  const inDegree = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    edges.forEach((e) => counts.set(e.to, (counts.get(e.to) ?? 0) + 1));
+
+    return counts;
+  }, [edges]);
+
   const positions = useMemo(() => {
     const out: Record<string, { x: number; y: number }> = {};
     const nodes = graph?.dimension_types ?? [];
@@ -285,13 +296,23 @@ function TypeGraphExplorer() {
 
             const active = e.from === selected || e.to === selected;
 
+            // Stop each line at the circle's edge so the arrowhead is visible
+            // instead of hidden underneath the node.
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const length = Math.hypot(dx, dy) || 1;
+            const ux = dx / length;
+            const uy = dy / length;
+            const startGap = nodeRadius(inDegree.get(e.from) ?? 0);
+            const endGap = nodeRadius(inDegree.get(e.to) ?? 0) + ARROW_GAP;
+
             return (
               <line
                 key={`${e.from}>${e.to}`}
-                x1={a.x}
-                y1={a.y}
-                x2={b.x}
-                y2={b.y}
+                x1={a.x + ux * startGap}
+                y1={a.y + uy * startGap}
+                x2={b.x - ux * endGap}
+                y2={b.y - uy * endGap}
                 stroke={active ? "#1565c0" : "#bbb"}
                 strokeWidth={active ? 2 : 1}
                 strokeDasharray={e.hasList ? "5 3" : undefined}
@@ -302,7 +323,7 @@ function TypeGraphExplorer() {
           {Object.entries(positions).map(([name, p]) => {
             const dim =
               filter && name.toLowerCase().includes(filter.toLowerCase());
-            const inDegree = edges.filter((e) => e.to === name).length;
+            const degree = inDegree.get(name) ?? 0;
 
             return (
               <g
@@ -312,14 +333,14 @@ function TypeGraphExplorer() {
                 onClick={() => setSelected(name)}
               >
                 <circle
-                  r={6 + Math.min(inDegree, 8)}
+                  r={nodeRadius(degree)}
                   fill={
                     name === selected ? "#1565c0" : dim ? "#ffb300" : "#fff"
                   }
                   stroke="#555"
                 />
                 <text
-                  y={-12 - Math.min(inDegree, 8)}
+                  y={-6 - nodeRadius(degree)}
                   textAnchor="middle"
                   fontSize={10}
                 >
