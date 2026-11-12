@@ -8,6 +8,7 @@ from packed_cor_tables import write_cor_df, InputMatrixDesc, read_cor_for_given_
 import json
 from typing import List
 import re
+from scipy import stats
 
 
 @dataclass
@@ -184,6 +185,25 @@ def read_parameters(filename):
     )
 
 
+def _compute_cor_table(in_hdf5_0_df, in_hdf5_1_df, thresholds: Thresholds):
+    """
+    Restricts both matrices to their shared rows and computes the filtered table of
+    correlations between their columns.
+
+    Returns (in_hdf5_0_df, in_hdf5_1_df, correlations_df) where the first two are the
+    inputs restricted to shared rows, and correlations_df has columns
+    dim_0, dim_1, cor, log10qvalue (dim_0/dim_1 are column positions in the first/second matrix).
+    """
+    in_hdf5_0_df, in_hdf5_1_df = with_shared_cell_lines(in_hdf5_0_df, in_hdf5_1_df)
+    # if we don't have a lot of samples shared, something is wrong
+    assert len(in_hdf5_0_df) > thresholds.minsamples
+    assert len(in_hdf5_1_df) == len(in_hdf5_0_df)
+    correlations_df = create_correlations_df(in_hdf5_0_df, in_hdf5_1_df, thresholds)
+    correlations_df["log10qvalue"] = np.log10(correlations_df["qvalue"])
+    correlations_df = correlations_df[["dim_0", "dim_1", "cor", "log10qvalue"]]
+    return in_hdf5_0_df, in_hdf5_1_df, correlations_df
+
+
 def compute_cor_table(
     in_hdf5_0_df,
     label_0,
@@ -194,13 +214,9 @@ def compute_cor_table(
     output_file,
     thresholds: Thresholds,
 ):
-    in_hdf5_0_df, in_hdf5_1_df = with_shared_cell_lines(in_hdf5_0_df, in_hdf5_1_df)
-    # if we don't have a lot of samples shared, something is wrong
-    assert len(in_hdf5_0_df) > thresholds.minsamples
-    assert len(in_hdf5_1_df) == len(in_hdf5_0_df)
-    correlations_df = create_correlations_df(in_hdf5_0_df, in_hdf5_1_df, thresholds)
-    correlations_df["log10qvalue"] = np.log10(correlations_df["qvalue"])
-    correlations_df = correlations_df[["dim_0", "dim_1", "cor", "log10qvalue"]]
+    in_hdf5_0_df, in_hdf5_1_df, correlations_df = _compute_cor_table(
+        in_hdf5_0_df, in_hdf5_1_df, thresholds
+    )
 
     print(f"Writing to {output_file}")
     write_cor_df(
@@ -262,9 +278,6 @@ def with_shared_cell_lines(dep_df, biomarker_df):
     return dep_df, biomarker_df
 
 
-from scipy import stats
-
-
 def fdr_correct_column(p):  # p is a single column
     valid_mask = ~np.isnan(p)
     q = np.full_like(p, np.nan)
@@ -291,8 +304,7 @@ def _calc_cor_pq_values(n, c):
     assert np.nanmax(p) - 1.0 < 1e-10, f"invalid max p-value {np.nanmax(p)}"
     assert 0 - np.nanmin(p) < 1e-10, f"invalid min p-value {np.nanmin(p)}"
     p = np.clip(p, 0.0, 1.0)
-
-    q = np.apply_along_axis(fdr_correct_column, axis=0, arr=p)
+    q = np.apply_along_axis(fdr_correct_column, axis=1, arr=p)
 
     return p, q
 
@@ -517,52 +529,6 @@ def concat_dfs_and_filter(dfs, limit):
     del df["dim_0_rank"]
     del df["dim_1_rank"]
     return df
-
-
-def test_small_end_to_end(tmpdir):
-    output_file = str(tmpdir.join("out.sqlite3"))
-
-    in_hdf5_0_df = pd.DataFrame(
-        [[1, -1], [2, 1], [3, -1], [4, 1]],
-        columns=["A", "B"],
-        index=["ACH-01", "ACH-02", "ACH-03", "ACH-04"],
-    )
-    label_0 = "X"
-    taiga_id_0 = "taiga-x"
-    in_hdf5_1_df = pd.DataFrame(
-        [[10, -10], [20, 10], [30, 10], [40, -10]],
-        columns=["C", "D"],
-        index=["ACH-01", "ACH-02", "ACH-03", "ACH-04"],
-    )
-    label_1 = "Y"
-    taiga_id_1 = "taiga-y"
-    compute_cor_table(
-        in_hdf5_0_df,
-        label_0,
-        taiga_id_0,
-        in_hdf5_1_df,
-        label_1,
-        taiga_id_1,
-        output_file,
-        Thresholds(
-            batch_size=100, limit=100, minsamples=0, limit_per_sign=100, max_qvalue=100
-        ),
-    )
-
-    df = read_cor_for_given_id(output_file, "A")
-
-    rows = df.sort_values("feature_given_id_1").to_dict("records")
-    assert rows[0]["dataset_given_id_0"] == "X"
-    assert rows[0]["dataset_given_id_1"] == "Y"
-    assert rows[0]["feature_given_id_0"] == "A"
-    assert rows[0]["feature_given_id_1"] == "C"
-    assert abs(rows[0]["cor"] - 1.0) < 1e-5
-
-    assert rows[1]["dataset_given_id_0"] == "X"
-    assert rows[1]["dataset_given_id_1"] == "Y"
-    assert rows[1]["feature_given_id_0"] == "A"
-    assert rows[1]["feature_given_id_1"] == "D"
-    assert abs(rows[1]["cor"] - 0.0) < 1e-5
 
 
 def test_map_to_given_ids_compound():

@@ -17,12 +17,15 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     liblzma-dev \
     libatomic1 \
-    nodejs \
     && apt-get upgrade -y \
     && rm -rf /var/lib/apt/lists/*
 
 # POST /temp/plot-data runs a self-contained Node bundle (no npm or node packages needed).
-# It needs the global fetch/Headers/FormData of Node >= 18; trixie's distro package is 20.x.
+# It needs the global fetch/Headers/FormData of Node >= 18.
+# We copy just the official node binary instead of installing debian's nodejs package, which
+# drags in node-undici, node-minimatch, etc. as separate packages that keep getting flagged by
+# the vulnerability scanner. The 24 tag floats to the latest 24.x patch on each build.
+COPY --from=node:24-trixie-slim /usr/local/bin/node /usr/local/bin/node
 RUN node --version && node -e 'const major = +process.versions.node.split(".")[0]; if (major < 18) { console.error("Node >= 18 is required, found " + process.version); process.exit(1); }'
 
 # Install pyenv

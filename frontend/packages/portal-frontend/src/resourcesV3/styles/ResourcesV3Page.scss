@@ -53,6 +53,12 @@
 
 .postContent {
   padding: 0 20px;
+
+  /* the fixed 50px site nav would otherwise cover the target of a #hash
+     scroll; leave a little breathing room below it too */
+  [id] {
+    scroll-margin-top: 70px;
+  }
 }
 
 /* styling for the nav accordions section */

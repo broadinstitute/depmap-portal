@@ -1848,6 +1848,24 @@ class TestDelete:
             os.path.join(settings.filestore_location, dataset_in_private_group_id)
         )
 
+    def test_update_no_write_permissions(
+        self, client: TestClient, minimal_db: SessionWithUser, settings
+    ):
+        headers = {"X-Forwarded-User": "anyone"}
+        dataset = factories.matrix_dataset(minimal_db, settings)
+        original_name = dataset.name
+
+        r = client.patch(
+            f"/datasets/{dataset.id}",
+            json={"format": "matrix", "name": "should not change"},
+            headers=headers,
+        )
+        assert r.status_code == 403
+
+        r = client.get(f"/datasets/{dataset.id}", headers=headers)
+        assert_status_ok(r)
+        assert r.json()["name"] == original_name
+
     def test_delete_no_permissions(
         self, client: TestClient, minimal_db: SessionWithUser, settings
     ):

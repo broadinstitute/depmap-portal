@@ -4,24 +4,35 @@ description: "Checks out and prepares poetry (with caching)"
 runs:
   using: "composite"
   steps:
+    # Pin python rather than using the runner's default. ubuntu-latest moved to 26.04
+    # (python 3.14), which pydantic-core 2.33.2 in breadbox's lock can't build for.
+    - name: "Set up Python"
+      id: setup-python
+      uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+      with:
+        python-version: "3.12"
+
     - name: "Compute poetry cache dir"
       id: "poetry-cachedir"
       run: 'echo POETRY_CACHEDIR="$HOME/.cache/pypoetry" >> "$GITHUB_OUTPUT"'
       shell: bash
 
+    # Install from PyPI via pipx rather than snok/install-poetry which is now behind Cloudflare. 
+    # That action fetches install.python-poetry.org with Python's urllib, whose user agent 
+    # is blocked by Cloudflare and it returns a 403.
     - name: "Install and configure Poetry"
-      uses: snok/install-poetry@76e04a911780d5b312d89783f7b1cd627778900a # v1.4.1
-      with:
-        version: 1.8.2
-        virtualenvs-create: true
-        virtualenvs-in-project: true
+      shell: bash
+      run: |
+        pipx install --python "${{ steps.setup-python.outputs.python-path }}" poetry==1.8.2
+        poetry config virtualenvs.create true
+        poetry config virtualenvs.in-project true
 
     - name: "Set up poetry cache"
       uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
       id: cached-poetry-dependencies
       with:
         path: "${{ steps.poetry-cachedir.outputs.POETRY_CACHEDIR }}"
-        key: "breadbox-venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('breadbox*/**/poetry.lock') }}"
+        key: "breadbox-venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('breadbox*/**/poetry.lock') }}"
 #    - name: "peek at poetry cachedir (for debugging)"
 #      run: "ls -l ${{ steps.poetry-cachedir.outputs.POETRY_CACHEDIR }}/* || true"
 #      shell: bash

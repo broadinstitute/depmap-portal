@@ -487,3 +487,41 @@ def test_validate_data_slicer_features(minimal_db, settings, client: TestClient)
         "featureID1",
         "FEATUREID2",
     }
+
+
+def test_data_slicer_download_validation(client: TestClient, settings):
+    import os
+
+    task_dir = os.path.join(settings.compute_results_location, "20240101", "abc")
+    os.makedirs(task_dir, exist_ok=True)
+    with open(os.path.join(task_dir, "export.csv"), "w") as f:
+        f.write("a,b\n1,2\n")
+
+    url = "/downloads/data_slicer/download"
+    ok = client.get(
+        url, params={"name": "x.csv", "file_path": "20240101/abc/export.csv"}
+    )
+    assert ok.status_code == 200
+
+    bad_paths = [
+        "../../etc/passwd",
+        "20240101/../../etc/passwd",
+        "/etc/passwd",
+        "20240101/abc/../abc/export.csv",
+        "20240101\\abc\\export.csv",
+        "export.csv",
+    ]
+    for p in bad_paths:
+        r = client.get(url, params={"name": "x.csv", "file_path": p})
+        assert r.status_code == 400, p
+
+    for n in ["../x.csv", "a/b.csv", "a\\b.csv", "", "a\r\nX-Evil: 1.csv", "a\x00.csv", "a\x7f.csv"]:
+        r = client.get(
+            url, params={"name": n, "file_path": "20240101/abc/export.csv"}
+        )
+        assert r.status_code == 400, n
+
+    r = client.get(
+        url, params={"name": "x.csv", "file_path": "20240101/abc/missing.csv"}
+    )
+    assert r.status_code == 404

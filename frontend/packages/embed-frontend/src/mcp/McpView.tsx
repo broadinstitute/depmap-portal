@@ -9,6 +9,13 @@ import {
 import { PlotView } from "../components/Plot";
 import { EMBEDDED_PLOT_STYLES } from "../utils/embeddedPlotStyles";
 import { codeGenerationBlocked } from "./codegen";
+import {
+  describePlotError,
+  failureNote,
+  plotId,
+  PlotErrorInfo,
+  successNote,
+} from "./plotErrors";
 
 // Hosts mount every past view in a chat at once, and some discard views within
 // a fraction of a second. So the tool result is only stored on arrival; the
@@ -30,6 +37,13 @@ const DEFAULT_HEIGHT = 480;
 const LINK_ROW_HEIGHT = 28;
 const GET_PLOT_DATA_TOOL = "get_plot_data";
 
+// Shown in place of "Loading plot data…" once a load has taken this long.
+export const SLOW_LOAD_HINT_MS = 8000;
+// Automatic retries for busy errors: delay n is BASE * 2^(n-1) plus jitter.
+export const MAX_AUTO_RETRIES = 2;
+export const AUTO_RETRY_BASE_MS = 1000;
+export const AUTO_RETRY_JITTER_MS = 1000;
+
 type PlotData = DataExplorerPlotResponse & {
   plot_config: DataExplorerPlotConfig;
   linreg_by_group?: LinRegInfo[];
@@ -47,7 +61,8 @@ type State =
   | { kind: "waiting" }
   | { kind: "queued" }
   | { kind: "loading" }
-  | { kind: "error"; message: string }
+  | { kind: "retrying"; userText: string }
+  | { kind: "error"; message: string; failure?: PlotErrorInfo }
   | { kind: "ready"; data: PlotData };
 
 interface ToolResultLike {
@@ -65,12 +80,12 @@ function parsePlotData(result: ToolResultLike): PlotData {
   const text = firstText(result);
 
   if (result.isError) {
-    // Looks like "code: message".
-    throw new Error(text || "The plot data request failed.");
+    // Looks like "code: message". Only the code is ever shown.
+    throw new Error(text || "unknown: The plot data request failed.");
   }
 
   if (text === null) {
-    throw new Error("The plot data response had no text content.");
+    throw new Error("bad_response: The response had no text content.");
   }
 
   let parsed: unknown;
@@ -78,7 +93,7 @@ function parsePlotData(result: ToolResultLike): PlotData {
   try {
     parsed = JSON.parse(text);
   } catch (e) {
-    throw new Error("The plot data response was not valid JSON.");
+    throw new Error("bad_response: The response was not valid JSON.");
   }
 
   if (
@@ -86,7 +101,7 @@ function parsePlotData(result: ToolResultLike): PlotData {
     typeof parsed !== "object" ||
     !(parsed as PlotData).plot_config
   ) {
-    throw new Error("The plot data response was missing `plot_config`.");
+    throw new Error("bad_response: The response was missing `plot_config`.");
   }
 
   return parsed as PlotData;
@@ -118,6 +133,8 @@ function McpView() {
   const [height, setHeight] = useState(DEFAULT_HEIGHT);
   const [visible, setVisible] = useState(false);
   const [plotKey, setPlotKey] = useState(0);
+  const [attempt, setAttempt] = useState(0);
+  const [slow, setSlow] = useState(false);
   const [gaveUp, setGaveUp] = useState(false);
   const [blocked] = useState(() => codeGenerationBlocked());
   const inHost = window.parent !== window;
@@ -128,7 +145,10 @@ function McpView() {
   const visibleRef = useRef(false);
   const readyRef = useRef(false);
   const latestRequestId = useRef(0);
-  const fetchedRequestId = useRef(0);
+  const fetchedKey = useRef("");
+  const autoRetries = useRef(0);
+  const autoRetryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const noteSent = useRef(false);
   const recovery = useRef<{
     attempts: number;
     pending: ReturnType<typeof setTimeout> | null;
@@ -145,11 +165,17 @@ function McpView() {
     r.stable = null;
   };
 
+  const clearAutoRetryTimer = () => {
+    if (autoRetryTimer.current) clearTimeout(autoRetryTimer.current);
+    autoRetryTimer.current = null;
+  };
+
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
       clearRecoveryTimers();
+      clearAutoRetryTimer();
     };
   }, []);
 
@@ -206,6 +232,10 @@ function McpView() {
       }
 
       latestRequestId.current += 1;
+      clearAutoRetryTimer();
+      autoRetries.current = 0;
+      noteSent.current = false;
+      setAttempt(0);
       setGaveUp(false);
       setState({ kind: "queued" });
       setRequest({
@@ -263,15 +293,29 @@ function McpView() {
     return () => observer.disconnect();
   }, [inHost]);
 
-  // Fetch once, after being continuously visible for the debounce. Becoming
-  // hidden cancels the timer; becoming visible again later does not refetch.
+  // Tells the model about the outcome, if the host accepts it. Fire and
+  // forget; a note is plain text built from a fixed template.
+  const tellModel = (text: string) => {
+    const app = appRef.current;
+
+    if (!app || !app.getHostCapabilities()?.updateModelContext?.text) {
+      return;
+    }
+
+    app.updateModelContext({ content: [{ type: "text", text }] }).catch((e) => {
+      if (debugEnabled()) {
+        window.console.debug("[mcp view] updateModelContext failed", e);
+      }
+    });
+  };
+
+  // Fetch after being continuously visible for the debounce. Becoming hidden
+  // cancels the timer; becoming visible again later does not refetch. A retry
+  // is the same effect with a new attempt number.
   useEffect(() => {
-    if (
-      !request ||
-      !visible ||
-      blocked ||
-      fetchedRequestId.current === request.id
-    ) {
+    const key = request ? `${request.id}:${attempt}` : "";
+
+    if (!request || !visible || blocked || fetchedKey.current === key) {
       return undefined;
     }
 
@@ -282,34 +326,118 @@ function McpView() {
         return;
       }
 
-      fetchedRequestId.current = request.id;
+      const isCurrent = () =>
+        mountedRef.current && latestRequestId.current === request.id;
+
+      fetchedKey.current = key;
       setState({ kind: "loading" });
 
+      const fail = (info: PlotErrorInfo) => {
+        if (!isCurrent()) {
+          return;
+        }
+
+        if (info.retry === "auto" && autoRetries.current < MAX_AUTO_RETRIES) {
+          autoRetries.current += 1;
+          const delay =
+            AUTO_RETRY_BASE_MS * 2 ** (autoRetries.current - 1) +
+            Math.random() * AUTO_RETRY_JITTER_MS;
+
+          setState({ kind: "retrying", userText: info.userText });
+          clearAutoRetryTimer();
+          autoRetryTimer.current = setTimeout(() => {
+            autoRetryTimer.current = null;
+
+            if (isCurrent()) {
+              // Back to queued; the effect fetches once we're visible.
+              setState({ kind: "queued" });
+              setAttempt((a) => a + 1);
+            }
+          }, delay);
+          return;
+        }
+
+        // A busy error that ran out of retries becomes a manual one.
+        const finalInfo: PlotErrorInfo =
+          info.retry === "auto"
+            ? {
+                ...info,
+                retry: "manual",
+                userText: info.exhaustedUserText ?? info.userText,
+              }
+            : info;
+
+        setState({
+          kind: "error",
+          message: finalInfo.userText,
+          failure: finalInfo,
+        });
+
+        if (finalInfo.modelText) {
+          noteSent.current = true;
+          tellModel(
+            failureNote(
+              plotId(request.params),
+              (request.params as { plot_type?: unknown })?.plot_type,
+              finalInfo
+            )
+          );
+        }
+      };
+
+      let response: unknown;
+
       try {
-        const response = await app.callServerTool({
+        response = await app.callServerTool({
           name: GET_PLOT_DATA_TOOL,
           arguments: {
             api_version: request.apiVersion,
             params: request.params,
           },
         });
-        const data = parsePlotData(response as ToolResultLike);
-
-        if (mountedRef.current && latestRequestId.current === request.id) {
-          setState({ kind: "ready", data });
-        }
       } catch (e) {
-        if (mountedRef.current && latestRequestId.current === request.id) {
-          setState({
-            kind: "error",
-            message: e instanceof Error ? e.message : String(e),
-          });
+        fail(describePlotError(e instanceof Error ? e : new Error(String(e))));
+        return;
+      }
+
+      let data: PlotData;
+
+      try {
+        data = parsePlotData(response as ToolResultLike);
+      } catch (e) {
+        fail(describePlotError(e instanceof Error ? e.message : String(e)));
+        return;
+      }
+
+      if (isCurrent()) {
+        setState({ kind: "ready", data });
+
+        if (noteSent.current) {
+          noteSent.current = false;
+          tellModel(
+            successNote(
+              plotId(request.params),
+              (request.params as { plot_type?: unknown })?.plot_type
+            )
+          );
         }
       }
     }, VISIBLE_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
-  }, [request, visible, blocked]);
+  }, [request, visible, blocked, attempt]);
+
+  // After a while, say that large plots are slow rather than stuck.
+  useEffect(() => {
+    setSlow(false);
+
+    if (state.kind !== "loading") {
+      return undefined;
+    }
+
+    const timer = setTimeout(() => setSlow(true), SLOW_LOAD_HINT_MS);
+    return () => clearTimeout(timer);
+  }, [state.kind]);
 
   // Leaving the view unmounts the plot (see render), which is what releases
   // its WebGL contexts. Coming back remounts from the data in memory, with a
@@ -381,6 +509,13 @@ function McpView() {
     []
   );
 
+  const tryAgain = () => {
+    clearAutoRetryTimer();
+    autoRetries.current = 0;
+    setState({ kind: "queued" });
+    setAttempt((a) => a + 1);
+  };
+
   const retry = () => {
     clearRecoveryTimers();
     recovery.current.attempts = 0;
@@ -442,7 +577,32 @@ function McpView() {
   } else if (state.kind === "queued") {
     content = <Message>Plot will load when visible…</Message>;
   } else if (state.kind === "loading") {
-    content = <Message>Loading plot data…</Message>;
+    content = (
+      <Message>
+        Loading plot data…
+        {slow && " large plots can take up to 30 seconds."}
+      </Message>
+    );
+  } else if (state.kind === "retrying") {
+    content = <Message>{state.userText}</Message>;
+  } else if (state.kind === "error" && state.failure) {
+    content = (
+      <Message>
+        {state.failure.userText}{" "}
+        <code style={{ fontSize: "0.8em" }}>{state.failure.code}</code>
+        {state.failure.retry === "manual" && (
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={tryAgain}
+            onKeyDown={(e) => e.key === "Enter" && tryAgain()}
+            style={{ marginTop: 8, cursor: "pointer", color: "#337ab7" }}
+          >
+            Try again
+          </div>
+        )}
+      </Message>
+    );
   } else if (state.kind === "error") {
     content = <Message>Cannot render plot. {state.message}</Message>;
   } else {

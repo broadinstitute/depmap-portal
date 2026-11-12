@@ -598,6 +598,12 @@ def update_dataset(
 
     """
     dataset = _get_required_dataset(db, dataset_id)
+
+    if not dataset_crud.user_has_access_to_group(
+        dataset.group, user, write_access=True
+    ):
+        raise HTTPException(403, "You do not have permission to update this dataset")
+
     if dataset.format == "matrix_dataset":
         if not isinstance(dataset_update_params, MatrixDatasetUpdateParams):
             raise UserError(
