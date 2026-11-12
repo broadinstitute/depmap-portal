@@ -294,6 +294,13 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  &[data-unresolved="true"] {
+    color: var(--text-muted);
+    font-style: italic;
+    text-decoration: line-through;
+    text-decoration-color: var(--text-faint);
+  }
 }
 
 .comboboxClear {

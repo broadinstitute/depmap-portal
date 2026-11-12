@@ -1,5 +1,9 @@
 import { SliceQuery } from "@depmap/types";
-import { buildSliceQuery, deriveNavStateFromValue } from "../sliceQueryUtils";
+import {
+  buildSliceQuery,
+  checkValueResolves,
+  deriveNavStateFromValue,
+} from "../sliceQueryUtils";
 import computeLevel from "../computeLevel";
 import type { DimensionTypeDescriptor, TableDescriptor } from "../types";
 
@@ -366,5 +370,99 @@ describe("deriveNavStateFromValue vs computeLevel door counting", () => {
     const nav = deriveNavStateFromValue(query, "a", TABLES, DIMS);
 
     expect(nav.hops).toEqual([{ throughCol: "p", toDim: "a" }]);
+  });
+});
+
+describe("checkValueResolves", () => {
+  const chain = (
+    leafDataset: string,
+    leafColumn: string,
+    hopDataset?: string,
+    hopColumn?: string
+  ): SliceQuery => ({
+    dataset_id: leafDataset,
+    identifier: leafColumn,
+    identifier_type: "column",
+    ...(hopDataset && {
+      reindex_through: {
+        dataset_id: hopDataset,
+        identifier: hopColumn as string,
+        identifier_type: "column",
+      },
+    }),
+  });
+
+  it("accepts a flat column and a one-hop chain", () => {
+    expect(
+      checkValueResolves(
+        chain("antibody_metadata", "label"),
+        "antibody",
+        TABLES_BY_DIM
+      )
+    ).toEqual({ resolved: true });
+
+    expect(
+      checkValueResolves(
+        chain("gene_metadata", "symbol", "antibody_metadata", "target_gene_fk"),
+        "antibody",
+        TABLES_BY_DIM
+      )
+    ).toEqual({ resolved: true });
+  });
+
+  it("rejects a dataset that is not in the schema", () => {
+    const result = checkValueResolves(
+      chain("removed_dataset", "symbol", "antibody_metadata", "target_gene_fk"),
+      "antibody",
+      TABLES_BY_DIM
+    );
+
+    expect(result.resolved).toBe(false);
+  });
+
+  it("rejects a root table at the wrong index type", () => {
+    const result = checkValueResolves(
+      chain("gene_metadata", "symbol"),
+      "antibody",
+      TABLES_BY_DIM
+    );
+
+    expect(result.resolved).toBe(false);
+  });
+
+  it("rejects a missing column", () => {
+    expect(
+      checkValueResolves(
+        chain("gene_metadata", "gone", "antibody_metadata", "target_gene_fk"),
+        "antibody",
+        TABLES_BY_DIM
+      ).resolved
+    ).toBe(false);
+  });
+
+  it("rejects an intermediate column that is not a foreign key", () => {
+    expect(
+      checkValueResolves(
+        chain("gene_metadata", "symbol", "antibody_metadata", "label"),
+        "antibody",
+        TABLES_BY_DIM
+      ).resolved
+    ).toBe(false);
+  });
+
+  it("rejects a hop that lands on a different type than the next table", () => {
+    // screen_metadata is not indexed by gene.
+    expect(
+      checkValueResolves(
+        chain(
+          "screen_metadata",
+          "label",
+          "antibody_metadata",
+          "target_gene_fk"
+        ),
+        "antibody",
+        TABLES_BY_DIM
+      ).resolved
+    ).toBe(false);
   });
 });
