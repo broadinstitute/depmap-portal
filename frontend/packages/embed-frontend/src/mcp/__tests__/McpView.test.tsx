@@ -11,6 +11,8 @@ const mockApp = {
   connect: jest.fn(),
   callServerTool: jest.fn(),
   getHostContext: jest.fn(),
+  getHostCapabilities: jest.fn(() => ({})),
+  updateModelContext: jest.fn(() => Promise.resolve({})),
   openLink: jest.fn(),
 };
 
@@ -74,7 +76,9 @@ async function advance(ms: number) {
 import McpView, {
   VISIBLE_DEBOUNCE_MS,
   MAX_RECOVERY_ATTEMPTS,
+  SLOW_LOAD_HINT_MS,
 } from "../McpView";
+import { plotId } from "../plotErrors";
 
 const PLOT_DATA = {
   plot_config: { plot_type: "scatter", normalized: true },
@@ -125,6 +129,8 @@ beforeEach(() => {
   mockApp.connect.mockReset().mockResolvedValue(undefined);
   mockApp.getHostContext.mockReturnValue(undefined);
   mockApp.callServerTool.mockReset();
+  mockApp.getHostCapabilities.mockReset().mockReturnValue({});
+  mockApp.updateModelContext.mockReset().mockResolvedValue({});
   mockApp.ontoolresult = undefined;
   container = document.createElement("div");
   document.body.appendChild(container);
@@ -174,8 +180,9 @@ it("shows the message when the tool call reports an error", async () => {
   await mountAndDeliver(toolResult());
 
   expect(container.textContent).toContain(
-    "forbidden: You can't see this dataset."
+    "You don't have access to some of the data in this plot."
   );
+  expect(container.textContent).not.toContain("You can't see this dataset");
   expect(container.querySelector("[data-testid=plot-view]")).toBeNull();
 });
 
@@ -186,7 +193,7 @@ it("shows an error when the response is not valid JSON", async () => {
 
   await mountAndDeliver(toolResult());
 
-  expect(container.textContent).toContain("not valid JSON");
+  expect(container.textContent).toContain("bad_response");
   expect(container.querySelector("[data-testid=plot-view]")).toBeNull();
 });
 
@@ -195,7 +202,7 @@ it("shows an error when the tool call itself rejects", async () => {
 
   await mountAndDeliver(toolResult());
 
-  expect(container.textContent).toContain("host went away");
+  expect(container.textContent).toContain("Couldn't reach the chat service.");
 });
 
 it("rejects a malformed structuredContent without calling the tool", async () => {

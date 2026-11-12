@@ -38,7 +38,8 @@ def get_current_result_dir():
 
 def write_url_to_local_file(url: str):
     response = requests.get(url, stream=True)
-    return write_fileobj_to_local_file(response.raw)
+    # response.raw is a urllib3 HTTPResponse, which is file-like (supports .read()) but not typed as IO
+    return write_fileobj_to_local_file(typing.cast(typing.IO, response.raw))
 
 
 def write_fileobj_to_local_file(fileobj: typing.IO):

@@ -5,7 +5,7 @@ import os
 import math
 from typing import List, Dict, Any, Optional
 
-screens = ["crispr", "rnai", "oncref"]
+screens = ["crispr", "rnai", "oncref", "repurposing"]
 
 
 def generate_daintree_configs(

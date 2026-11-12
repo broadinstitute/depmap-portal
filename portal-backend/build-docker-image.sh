@@ -59,5 +59,6 @@ DOCKER_BUILDKIT=1 \
   docker build . \
   -t ${IMAGE_TAG} \
   --cache-from us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap:latest \
-  --build-arg BUILDKIT_INLINE_CACHE=1
+  --build-arg BUILDKIT_INLINE_CACHE=1 \
+  --build-arg SECURITY_PATCH_CACHE_BUST="$(date -u +%Y%m%dT%H%M%S)"
 

@@ -446,7 +446,6 @@ parse_downloads.py: error: Argument of type "Any | None" cannot be assigned to p
 parse_downloads.py: error: Argument of type "Any | None" cannot be assigned to parameter "stats" of type "List[Dict[str, Any]]" in function "get_summary_stats"
 parse_downloads.py: error: Argument of type "dict[str, Any | None]" cannot be assigned to parameter "__map" of type "SummaryStatsDict" in function "__init__"
 parse_downloads.py: error: Type "Any | None" is not assignable to declared type "RetractedUrl | str"
-parse_downloads.py: error: Type "Any | None" is not assignable to declared type "date"
 parse_downloads.py: error: Type "List[dict[Unknown, Unknown]]" is not assignable to return type "str"
 parse_downloads.py: error: Type "None" is not assignable to return type "List[FileSource]"
 parse_downloads.py: error: Type "tuple[Unknown | None, DownloadRelease]" is not assignable to return type "Tuple[str, DownloadRelease]"
@@ -531,7 +530,6 @@ subset_translocations.py: error: Argument of type "set[str]" cannot be assigned 
 taiga_id_loader.py: error: No parameter named "canonical_taiga_id" (reportCallIssue)
 taiga_id_loader.py: error: No parameter named "taiga_id" (reportCallIssue)
 task_utils.py: error: Argument of type "FileStorage" cannot be assigned to parameter "fileobj" of type "IO[Unknown]" in function "write_fileobj_to_local_file"
-task_utils.py: error: Argument of type "HTTPResponse | Any" cannot be assigned to parameter "fileobj" of type "IO[Unknown]" in function "write_fileobj_to_local_file"
 tasks.py: error: Argument of type "ArrayLike" cannot be assigned to parameter "column_labels" of type "List[str] | None" in function "_handle_df_nas"
 tasks.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "gene_ids" of type "MutationTableSpec" in function "get_subsetted_mutations_df_by_ids"
 tda_loader.py: error: "groups" is not a known attribute of "None" (reportOptionalMemberAccess)
@@ -732,7 +730,6 @@ views.py: error: Argument of type "str | None" cannot be assigned to parameter "
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "dataset_id" of type "str" in function "get_matrix_dataset"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "entity_id" of type "int" in function "integrate_size_and_label_data"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "model_condition_id" of type "str" in function "get_by_model_condition_id"
-views.py: error: Argument of type "str | None" cannot be assigned to parameter "paths" of type "BytesPath" in function "join"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "s" of type "str | bytes | bytearray" in function "loads"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "s" of type "str | bytes" in function "loads"
 views.py: error: Argument of type "str" cannot be assigned to parameter "_external" of type "bool | None" in function "url_for"
@@ -747,7 +744,6 @@ views.py: error: Cannot access attribute "symbol" for class "Entity"
 views.py: error: Cannot access attribute "values" for class "ndarray[_AnyShape, dtype[Any]]"
 views.py: error: Invalid conditional operand of type "ColumnElement[bool]"
 views.py: error: No overloads for "__setitem__" match the provided arguments (reportCallIssue)
-views.py: error: No overloads for "join" match the provided arguments (reportCallIssue)
 views.py: error: No overloads for "rename" match the provided arguments (reportCallIssue)
 views.py: error: No overloads for "sort_values" match the provided arguments
 views.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)

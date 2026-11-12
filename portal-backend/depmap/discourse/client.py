@@ -1,5 +1,6 @@
 import requests
-from requests.adapters import HTTPAdapter, Retry
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from urllib.parse import urljoin
 import os
 from sqlitedict import SqliteDict

@@ -20,13 +20,14 @@ add-if-missing {
 #When fit_all_actuals='only-ref' we want to only fit models for a small set of known compounds/genes whose
 #results will be interpretable. Add to this list if there's additional examples we can use in the future:
 # Compounds:
-#  DARAXONRASIB PRC-005235888-422-54 PRC-008717476-705-91
-#  IMATINIB would be good but there's too many samples 
-#  DEG-35 PRC-008138974-313-12 (should see P53)
+#  DPC-007545 DARAXONRASIB PRC-005235888-422-54 PRC-008717476-705-91
+#  DPC-003373 IMATINIB would be good but there's too many samples 
+#  DPC-007256 DEG-35 PRC-008138974-313-12 (should see P53)
 #  DEG-37 PRC-000699183-281-19
-#  Temozolomide PRC-008831813-672-71
-let reference_genes_for_testing="MCL1|WRN|PELO"
-let reference_compounds_for_testing="PRC-005235888|PRC-008717476|PRC-008138974|PRC-000699183|PRC-008831813"
+#  DPC-006824 VEMURAFENIB BRD:BRD-K56343971-001-10-6 BRD:BRD-K56343971-001-14-8 BRD:PRC-000323635-836-07
+#  DPC-003981 Temozolomide PRC-008831813-672-71
+let reference_genes_for_testing="CDK6|CDK4|VPS4A|UBE3A|PAX8|JUP|MCL1|WRN|PELO|BRAF"
+let reference_compounds_for_testing="PRC-005235888|PRC-008717476|PRC-008138974|PRC-000699183|PRC-008831813|BRD:BRD-K56343971-001-10-6|BRD:BRD-K56343971-001-14-8|PRC-000323635-836-07"
 
 # creates artifacts for each run of daintree with the parameters daintree will need. Also emits a file containing the model config information that breadbox needs
 rule process_model_config:
@@ -38,12 +39,14 @@ rule process_model_config:
         crispr={"type": "target_matrix", "label": "crispr"},
         rnai={"type": "target_matrix", "label": "rnai"},
         oncref={"type": "target_matrix", "label": "oncref"},
+        repurposing={"type": "target_matrix", "label": "repurposing"},
 
         # Features
         lineage={"type": "feature", "label": "lineage"},
         crispr_confounder={"type": "feature", "label": "crispr_confounder"},
         rnai_confounder={"type": "feature", "label": "rnai_confounder"},
         oncref_confounder={"type": "feature", "label": "oncref_confounder"},
+        repurposing_confounder={"type": "feature", "label": "repurposing_confounder"},
         driver_events={"type": "feature", "label": "driver_events"},
         armlevel_cna={"type": "feature", "label": "armlevel_cna"},
         cytoband_cn={"type": "feature", "label": "cytoband_cn"},
