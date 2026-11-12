@@ -66,10 +66,7 @@ export default function PredictiveInsightsPage({
           />
         ))}
       </div>
-      <h2 className={styles.sectionHeader}>
-        Model Performance — Performance according to{" "}
-        {screenTypes.map(getScreenTypeLabel).join(" and ")}.
-      </h2>
+      <h2 className={styles.sectionHeader}>Individual Model Performance</h2>
       {screenTypes.map((screenType) => (
         <ModelPerformanceSection
           key={screenType.actualsDatasetId}
