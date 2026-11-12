@@ -24,6 +24,12 @@ interface FkGroup {
   cols: string[];
 }
 
+// Locale-independent, so route choice agrees with Breadbox's Python port.
+const compareCodeUnits = (a: string, b: string) => {
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
+};
+
 interface Claim {
   parentDim: string;
   throughCol: string;
@@ -143,8 +149,8 @@ function planTraversal(
     for (const [target, list] of candidates) {
       const winner = [...list].sort(
         (a, b) =>
-          a.path.join("\u0000").localeCompare(b.path.join("\u0000")) ||
-          a.parentDim.localeCompare(b.parentDim)
+          compareCodeUnits(a.path.join("\u0000"), b.path.join("\u0000")) ||
+          compareCodeUnits(a.parentDim, b.parentDim)
       )[0];
       claims.set(target, winner);
       next.push(target);
