@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from operator import and_
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, cast
 from depmap.database import (
     Column,
     ForeignKey,
@@ -261,12 +261,12 @@ class SubtypeContext(Model):
 
         for node in nodes:
             level_codes: List[Optional[str]] = [
-                node.level_0,
-                node.level_1,
-                node.level_2,
-                node.level_3,
-                node.level_4,
-                node.level_5,
+                cast(Optional[str], node.level_0),
+                cast(Optional[str], node.level_1),
+                cast(Optional[str], node.level_2),
+                cast(Optional[str], node.level_3),
+                cast(Optional[str], node.level_4),
+                cast(Optional[str], node.level_5),
             ]
 
             for code in level_codes:
@@ -283,11 +283,11 @@ class SubtypeContext(Model):
                     model.model_id for model in context.depmap_model
                 ]
                 if model_ids:
-                    node_models[context.subtype_code] = model_ids
+                    node_models[str(context.subtype_code)] = model_ids
                     all_model_ids.extend(model_ids)
 
         codes_to_node_name: Dict[str, str] = {
-            node.subtype_code: node.node_name for node in nodes
+            cast(str, node.subtype_code): cast(str, node.node_name) for node in nodes
         }
 
         return NodeBranchModelsResult(

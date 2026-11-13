@@ -272,7 +272,7 @@ def get_branch_subtype_codes_organized_by_code(
         child_nodes: List[
             SubtypeNode
         ] = SubtypeNode.get_children_using_current_level_code(level_0, 0)
-        child_codes: List[str] = [node.subtype_code for node in child_nodes]
+        child_codes: List[str] = [str(node.subtype_code) for node in child_nodes]
 
         result: NodeBranchModelsResult = SubtypeContext.get_model_ids_for_node_branch(
             subtype_codes=child_codes, level_0_subtype_code=level_0,
@@ -342,10 +342,10 @@ def get_card_data(
             # significant. In that case, we still need to get the child nodes of
             # the level_0 so that they can be sorted into an Other <level_0> plot.
             child_nodes = SubtypeNode.get_children_using_current_level_code(level_0, 0)
-            child_codes = [node.subtype_code for node in child_nodes]
-            selected_context_level_0, _ = SubtypeContext.get_model_ids_for_node_branch(
+            child_codes = [str(node.subtype_code) for node in child_nodes]
+            selected_context_level_0 = SubtypeContext.get_model_ids_for_node_branch(
                 subtype_codes=child_codes, level_0_subtype_code=level_0
-            )
+            ).node_models
 
         if selected_context_level_0 != None:
             box_plot_card_data = get_box_plot_card_data(
@@ -387,10 +387,7 @@ def _build_significant_cards_and_mappings(
     entity_full_row_of_values: pd.Series,
     ordered_sig_context_codes: List[str],
 ) -> Tuple[
-    Optional[Any],  # Replace Any with your CardData type if available
-    List[Any],
-    List[str],
-    Dict[str, str],
+    Optional[Any], List[Any], List[str], Dict[str, str],
 ]:
     """Build box plot cards for the selected and secondary branches, plus model/name lookups."""
     sig_contexts_by_level_0 = get_significant_context_codes_indexed_by_level_0(
@@ -433,13 +430,13 @@ def _resolve_level_0_mapping(
     if not level_0 or level_0 in existing_mapping:
         return {}
 
-    level_0_context: Optional[SubtypeContext] = SubtypeContext.get_by_code(
+    level_0_context: Optional[SubtypeNode] = SubtypeNode.get_by_code(
         level_0, must=False
     )
     if level_0_context is None:
         return {}
 
-    return {level_0: level_0_context.node_name}
+    return {level_0: str(level_0_context.node_name)}
 
 
 def get_context_plot_box_data(
