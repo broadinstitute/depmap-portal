@@ -149,7 +149,9 @@ rule run_fit_models:
                     "daintree_input_config_filename": {{ inputs.daintree_input_config.filename | quoted }},
                     "features_metadata_filename" : {"$file_url": result["features_metadata_path"]},
                     "ensemble_filename" : {"$file_url": result["ensemble_path"]},
-                    "predictions_filename": {"$file_url": result["predictions_path"]}}
+                    "predictions_filename": {"$file_url": result["predictions_path"]},
+                    "feature_imp_norm_filename": {"$file_url": result['feature_imp_norms_path']}
+                }
             ]}))
     """
 
