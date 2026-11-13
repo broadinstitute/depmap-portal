@@ -219,12 +219,9 @@ def main():
         type=int,
         help="Number of null permutations (R) used by calc-feature-imp-norm",
     )
-
     parser.add_argument(
-        "--python-to-upload",
-        action="append",
-        default=[],
-        help="Directory which contains python files which should be in python search path so they can contain functions used for preprocessing data. All *.py files in this directory will be transferred to worker nodes into a single directory. May be specified multiple times.",
+        "--extra-python-files",
+        help="Path to directory which contains transforms that daintree will use",
     )
 
     parser.add_argument(
@@ -245,7 +242,7 @@ def main():
         models_per_task=args.models_per_task,
         test_first_n_tasks=args.test_first_n_tasks,
         norm_permutations=args.norm_permutations,
-        python_to_upload=tuple(args.python_to_upload),
+        extra_python_files=args.extra_python_files,
         select_n_features=args.select_n_features,
         filter=args.filter,
     )
