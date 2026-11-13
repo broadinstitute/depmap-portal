@@ -195,8 +195,32 @@ class ReferenceGraphNode(BaseModel):
     tables: List[ReferenceGraphTable]
 
 
+class ReferenceGraphMatrixDataset(BaseModel):
+    """A matrix dataset and the dimension types that index its two axes."""
+
+    id: str
+    given_id: Optional[str] = Field(None,)
+    slice_dataset_id: str = Field(
+        description="The value to use as `dataset_id` in a SliceQuery: `given_id` if set, otherwise `id`."
+    )
+    name: str
+    data_type: str
+    feature_type: Optional[str] = Field(
+        None,
+        description="Dimension type indexing the feature axis (null for sample-only datasets). "
+        "Look it up in `dimension_types` to see what it references.",
+    )
+    sample_type: Optional[str] = Field(
+        None, description="Dimension type indexing the sample axis."
+    )
+
+
 class DimensionTypeReferenceGraph(BaseModel):
     dimension_types: List[ReferenceGraphNode]
+    matrix_datasets: List[ReferenceGraphMatrixDataset] = Field(
+        description="Every matrix dataset visible to the caller, with its axis types. "
+        "Tabular datasets are listed under `dimension_types[].tables`, whose owning type is their index type."
+    )
 
 
 class ReachableColumn(TypedDict):
@@ -263,3 +287,55 @@ class ReachableTables(BaseModel):
     index_type: str
     max_depth: int
     routes: List[ReachableRoute]
+
+
+class ReferencingColumn(BaseModel):
+    """A column, in a table of the referencing type, whose values are IDs of the requested type."""
+
+    column: str
+    cardinality: Literal["scalar", "list"] = Field(
+        description="From the referencing (child) side: 'list' when each cell holds several IDs of the requested type."
+    )
+    relationship_from_child: Literal["many_to_one", "many_to_many"] = Field(
+        description="Each referencing row points at one (scalar) or several (list) rows of the requested type. "
+        "Several referencing rows may share the same target; uniqueness is not recorded."
+    )
+    relationship_from_parent: Literal["one_to_many", "many_to_many"] = Field(
+        description="Seen from a row of the requested type: it may be referenced by many rows of the referencing type."
+    )
+
+
+class ReferencingTable(BaseModel):
+    id: str
+    given_id: Optional[str] = Field(None,)
+    slice_dataset_id: str
+    name: str
+    is_primary: bool = Field(
+        description="True if this is the referencing type's primary (metadata) table."
+    )
+    columns: List[ReachableColumn] = Field(
+        description="The table's own columns. Query them with a plain SliceQuery (no reindex_through) "
+        "on an axis of the referencing type."
+    )
+    references: List[ReferencingColumn] = Field(
+        description="Only the columns that reference the requested type."
+    )
+
+
+class ReferencingType(BaseModel):
+    name: str
+    display_name: str
+    axis: Literal["feature", "sample"]
+    metadata_dataset_id: Optional[str] = Field(None,)
+    tables: List[ReferencingTable]
+
+
+class ReferencedByTypes(BaseModel):
+    """
+    Discovery only. These are the REVERSE of reachable routes: the resolver cannot
+    follow them, so there are no slice_query_templates. To use one, plot at the
+    referencing type's own level.
+    """
+
+    type: str
+    referenced_by: List[ReferencingType]

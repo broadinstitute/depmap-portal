@@ -2049,6 +2049,272 @@ def test_reachable_hides_private_tables(
     assert "rpair_private" in start_tables("someone@private-group.com")
 
 
+def _dose_fixture(db, settings):
+    """
+    rdose --CompoundID--> rcompound: many dose rows per compound, plus a matrix
+    indexed by rdose (a dose-level matrix) and a second list-valued child.
+    """
+    admin = settings.admin_users[0]
+    text = AnnotationType.text
+
+    factories.add_dimension_type(
+        db,
+        settings,
+        user=admin,
+        name="rcompound",
+        display_name="Compound",
+        id_column="ID",
+        axis="feature",
+        annotation_type_mapping={"ID": text, "label": text},
+        reference_column_mappings={},
+        metadata_df=pd.DataFrame({"ID": ["C1", "C2"], "label": ["C1", "C2"]}),
+    )
+    factories.add_dimension_type(
+        db,
+        settings,
+        user=admin,
+        name="rdose",
+        display_name="Compound Dose",
+        id_column="ID",
+        axis="feature",
+        annotation_type_mapping={
+            "ID": text,
+            "label": text,
+            "CompoundID": text,
+            "Dose": text,
+        },
+        reference_column_mappings={"CompoundID": "rcompound"},
+        metadata_df=pd.DataFrame(
+            {
+                "ID": ["D1", "D2", "D3"],
+                "label": ["D1", "D2", "D3"],
+                "CompoundID": ["C1", "C1", "C2"],
+                "Dose": ["0.1", "1", "0.1"],
+            }
+        ),
+    )
+    factories.tabular_dataset(
+        db,
+        settings,
+        given_id="rcompound_panels",
+        name="Compound panels",
+        index_type_name="rcompound",
+        data_df=pd.DataFrame(
+            {"ID": ["C1", "C2"], "label": ["C1", "C2"], "Related": ['["C2"]', '["C1"]']}
+        ),
+        columns_metadata={
+            "ID": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+            "Related": ColumnMetadata(
+                col_type=AnnotationType.list_strings, references="rcompound"
+            ),
+        },
+    )
+    factories.sample_type(
+        db, admin, "rline", display_name="Line", given_ids=["L1", "L2"]
+    )
+    factories.matrix_dataset(
+        db,
+        settings,
+        feature_type="rdose",
+        sample_type="rline",
+        given_id="dose_matrix",
+        dataset_name="Dose matrix",
+        data_file=factories.continuous_matrix_csv_file(
+            feature_ids=["D1", "D2", "D3"], sample_ids=["L1", "L2"]
+        ),
+    )
+
+
+def test_referenced_by(client: TestClient, minimal_db, settings):
+    _dose_fixture(minimal_db, settings)
+    headers = {"X-Forwarded-Email": "anyone@example.com"}
+
+    body = client.get(
+        "types/dimensions/rcompound/referenced-by", headers=headers
+    ).json()
+    assert body["type"] == "rcompound"
+    by_name = {t["name"]: t for t in body["referenced_by"]}
+    # the type itself appears: rcompound_panels.Related is a self-reference
+    assert sorted(by_name) == ["rcompound", "rdose"]
+
+    dose = by_name["rdose"]
+    assert dose["display_name"] == "Compound Dose"
+    assert dose["axis"] == "feature"
+    (table,) = dose["tables"]
+    assert table["is_primary"] is True
+    assert dose["metadata_dataset_id"] == table["id"]
+    assert [c["name"] for c in table["columns"]] == [
+        "CompoundID",
+        "Dose",
+        "ID",
+        "label",
+    ]
+    assert table["references"] == [
+        {
+            "column": "CompoundID",
+            "cardinality": "scalar",
+            "relationship_from_child": "many_to_one",
+            "relationship_from_parent": "one_to_many",
+        }
+    ]
+    assert "slice_query_template" not in table
+
+    (panels,) = by_name["rcompound"]["tables"]
+    assert panels["is_primary"] is False
+    assert panels["references"] == [
+        {
+            "column": "Related",
+            "cardinality": "list",
+            "relationship_from_child": "many_to_many",
+            "relationship_from_parent": "many_to_many",
+        }
+    ]
+
+    # nothing references rdose
+    leaf = client.get("types/dimensions/rdose/referenced-by", headers=headers).json()
+    assert leaf["referenced_by"] == []
+
+    assert (
+        client.get("types/dimensions/nope/referenced-by", headers=headers).status_code
+        == 404
+    )
+
+
+def test_referenced_by_columns_resolve(client: TestClient, minimal_db, settings):
+    """Every advertised child column loads as a plain slice, and the reverse edge
+    is the mirror of a forward route that `reachable` lists and the resolver accepts."""
+    _dose_fixture(minimal_db, settings)
+    headers = {"X-Forwarded-Email": "anyone@example.com"}
+    body = client.get(
+        "types/dimensions/rcompound/referenced-by", headers=headers
+    ).json()
+
+    checked = 0
+    for child in body["referenced_by"]:
+        for table in child["tables"]:
+            for column in table["columns"]:
+                query = {
+                    "dataset_id": table["slice_dataset_id"],
+                    "identifier_type": "column",
+                    "identifier": column["name"],
+                }
+                response = client.post(
+                    "/datasets/dimension/data", json=query, headers=headers
+                )
+                assert response.status_code == 200, (query, response.text)
+                checked += 1
+            for ref in table["references"]:
+                if child["name"] == "rcompound":
+                    # Self-references are listed here but are not forward routes:
+                    # the resolver rejects revisiting a type.
+                    continue
+                forward = client.get(
+                    f"types/dimensions/{child['name']}/reachable", headers=headers
+                ).json()
+                assert any(
+                    r["start_table"] == table["slice_dataset_id"]
+                    and [(h["column"], h["target_type"]) for h in r["hops"]]
+                    == [(ref["column"], "rcompound")]
+                    for r in forward["routes"]
+                ), ref
+    assert checked == 7
+
+
+def test_reverse_routes_are_not_resolvable(client: TestClient, minimal_db, settings):
+    """Why referenced-by carries no templates: a chain from the parent through
+    the child's FK column does not resolve to child-level values."""
+    _dose_fixture(minimal_db, settings)
+    headers = {"X-Forwarded-Email": "anyone@example.com"}
+    query = {
+        "dataset_id": "rdose_metadata",
+        "identifier_type": "column",
+        "identifier": "Dose",
+        "reindex_through": {
+            "dataset_id": "rdose_metadata",
+            "identifier": "CompoundID",
+            "identifier_type": "column",
+        },
+    }
+    response = client.post("/datasets/dimension/data", json=query, headers=headers)
+    # Either rejected or silently empty, never one value per dose.
+    assert response.status_code != 200 or response.json()["values"] == []
+
+
+def test_reference_graph_lists_matrix_datasets(
+    client: TestClient, minimal_db, settings
+):
+    _dose_fixture(minimal_db, settings)
+    body = client.get(
+        "types/dimensions/reference-graph",
+        headers={"X-Forwarded-Email": "anyone@example.com"},
+    ).json()
+    matrices = {m["slice_dataset_id"]: m for m in body["matrix_datasets"]}
+    dose = matrices["dose_matrix"]
+    assert dose["name"] == "Dose matrix"
+    assert dose["feature_type"] == "rdose"
+    assert dose["sample_type"] == "rline"
+    # tabular datasets stay under their type, not in matrix_datasets
+    assert "rdose_metadata" not in matrices
+
+
+def test_referenced_by_hides_private_tables(
+    client: TestClient, minimal_db, settings, private_group
+):
+    _dose_fixture(minimal_db, settings)
+    factories.tabular_dataset(
+        minimal_db,
+        settings,
+        given_id="rdose_private",
+        index_type_name="rdose",
+        group_id=private_group["id"],
+        data_df=pd.DataFrame({"ID": ["D1"], "label": ["D1"], "Secret": ["C1"]}),
+        columns_metadata={
+            "ID": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+            "Secret": ColumnMetadata(
+                col_type=AnnotationType.text, references="rcompound"
+            ),
+        },
+        user=settings.admin_users[0],
+    )
+
+    def tables(email):
+        body = client.get(
+            "types/dimensions/rcompound/referenced-by",
+            headers={"X-Forwarded-Email": email},
+        ).json()
+        return {
+            t["slice_dataset_id"] for c in body["referenced_by"] for t in c["tables"]
+        }
+
+    assert "rdose_private" not in tables("anyone@example.com")
+    assert "rdose_private" in tables("someone@private-group.com")
+
+
+def test_contract_schema_covers_compound_dose():
+    """The checked-in schema keeps compound_dose (a synthetic child of compound_v2),
+    so Delphi's acceptance test sees the many-to-one case."""
+    from breadbox.service.reference_graph import build_referenced_by
+
+    tables = _contract_tables()
+    types = [
+        DimensionType(name=n, display_name=n, axis="feature") for n in sorted(tables)
+    ]
+    body = build_referenced_by(types, tables, "compound_v2")
+    dose = next(t for t in body.referenced_by if t.name == "compound_dose")
+    (table,) = dose.tables
+    assert table.is_primary
+    assert [r.column for r in table.references] == ["CompoundID"]
+    assert "Dose" in [c["name"] for c in table.columns]
+
+    forward = build_reachable(tables, "compound_dose", MAX_HOPS)
+    assert any(
+        [(h.column, h.target_type) for h in r.hops] == [("CompoundID", "compound_v2")]
+        for r in forward.routes
+    )
+
+
 CONTRACT_DIR = Path(__file__).parent.parent / "fixtures" / "reference_graph"
 
 
@@ -2131,6 +2397,6 @@ def test_reachable_matches_contract_fixture():
     path = CONTRACT_DIR / "reachable.json"
 
     if os.environ.get("UPDATE_CONTRACT_FIXTURES"):
-        path.write_text(json.dumps(actual, indent=1, sort_keys=True) + "\n")
+        path.write_text(json.dumps(actual, indent=2, sort_keys=True) + "\n")
 
     assert actual == json.loads(path.read_text())

@@ -16,6 +16,13 @@
     },
     {
       "axis": "feature",
+      "display_name": "Compound at dose",
+      "id_column": "CompoundDoseID",
+      "metadata_dataset_id": "8568fdba-d05f-450b-846e-c35becf7eceb",
+      "name": "compound_dose"
+    },
+    {
+      "axis": "feature",
       "display_name": "Compound",
       "id_column": "CompoundID",
       "metadata_dataset_id": "41966b7d-1117-4e45-8ed0-108ff0b165bf",
@@ -142,6 +149,31 @@
       "id": "7944dd0e-9215-4bbe-96d1-acd392b8bf78",
       "index_type_name": "antibody_v2",
       "name": "antibody_v2 metadata"
+    },
+    {
+      "columns_metadata": {
+        "CompoundDoseID": {
+          "col_type": "text",
+          "references": null
+        },
+        "CompoundID": {
+          "col_type": "text",
+          "references": "compound_v2"
+        },
+        "Dose": {
+          "col_type": "continuous",
+          "references": null
+        },
+        "DoseUnit": {
+          "col_type": "text",
+          "references": null
+        }
+      },
+      "format": "tabular_dataset",
+      "given_id": "compound_dose_metadata",
+      "id": "8568fdba-d05f-450b-846e-c35becf7eceb",
+      "index_type_name": "compound_dose",
+      "name": "compound_dose metadata"
     },
     {
       "columns_metadata": {

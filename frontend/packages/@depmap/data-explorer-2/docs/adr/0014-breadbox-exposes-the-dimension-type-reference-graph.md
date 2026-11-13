@@ -3,7 +3,8 @@
 - **Status:** Accepted
 - **Applies to:** Breadbox (`api/dimension_types.py`, `service/reference_graph.py`,
   `service/reachable.py`), `@depmap/selects` (`AnnotationSelect`), and
-  `generating-de2-links.md` (Delphi's link rules)
+  `generating-de2-links.md` (Delphi's link rules). Extended by ADR 0017 (reverse view,
+  matrix datasets).
 - **Key symbols:** `GET /types/dimensions/reference-graph`,
   `GET /types/dimensions/{name}/reachable`, `slice_query_template`,
   `offered_by_picker`, `computeLevel`, `picker_offers`
@@ -82,5 +83,7 @@ can render as its own selection, so the two must agree.
   a door at the current level, but clicking it records no auto path, so `buildSliceQuery`
   names the wrong source table. `picker_offers` does not treat such routes as offered. This
   is a latent picker bug, not fixed here.
+- **Neutral:** `reachable` is forward-only by design. The reverse direction is a separate,
+  template-free endpoint (ADR 0017).
 - **Neutral:** routes through supplemental tables as intermediate hops are not offered by
   the endpoint, matching the picker.
