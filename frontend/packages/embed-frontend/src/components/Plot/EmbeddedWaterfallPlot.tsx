@@ -9,6 +9,7 @@ import PrototypeScatterPlot from "@depmap/data-explorer-2/src/components/DataExp
 import { useDataExplorerSettings } from "@depmap/data-explorer-2/src/contexts/DataExplorerSettingsContext";
 import type { PlotSelection } from "./PlotSelection";
 import ScatterLoader from "../../loaders/ScatterLoader";
+import useBuiltinLegendClick from "./useBuiltinLegendClick";
 
 interface Props {
   data: DataExplorerPlotResponse | null;
@@ -39,13 +40,29 @@ function DataExplorerWaterfallPlot({
     formattedData,
     contLegendKeys,
     colorMap,
+    legendForDownload,
+    builtinLegend,
+    legendState,
+    pointVisibility,
     hasFacetOptionsEnabled,
     selectionRegions,
   } = useWaterfallPlotData(data, plotConfig, palette);
 
+  const onClickLegendItem = useBuiltinLegendClick(legendState, colorMap);
+
   if (!formattedData) {
     return null;
   }
+
+  // Only worth revealing when something is actually colored — otherwise the
+  // legend is one entry for the single ungrouped bucket. Same condition
+  // EmbeddedScatterPlot uses.
+  const showBuiltinLegend = Boolean(
+    data?.metadata.color_property ||
+      data?.dimensions.color ||
+      data?.filters.color1 ||
+      data?.filters.color2
+  );
 
   return (
     <PlotlyLoaderProvider PlotlyLoader={ScatterLoader}>
@@ -59,6 +76,11 @@ function DataExplorerWaterfallPlot({
         continuousColorKey="contColorData"
         contLegendKeys={contLegendKeys}
         colorMap={colorMap}
+        pointVisibility={pointVisibility || undefined}
+        legendForDownload={legendForDownload}
+        builtinLegend={builtinLegend}
+        onClickLegendItem={onClickLegendItem}
+        showBuiltinLegend={showBuiltinLegend}
         hoverTextKey="hoverText"
         annotationTextKey="annotationText"
         height={height}

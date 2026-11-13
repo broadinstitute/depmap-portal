@@ -19,6 +19,7 @@ import {
   getLegendKeysWithNoData,
   LEGEND_ALL,
   LEGEND_OTHER,
+  LegendInfo,
   LegendKey,
   nullifyUnplottableValues,
   resolveColorMode,
@@ -70,6 +71,11 @@ export interface WaterfallPlotData {
     items: { name: string; hexColor: string }[];
     isTrivial: boolean;
   };
+  // The live counterpart of `legendForDownload`, for a caller that draws
+  // Plotly's own legend (the embeddable plot): hidden entries are kept,
+  // flagged `hidden` so they render dimmed, and each carries its LegendKey so
+  // a click can be routed to `legendState`.
+  builtinLegend: LegendInfo;
   pointVisibility: boolean[] | null;
   // Contiguous x-rank regions, one per facet, with gap-midpoint boundaries
   // (±Infinity at the ends). Drives enforceSingleFacetSelection in the
@@ -383,7 +389,7 @@ export default function useWaterfallPlotData(
   // NOTE: Unlike the scatter variant, this does NOT append `dataset_label` to
   // the title when `color_property` is set. Preserving existing behavior; may
   // be worth revisiting whether that's intentional.
-  const legendForDownload = useMemo(() => {
+  const { legendForDownload, builtinLegend } = useMemo(() => {
     let title = "";
 
     // dataset_label is legitimately absent for "primary" metadata datasets
@@ -407,30 +413,35 @@ export default function useWaterfallPlotData(
       }
     }
 
-    const items: { name: string; hexColor: string }[] = [];
-
-    [...colorMap.keys()].forEach((key) => {
-      if (!hiddenLegendValues.has(key)) {
+    const allItems: NonNullable<LegendInfo["items"]> = [...colorMap.keys()].map(
+      (key) => {
         const name = categoryToDisplayName(
           key,
           data as DataExplorerPlotResponse,
           continuousBins,
           colorMode.target
         );
-        const formattedName =
-          typeof name === "string" ? name : `${name[0]} – ${name[1]}`;
 
-        items.push({
-          name: formattedName,
+        return {
+          key,
+          name: typeof name === "string" ? name : `${name[0]} – ${name[1]}`,
           hexColor: colorMap.get(key)!,
-        });
+          hidden: hiddenLegendValues.has(key),
+        };
       }
-    });
+    );
+
+    const isTrivial = colorMap.size === 1 && colorMap.has(LEGEND_ALL);
 
     return {
-      title,
-      items,
-      isTrivial: colorMap.size === 1 && colorMap.has(LEGEND_ALL),
+      builtinLegend: { title, items: allItems, isTrivial },
+      legendForDownload: {
+        title,
+        items: allItems
+          .filter((item) => !item.hidden)
+          .map(({ name, hexColor }) => ({ name, hexColor })),
+        isTrivial,
+      },
     };
   }, [colorMap, data, continuousBins, hiddenLegendValues, colorMode]);
 
@@ -533,6 +544,7 @@ export default function useWaterfallPlotData(
     facetContinuousBins,
     colorMap,
     legendForDownload,
+    builtinLegend,
     pointVisibility,
     selectionRegions,
     colorTarget: colorMode.target,

@@ -3447,7 +3447,16 @@ export function calcPlotIndicatorLineShapes(
 
 export interface LegendInfo {
   title: string;
-  items: { name: string; hexColor: string }[];
+  items: {
+    name: string;
+    hexColor: string;
+    // Only set on a legend that is drawn live (see useScatterPlotData's
+    // `builtinLegend`): the key a click on this entry should toggle, and
+    // whether it is currently toggled off (drawn dimmed, still clickable).
+    // Exports leave both unset and simply omit hidden entries.
+    key?: LegendKey;
+    hidden?: boolean;
+  }[];
   // True when the legend's only possible entry is LEGEND_ALL (nothing is
   // colored by), so it says nothing a viewer could use. The export modal
   // forces such a legend hidden and doesn't offer to show it.
@@ -3489,10 +3498,12 @@ export const getLegendTraces = (
   legendForDownload: LegendInfo,
   templateTrace: object & { marker: object }
 ) =>
-  legendForDownload.items.map(({ name, hexColor }) => {
+  legendForDownload.items.map(({ name, hexColor, hidden }) => {
     return {
       ...templateTrace,
       showlegend: true,
+      // Dims the entry without removing it, so it can be clicked back on.
+      ...(hidden ? { visible: "legendonly" } : {}),
       // HACK: Use a plot type of "indicator" rather than "scatter". This
       // prevents a rare bug where these dummy traces interfere with the
       // real ones and some points don't get rendered.

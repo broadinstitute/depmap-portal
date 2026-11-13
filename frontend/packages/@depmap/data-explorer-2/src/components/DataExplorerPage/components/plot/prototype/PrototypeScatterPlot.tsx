@@ -109,6 +109,13 @@ interface Props {
   // says — so this must default to false for every other caller.
   xAxisIsRank?: boolean;
   showBuiltinLegend?: boolean;
+  // Makes the built-in legend interactive. `builtinLegend` is the full entry
+  // list (hidden ones included, flagged) drawn in place of
+  // `legendForDownload`, and a click on an entry calls `onClickLegendItem`
+  // with its key — the caller owns the hidden state and feeds it back through
+  // `pointVisibility`. `isDoubleClick` is true for Plotly's double-click.
+  builtinLegend?: LegendInfo;
+  onClickLegendItem?: (key: LegendKey, isDoubleClick: boolean) => void;
   // optional styling
   pointSize?: number;
   pointOpacity?: number;
@@ -234,6 +241,8 @@ function PrototypeScatterPlot({
   hideXAxisGrid = false,
   xAxisIsRank = false,
   showBuiltinLegend = false,
+  builtinLegend = undefined,
+  onClickLegendItem = undefined,
   pointSize = 7,
   pointOpacity = 1.0,
   outlineWidth = 0.5,
@@ -663,8 +672,11 @@ function PrototypeScatterPlot({
       .filter(Boolean)
       .reverse() as Partial<PlotData>[];
 
+    const builtinLegendItems = builtinLegend ?? legendForDownload!;
+    const firstLegendTrace = plotlyData.length;
+
     if (showBuiltinLegend) {
-      getLegendTraces(legendForDownload!, templateTrace).forEach((t) =>
+      getLegendTraces(builtinLegendItems, templateTrace).forEach((t) =>
         plotlyData.push(t as typeof plotlyData[number])
       );
     }
@@ -927,12 +939,24 @@ function PrototypeScatterPlot({
     // The legend is drawn from dummy traces (getLegendTraces) that hold no
     // real points, so Plotly's default click behavior toggles the dummy and
     // nothing else: the entry greys out while the plot stays put. Returning
-    // false suppresses that, leaving the legend a static key rather than a
-    // control that appears to do something. Registered unconditionally — with
-    // no legend shown (Data Explorer's case) these never fire.
-    // TODO: make these actually filter, as Data Explorer's own legend does.
-    on("plotly_legendclick", () => false);
-    on("plotly_legenddoubleclick", () => false);
+    // false always suppresses that. When the caller supplied
+    // `onClickLegendItem`, the click is instead routed to it and the legend
+    // is redrawn from the resulting state (hidden entries come back as
+    // `legendonly`); otherwise the legend is a static key. Registered
+    // unconditionally — with no legend shown (Data Explorer's case) these
+    // never fire.
+    const routeLegendClick = (isDoubleClick: boolean) => (e: any) => {
+      const item = builtinLegendItems.items[e.curveNumber - firstLegendTrace];
+
+      if (onClickLegendItem && showBuiltinLegend && item?.key !== undefined) {
+        onClickLegendItem(item.key, isDoubleClick);
+      }
+
+      return false;
+    };
+
+    on("plotly_legendclick", routeLegendClick(false));
+    on("plotly_legenddoubleclick", routeLegendClick(true));
 
     // After initializing the plot with `autorange` set to true, store what
     // Plotly calculated for the axes zoom level and turn off autorange.
@@ -1347,6 +1371,8 @@ function PrototypeScatterPlot({
     hideXAxisGrid,
     xAxisIsRank,
     showBuiltinLegend,
+    builtinLegend,
+    onClickLegendItem,
     pointSize,
     pointOpacity,
     outlineWidth,
