@@ -1,6 +1,6 @@
 from functools import partial
 from operator import contains
-from typing import Dict, List, Literal, Optional, Set
+from typing import Any, Dict, List, Literal, Optional, Set, Tuple
 from depmap import data_access
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound
@@ -17,7 +17,11 @@ import pandas as pd
 from flask import url_for
 
 from depmap.context_explorer import enrichment_tile_filters, utils
-from depmap.context.models_new import SubtypeNode, SubtypeContext
+from depmap.context.models_new import (
+    NodeBranchModelsResult,
+    SubtypeNode,
+    SubtypeContext,
+)
 from depmap.context_explorer.models import ContextPlotBoxData, BoxData, NodeEntityData
 
 
@@ -257,21 +261,30 @@ def get_box_plot_data_for_context(
     )
 
 
-def get_branch_subtype_codes_organized_by_code(sig_contexts: Dict[str, List[str]]):
-    branch_contexts = {}
-    all_sig_models = []
+def get_branch_subtype_codes_organized_by_code(
+    sig_contexts: Dict[str, List[str]],
+) -> Tuple[Dict[str, Optional[Dict[str, List[str]]]], List[str], Dict[str, str]]:
+    branch_contexts: Dict[str, Optional[Dict[str, List[str]]]] = {}
+    all_sig_models: List[str] = []
+    all_codes_to_node_name: Dict[str, str] = {}
+
     for level_0 in sig_contexts.keys():
-        child_nodes = SubtypeNode.get_children_using_current_level_code(level_0, 0)
-        child_codes = [node.subtype_code for node in child_nodes]
-        branch, all_model_ids = SubtypeContext.get_model_ids_for_node_branch(
-            subtype_codes=child_codes, level_0_subtype_code=level_0
+        child_nodes: List[
+            SubtypeNode
+        ] = SubtypeNode.get_children_using_current_level_code(level_0, 0)
+        child_codes: List[str] = [str(node.subtype_code) for node in child_nodes]
+
+        result: NodeBranchModelsResult = SubtypeContext.get_model_ids_for_node_branch(
+            subtype_codes=child_codes, level_0_subtype_code=level_0,
         )
-        if all_model_ids:
-            all_sig_models.extend(all_model_ids)
 
-        branch_contexts[level_0] = branch
+        if result.all_model_ids:
+            all_sig_models.extend(result.all_model_ids)
 
-    return branch_contexts, all_sig_models
+        branch_contexts[level_0] = result.node_models
+        all_codes_to_node_name.update(result.codes_to_node_name)
+
+    return branch_contexts, all_sig_models, all_codes_to_node_name
 
 
 def get_sig_context_dataframe(
@@ -329,10 +342,10 @@ def get_card_data(
             # significant. In that case, we still need to get the child nodes of
             # the level_0 so that they can be sorted into an Other <level_0> plot.
             child_nodes = SubtypeNode.get_children_using_current_level_code(level_0, 0)
-            child_codes = [node.subtype_code for node in child_nodes]
-            selected_context_level_0, _ = SubtypeContext.get_model_ids_for_node_branch(
+            child_codes = [str(node.subtype_code) for node in child_nodes]
+            selected_context_level_0 = SubtypeContext.get_model_ids_for_node_branch(
                 subtype_codes=child_codes, level_0_subtype_code=level_0
-            )
+            ).node_models
 
         if selected_context_level_0 != None:
             box_plot_card_data = get_box_plot_card_data(
@@ -368,6 +381,64 @@ def get_all_significant_context_codes_ordered_by_significance(
     return ordered_sig_subtype_codes
 
 
+def _build_significant_cards_and_mappings(
+    sig_contexts: pd.DataFrame,
+    selected_level_0: str,
+    entity_full_row_of_values: pd.Series,
+    ordered_sig_context_codes: List[str],
+) -> Tuple[
+    Optional[Any], List[Any], List[str], Dict[str, str],
+]:
+    """Build box plot cards for the selected and secondary branches, plus model/name lookups."""
+    sig_contexts_by_level_0 = get_significant_context_codes_indexed_by_level_0(
+        sig_contexts=sig_contexts
+    )
+    (
+        branch_contexts,
+        all_sig_models,
+        branch_codes_to_node_name,
+    ) = get_branch_subtype_codes_organized_by_code(sig_contexts=sig_contexts_by_level_0)
+
+    selected_card = get_card_data(
+        level_0=selected_level_0,
+        branch_contexts=branch_contexts,
+        entity_full_row_of_values=entity_full_row_of_values,
+        ordered_sig_subtype_codes=ordered_sig_context_codes,
+    )
+
+    other_cards: List[Any] = []
+    for other_level_0 in branch_contexts.keys():
+        if other_level_0 == selected_level_0:
+            continue
+
+        other_card = get_card_data(
+            level_0=other_level_0,
+            branch_contexts=branch_contexts,
+            entity_full_row_of_values=entity_full_row_of_values,
+            ordered_sig_subtype_codes=ordered_sig_context_codes,
+        )
+        if other_card is not None:
+            other_cards.append(other_card)
+
+    return selected_card, other_cards, all_sig_models, branch_codes_to_node_name
+
+
+def _resolve_level_0_mapping(
+    level_0: str, existing_mapping: Dict[str, str]
+) -> Dict[str, str]:
+    """Ensure the primary level_0 code has a display name even when sig_contexts is empty."""
+    if not level_0 or level_0 in existing_mapping:
+        return {}
+
+    level_0_context: Optional[SubtypeNode] = SubtypeNode.get_by_code(
+        level_0, must=False
+    )
+    if level_0_context is None:
+        return {}
+
+    return {level_0: str(level_0_context.node_name)}
+
+
 def get_context_plot_box_data(
     dataset_given_id: str,
     feature_type: str,
@@ -376,65 +447,57 @@ def get_context_plot_box_data(
     level_0: str,
     tree_type: str,
 ) -> Optional[ContextPlotBoxData]:
+    """Assemble box plot distributions, reference lines, and code-to-name metadata."""
+    # 1. Fetch feature metadata and non-null measurement values across models
     node_entity_data = _get_node_entity_data(
         dataset_given_id=dataset_given_id,
         feature_type=feature_type,
         feature_id=feature_id,
     )
-
-    entity_full_row_of_values = node_entity_data.feature_full_row_of_values
-
-    (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
+    entity_full_row_of_values = utils.get_full_row_of_values_and_depmap_ids(
         dataset_given_id=dataset_given_id, feature_id=feature_id
-    )
-    entity_full_row_of_values.dropna(inplace=True)
+    ).dropna()
 
-    drug_dotted_line = (
-        entity_full_row_of_values.mean() if feature_type == "compound" else None
+    # Compounds display a global mean reference line across all cell lines
+    drug_dotted_line: Optional[float] = (
+        float(entity_full_row_of_values.mean()) if feature_type == "compound" else None
     )
 
-    other_box_plot_data = []
-    ordered_sig_context_codes = (
-        []
-        if len(sig_contexts) == 0
-        else get_all_significant_context_codes_ordered_by_significance(
+    # 2. Rank significant contexts and build per-branch box plot cards
+    has_sig_contexts = len(sig_contexts) > 0
+    ordered_sig_context_codes: List[str] = (
+        get_all_significant_context_codes_ordered_by_significance(
             sig_contexts=sig_contexts
         )
+        if has_sig_contexts
+        else []
     )
-    all_sig_models = []
-    selected_sig_box_plot_card_data = None
-    if len(sig_contexts) > 0:
-        sig_contexts_by_level_0 = get_significant_context_codes_indexed_by_level_0(
-            sig_contexts=sig_contexts
-        )
 
+    if has_sig_contexts:
         (
-            branch_contexts,
-            all_significant_models,
-        ) = get_branch_subtype_codes_organized_by_code(
-            sig_contexts=sig_contexts_by_level_0
-        )
-        all_sig_models = all_significant_models
-
-        selected_sig_box_plot_card_data = get_card_data(
-            level_0=level_0,
-            branch_contexts=branch_contexts,
+            selected_card,
+            other_box_plot_data,
+            all_sig_models,
+            branch_codes_to_node_name,
+        ) = _build_significant_cards_and_mappings(
+            sig_contexts=sig_contexts,
+            selected_level_0=level_0,
             entity_full_row_of_values=entity_full_row_of_values,
-            ordered_sig_subtype_codes=ordered_sig_context_codes,
+            ordered_sig_context_codes=ordered_sig_context_codes,
         )
+    else:
+        selected_card = None
+        other_box_plot_data = []
+        all_sig_models = []
+        branch_codes_to_node_name = {}
 
-        all_level_0_codes = branch_contexts.keys()
-        for other_level_0 in all_level_0_codes:
-            if level_0 != other_level_0:
-                other_sig_data = get_card_data(
-                    level_0=other_level_0,
-                    branch_contexts=branch_contexts,
-                    entity_full_row_of_values=entity_full_row_of_values,
-                    ordered_sig_subtype_codes=ordered_sig_context_codes,
-                )
-                if other_sig_data is not None:
-                    other_box_plot_data.append(other_sig_data)
+    # 3. Combine branch code-to-name mappings with a fallback for the selected level_0
+    codes_to_node_name: Dict[str, str] = (
+        _resolve_level_0_mapping(level_0, branch_codes_to_node_name)
+        | branch_codes_to_node_name
+    )
 
+    # 4. Compute baseline box plots for remaining (non-significant) solid and heme models
     solid_and_heme_box_data = get_box_plot_data_for_other_category(
         all_sig_context_codes=set(ordered_sig_context_codes),
         entity_full_row_of_values=entity_full_row_of_values,
@@ -442,23 +505,12 @@ def get_context_plot_box_data(
         all_sig_models=set(all_sig_models),
     )
 
-    significant_selection = (
-        None
-        if not selected_sig_box_plot_card_data
-        else selected_sig_box_plot_card_data.significant
-    )
-    insignificant_selection = (
-        None
-        if not selected_sig_box_plot_card_data
-        else selected_sig_box_plot_card_data.insignificant
-    )
-
     dataset_units = data_access.get_dataset_units(dataset_id=dataset_given_id)
     assert dataset_units is not None
 
     return ContextPlotBoxData(
-        significant_selection=significant_selection,
-        insignificant_selection=insignificant_selection,
+        significant_selection=selected_card.significant if selected_card else None,
+        insignificant_selection=selected_card.insignificant if selected_card else None,
         other_cards=other_box_plot_data,
         insignificant_heme_data=solid_and_heme_box_data.heme,
         insignificant_solid_data=solid_and_heme_box_data.solid,
@@ -466,7 +518,27 @@ def get_context_plot_box_data(
         feature_label=node_entity_data.label,
         feature_overview_page_label=node_entity_data.feature_overview_page_label,
         dataset_units=dataset_units,
+        codes_to_node_name=codes_to_node_name,
     )
+
+
+def _order_cards_by_significance(
+    cards: List[Any], sig_contexts: pd.DataFrame,
+) -> List[Any]:
+    """Arrange secondary cards in the exact order their level_0 codes appear in sig_contexts."""
+    if sig_contexts.empty or not cards:
+        return cards
+
+    cards_by_level_0: Dict[str, Any] = {card.level_0_code: card for card in cards}
+    ordered_level_0_codes: List[str] = (
+        sig_contexts["level_0"].drop_duplicates(keep="first").tolist()
+    )
+
+    return [
+        cards_by_level_0[code]
+        for code in ordered_level_0_codes
+        if code in cards_by_level_0
+    ]
 
 
 def get_organized_contexts(
@@ -477,10 +549,11 @@ def get_organized_contexts(
     dataset_given_id: str,
     tree_type: str,
 ) -> Optional[ContextPlotBoxData]:
-    node = SubtypeNode.get_by_code(selected_subtype_code)
+    """Fetch context plot box data for the selected subtype's lineage and order secondary cards."""
+    node: Optional[SubtypeNode] = SubtypeNode.get_by_code(selected_subtype_code)
     assert node is not None
 
-    context_box_plot_data = get_context_plot_box_data(
+    context_box_plot_data: Optional[ContextPlotBoxData] = get_context_plot_box_data(
         dataset_given_id=dataset_given_id,
         feature_type=feature_type,
         feature_id=feature_id,
@@ -489,36 +562,25 @@ def get_organized_contexts(
         tree_type=tree_type,
     )
 
-    if context_box_plot_data == None:
+    if context_box_plot_data is None:
         return None
 
-    context_box_plot_data_other_cards = context_box_plot_data.other_cards
-    sorted_other_cards = context_box_plot_data_other_cards
-    if not sig_contexts.empty:
-        level_0_sort_order = (
-            sig_contexts["level_0"].drop_duplicates(keep="first").tolist()
-        )
-        sorted_other_cards = sorted(
-            context_box_plot_data_other_cards,
-            key=lambda x: level_0_sort_order.index(x.level_0_code),
-        )
+    ordered_other_cards: List[Any] = _order_cards_by_significance(
+        cards=context_box_plot_data.other_cards, sig_contexts=sig_contexts,
+    )
 
-    dataset_units = data_access.get_dataset_units(dataset_id=dataset_given_id)
-    assert dataset_units is not None
-
-    ordered_box_plot_data = ContextPlotBoxData(
+    return ContextPlotBoxData(
         significant_selection=context_box_plot_data.significant_selection,
         insignificant_selection=context_box_plot_data.insignificant_selection,
-        other_cards=sorted_other_cards,
+        other_cards=ordered_other_cards,
         insignificant_heme_data=context_box_plot_data.insignificant_heme_data,
         insignificant_solid_data=context_box_plot_data.insignificant_solid_data,
         drug_dotted_line=context_box_plot_data.drug_dotted_line,
         feature_label=context_box_plot_data.feature_label,
         feature_overview_page_label=context_box_plot_data.feature_overview_page_label,
-        dataset_units=dataset_units,
+        dataset_units=context_box_plot_data.dataset_units,
+        codes_to_node_name=context_box_plot_data.codes_to_node_name,
     )
-
-    return ordered_box_plot_data
 
 
 ################################################################################

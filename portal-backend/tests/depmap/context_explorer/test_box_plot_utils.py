@@ -646,7 +646,7 @@ def test_get_context_plot_data(
     # Insignificant selection provides the data for the Other <Lineage> plots.
     # For example, if Bone is one collapsible card. Opening the card will show colored
     # significant plots as well as "Other Bone".
-
+    #
     # Construct an Other Lineage group that contains all models that are in the level_0
     # context but not in any significant contexts in level_1 --> level_5. This is true
     # regardless of if the level_0 context itself is significant. The purpose of this is
@@ -661,27 +661,16 @@ def test_get_context_plot_data(
     assert context_plot_box_data_dict["insignificant_selection"]["label"] == "Other A"
     assert len(context_plot_box_data_dict["insignificant_selection"]["data"]) > 0
 
-    # Any model in "A" that is not in "A1" should show up in "Other A", aka "insignificant_selection"
-    expected_other_lineage_plot_display_names = []
-    for name in context_plot_box_data_dict["significant_selection"][1][
+    # Any model in "A1" (significant) should NOT show up in "Other A" (insignificant_selection)
+    a1_cell_line_names = set(
+        context_plot_box_data_dict["significant_selection"][0][
+            "cell_line_display_names"
+        ]
+    )
+    for cell_line_display_name in context_plot_box_data_dict["insignificant_selection"][
         "cell_line_display_names"
     ]:
-        if (
-            name
-            not in context_plot_box_data_dict["significant_selection"][0][
-                "cell_line_display_names"
-            ]
-        ):
-            expected_other_lineage_plot_display_names.append(name)
-
-    for cell_line_display_name in context_plot_box_data_dict["insignificant_selection"]:
-        # Make sure A1 models are not in insignificant_selection
-        assert (
-            cell_line_display_name
-            not in context_plot_box_data_dict["significant_selection"][0][
-                "cell_line_display_names"
-            ]
-        )
+        assert cell_line_display_name not in a1_cell_line_names
 
     assert context_plot_box_data_dict["other_cards"] == []
     assert context_plot_box_data_dict["insignificant_heme_data"] == {
@@ -695,6 +684,16 @@ def test_get_context_plot_data(
         "data": [],
         "cell_line_display_names": [],
         "path": None,
+    }
+
+    # Verify codes_to_node_name maps every queried branch node code to its display name
+    expected_branch_nodes = (
+        empty_db_mock_downloads.session.query(SubtypeNode)
+        .filter(SubtypeNode.level_0 == "A")
+        .all()
+    )
+    assert context_plot_box_data_dict["codes_to_node_name"] == {
+        node.subtype_code: node.node_name for node in expected_branch_nodes
     }
 
 

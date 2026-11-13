@@ -1,6 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from operator import and_
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, cast
 from depmap.database import (
     Column,
     ForeignKey,
@@ -17,6 +17,13 @@ from typing import Type
 from sqlalchemy import and_, or_
 from depmap.entity.models import Entity
 from depmap.cell_line.models_new import DepmapModel, depmap_model_context_association
+
+
+@dataclass(frozen=True)
+class NodeBranchModelsResult:
+    node_models: Optional[Dict[str, List[str]]] = None
+    all_model_ids: List[str] = field(default_factory=list)
+    codes_to_node_name: Dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -226,13 +233,12 @@ class SubtypeContext(Model):
     # Only used for Context Explorer box plots
     @staticmethod
     def get_model_ids_for_node_branch(
-        subtype_codes: List[str], level_0_subtype_code: str
-    ) -> Tuple[Optional[Dict[str, List[str]]], Optional[List[str]]]:
-
+        subtype_codes: List[str], level_0_subtype_code: str,
+    ) -> NodeBranchModelsResult:
         only_get_nodes_on_this_branch_filters = and_(
             SubtypeNode.level_0 == level_0_subtype_code,
             or_(
-                SubtypeNode.level_1 == None,
+                SubtypeNode.level_1.is_(None),
                 SubtypeNode.level_1.in_(subtype_codes),
                 SubtypeNode.level_2.in_(subtype_codes),
                 SubtypeNode.level_3.in_(subtype_codes),
@@ -241,70 +247,54 @@ class SubtypeContext(Model):
             ),
         )
 
-        filters = only_get_nodes_on_this_branch_filters
+        nodes: List[SubtypeNode] = (
+            db.session.query(SubtypeNode)
+            .filter(only_get_nodes_on_this_branch_filters)
+            .all()
+        )
 
-        nodes = db.session.query(SubtypeNode).filter(filters).all()
+        if not nodes:
+            return NodeBranchModelsResult()
 
-        if len(nodes) == 0:
-            return None, []
-
-        node_models = {}
-        all_model_ids = []
+        node_models: Dict[str, List[str]] = {}
+        all_model_ids: List[str] = []
 
         for node in nodes:
-            level_0 = SubtypeContext.get_by_code(node.level_0, must=False)
-            assert level_0 is not None
-            model_ids = [model.model_id for model in level_0.depmap_model]
-            if len(model_ids) > 0:
-                node_models[level_0.subtype_code] = model_ids
-                all_model_ids.extend(model_ids)
+            level_codes: List[Optional[str]] = [
+                cast(Optional[str], node.level_0),
+                cast(Optional[str], node.level_1),
+                cast(Optional[str], node.level_2),
+                cast(Optional[str], node.level_3),
+                cast(Optional[str], node.level_4),
+                cast(Optional[str], node.level_5),
+            ]
 
-            if node.level_1:
-                level_1 = SubtypeContext.get_by_code(node.level_1, must=False)
+            for code in level_codes:
+                if not code:
+                    continue
 
-                if level_1:
-                    model_ids = [model.model_id for model in level_1.depmap_model]
-                    if len(model_ids) > 0:
-                        node_models[level_1.subtype_code] = model_ids
-                        all_model_ids.extend(model_ids)
+                context: Optional[SubtypeContext] = SubtypeContext.get_by_code(
+                    code, must=False
+                )
+                if context is None:
+                    continue
 
-            if node.level_2:
-                level_2 = SubtypeContext.get_by_code(node.level_2, must=False)
+                model_ids: List[str] = [
+                    model.model_id for model in context.depmap_model
+                ]
+                if model_ids:
+                    node_models[str(context.subtype_code)] = model_ids
+                    all_model_ids.extend(model_ids)
 
-                if level_2:
-                    model_ids = [model.model_id for model in level_2.depmap_model]
-                    if len(model_ids) > 0:
-                        node_models[level_2.subtype_code] = model_ids
-                        all_model_ids.extend(model_ids)
+        codes_to_node_name: Dict[str, str] = {
+            cast(str, node.subtype_code): cast(str, node.node_name) for node in nodes
+        }
 
-            if node.level_3:
-                level_3 = SubtypeContext.get_by_code(node.level_3, must=False)
-
-                if level_3:
-                    model_ids = [model.model_id for model in level_3.depmap_model]
-                    if len(model_ids) > 0:
-                        node_models[level_3.subtype_code] = model_ids
-                        all_model_ids.extend(model_ids)
-
-            if node.level_4:
-                level_4 = SubtypeContext.get_by_code(node.level_4, must=False)
-
-                if level_4:
-                    model_ids = [model.model_id for model in level_4.depmap_model]
-                    if len(model_ids) > 0:
-                        node_models[level_4.subtype_code] = model_ids
-                        all_model_ids.extend(model_ids)
-
-            if node.level_5:
-                level_5 = SubtypeContext.get_by_code(node.level_5, must=False)
-
-                if level_5:
-                    model_ids = [model.model_id for model in level_5.depmap_model]
-                    if len(model_ids) > 0:
-                        node_models[level_5.subtype_code] = model_ids
-                        all_model_ids.extend(model_ids)
-
-        return node_models, all_model_ids
+        return NodeBranchModelsResult(
+            node_models=node_models,
+            all_model_ids=all_model_ids,
+            codes_to_node_name=codes_to_node_name,
+        )
 
     @staticmethod
     def get_model_ids_for_other_heme_and_other_solid_contexts(
