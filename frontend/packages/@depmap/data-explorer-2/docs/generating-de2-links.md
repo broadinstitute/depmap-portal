@@ -9,6 +9,7 @@ This document describes version 2 of the Data Explorer 2 (DE2) plot config. It i
 | `[QUICKSTART]`             | You are about to build any plot. Read this first.                                                                                                  |
 | `[QUESTION-TO-PLOT]`       | You have a biological question and must choose a plot type and config.                                                                             |
 | `[SELECTED-POINTS]`        | The user selected points in a plot and asks about them.                                                                                            |
+| `[FOLLOW-UP-PLOTS]`        | The user asks to change, extend or re-plot something they have already seen ("plot this against X", "now color by Y", "same but for Z").           |
 | `[PLOT-TYPES]`             | Choosing between density, waterfall, scatter and heatmap.                                                                                          |
 | `[DIMENSIONS]`             | Writing `dimensions` (what each axis shows).                                                                                                       |
 | `[COLOR-AND-FACET]`        | Grouping points by a property, a gene, or two hand-made groups.                                                                                    |
@@ -81,6 +82,7 @@ Rules of thumb for choosing:
 - **"Per lineage / per subtype / per mutation status"** → facet. **"Highlight these models"** → `color_by: "raw_slice"` / `"aggregated_slice"` with a context. **"Colored by another measurement"** → `color_by: "custom"`.
 - **A relationship between two measurements of the same models** → `scatter` with `index_type: "depmap_model"`. **The distribution of one measurement** → `density_1d`. **A ranked list** → `waterfall`.
 - **If the question is ambiguous about the dataset** (e.g. "dependency" could be Chronos effect, or probability), choose the portal default, say so, and offer the alternative.
+- **A follow-up plot changes only what the user asked to change.** See `[FOLLOW-UP-PLOTS]`.
 - **Interpreting the result is part of the job.** After plotting, say what the plot shows biologically (which groups separate, outliers, direction of effect), not only that it was drawn.
 
 ## [SELECTED-POINTS] When the user selects points and asks about them
@@ -106,6 +108,158 @@ Up to 50 entities are sent. Each is the plot's `index_type` entity (cell line, g
 6. **Be honest about limits.** A shared lineage across five models is a hint, not a conclusion; say how many of the plot's models share the property and how many would be expected by chance. If the selection is a single point, treat it as a question about that entity.
 
 Selection is only offered where one point is one entity. On a plot with `expand_by` that is not faceted by the expansion it is disabled (see `[EXPAND-BY]`).
+
+## [FOLLOW-UP-PLOTS] Carrying context from one plot to the next
+
+A follow-up request ("plot this against EGFR", "color it by lineage", "same plot for GDSC2") refers to **the plot the user is looking at**, not only to the measure it shows. "This" means the whole plot: what a point is, which dataset and quantity, how it is broken out, which points are highlighted or filtered. **Start from the previous plot's config, change only what the user asked to change, and keep everything else.** Do not rebuild the plot from the user's last sentence alone.
+
+**What to carry over, unless the user says otherwise:**
+
+- **`index_type`**, and **the dataset, `slice_type` and `context`** of every quantity that is staying. Do not switch to a different dataset silently; if you do, say why.
+- **A breakdown by member: `aggregation: "expansion"`, `expand_by` and `facet_by: "expansion"`.** This is the one most often lost. If the previous plot gave each dose, timepoint, replicate or isoform its own track or panel, the follow-up keeps that. **Never turn an expansion into `mean` (or any other aggregation) to make a new plot type fit.** Collapsing a breakdown the user was looking at is a change to the question. Only do it when the user explicitly asks for an average or summary, and say what you did.
+- **Other grouping:** `facet_by`, `color_by`, `metadata.facet_property` / `color_property`, and `facet_categories` / `color_categories`.
+- **Filters:** `filters.visible`, `color1` / `color2`, `facet1` / `facet2`, including highlights that came from a selection (`[SELECTED-POINTS]`).
+- **Things the user said:** "I don't want the mean", "only breast", "log scale". These persist until withdrawn.
+
+A highlight is easy to keep because the user handed you an explicit list. A structural property such as an expansion is not listed anywhere; you have to notice it in the previous config.
+
+**Changing plot type.** Keep the same breakdown, and map it onto the new plot type (`[PLOT-TYPES]` says what facets become: violin tracks in `density_1d`, clusters in `waterfall`, panels in `scatter`).
+
+- `density_1d` to `scatter` ("plot this against X"): the quantity the density showed goes on one axis **unchanged, expansion included**, and the new quantity goes on the other axis as a `raw_slice`. "Plot A against B" puts A on `y` and B on `x`. If the old plot expanded, the scatter needs `expand_by` and `facet_by: "expansion"` too (see `[EXPAND-BY]`).
+- `scatter` to `density_1d` or `waterfall`: keep the axis the user names and carry the grouping. Drop the other axis only when asked.
+
+**If the breakdown genuinely cannot carry over** (for example the new plot type cannot facet), do not collapse it quietly. Say what cannot be kept, offer the nearest alternative, and ask. Do not leave it to the user to say "keep it faceted": the default is to preserve.
+
+**Say what you kept.** Start the reply with one line: "Keeping the per-dose panels and the two highlighted models; adding EGFR on x." That lets the user correct you in one reply.
+
+### Worked example
+
+Turn 1, "plot ERLOTINIB viability grouped by dose": a `density_1d` with one expanded axis.
+
+```json
+{
+  "version": 2,
+  "plot_type": "density_1d",
+  "index_type": "depmap_model",
+  "dimensions": {
+    "x": {
+      "axis_type": "aggregated_slice",
+      "aggregation": "expansion",
+      "dataset_id": "Prism_oncology_unified_viability",
+      "slice_type": "compound_dose",
+      "context": { "…": "ERLOTINIB doses, as in the final config below" }
+    }
+  },
+  "expand_by": [
+    { "slice_type": "compound_dose", "context": { "…": "same context" } }
+  ],
+  "facet_by": "expansion"
+}
+```
+
+Turn 2: the user selects two models and asks about them. The plot is redrawn with them highlighted (`color_by: "raw_slice"`, see `[SELECTED-POINTS]`).
+
+Turn 3, "can we plot this against EGFR CRISPR gene effect?" **Wrong:** the doses are averaged and the facets are gone. Nothing errors and data still comes back, so the failure is silent: it is just the wrong plot.
+
+```json
+{
+  "plot_type": "scatter",
+  "dimensions": {
+    "x": {
+      "axis_type": "raw_slice",
+      "aggregation": "first",
+      "dataset_id": "Chronos_Combined",
+      "slice_type": "gene",
+      "context": { "…": "EGFR" }
+    },
+    "y": {
+      "axis_type": "aggregated_slice",
+      "aggregation": "mean",
+      "dataset_id": "Prism_oncology_unified_viability",
+      "slice_type": "compound_dose",
+      "context": { "…": "ERLOTINIB doses" }
+    }
+  }
+}
+```
+
+**Right:** the same quantity on `y`, unchanged and still expanded; EGFR added on `x`; highlight kept; `expand_by` and `facet_by: "expansion"` kept.
+
+The doses are selected by `CompoundID` directly on `compound_dose_metadata`. That column is on the child's own table, so no `reindex_through` is needed (compare the label-based approach in `[REINDEX-THROUGH]`).
+
+```json
+{
+  "version": 2,
+  "plot_type": "scatter",
+  "index_type": "depmap_model",
+  "dimensions": {
+    "x": {
+      "axis_type": "raw_slice",
+      "aggregation": "first",
+      "dataset_id": "Chronos_Combined",
+      "slice_type": "gene",
+      "context": {
+        "dimension_type": "gene",
+        "name": "EGFR",
+        "expr": { "==": [{ "var": "given_id" }, "1956"] },
+        "vars": {}
+      }
+    },
+    "y": {
+      "axis_type": "aggregated_slice",
+      "aggregation": "expansion",
+      "dataset_id": "Prism_oncology_unified_viability",
+      "slice_type": "compound_dose",
+      "context": {
+        "dimension_type": "compound_dose",
+        "name": "ERLOTINIB",
+        "expr": { "==": [{ "var": "compound_id" }, "DPC-002573"] },
+        "vars": {
+          "compound_id": {
+            "dataset_id": "compound_dose_metadata",
+            "identifier": "CompoundID",
+            "identifier_type": "column"
+          }
+        }
+      }
+    }
+  },
+  "expand_by": [
+    {
+      "slice_type": "compound_dose",
+      "context": {
+        "dimension_type": "compound_dose",
+        "name": "ERLOTINIB",
+        "expr": { "==": [{ "var": "compound_id" }, "DPC-002573"] },
+        "vars": {
+          "compound_id": {
+            "dataset_id": "compound_dose_metadata",
+            "identifier": "CompoundID",
+            "identifier_type": "column"
+          }
+        }
+      }
+    }
+  ],
+  "facet_by": "expansion",
+  "color_by": "raw_slice",
+  "filters": {
+    "color1": {
+      "name": "HCC827",
+      "dimension_type": "depmap_model",
+      "expr": { "==": [{ "var": "given_id" }, "ACH-000012"] },
+      "vars": {}
+    },
+    "color2": {
+      "name": "YD38",
+      "dimension_type": "depmap_model",
+      "expr": { "==": [{ "var": "given_id" }, "ACH-000762"] },
+      "vars": {}
+    }
+  },
+  "show_regression_line": true
+}
+```
 
 ## [PLOT-TYPES] Plot types
 
