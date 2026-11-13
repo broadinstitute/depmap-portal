@@ -119,14 +119,9 @@ def create_sparkles_workflow(
     taiga_token = _find_taiga_token()
 
     # Build paths_to_localize including python-path directories
-    paths_to_localize = [{"src": taiga_token, "dst": ".taiga-token"}]
-    for python_files_to_transfer in python_files_to_transfer:
-        paths_to_localize.append(
-            {
-                "src": python_files_to_transfer,
-                "dst": f"{transfered_python_files_dir}/{os.path.basename(python_files_to_transfer)}",
-            }
-        )
+    paths_to_localize = [
+        {"src": taiga_token, "dst": ".taiga-token"}
+    ] + python_files_to_localize
 
     workflow = {
         "paths_to_localize": paths_to_localize,
