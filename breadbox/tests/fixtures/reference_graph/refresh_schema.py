@@ -31,6 +31,7 @@ PLAIN_COLUMNS_KEPT = 3
 #   sanger_combination_combo_fit_feature
 #                                     two references to one type, then a chain
 #   generic                           a type with no primary table
+#   compound_dose                     many-to-one child of compound_v2 (CompoundID)
 ROOT_TYPES = [
     "screen_pair",
     "transcript",
@@ -38,6 +39,7 @@ ROOT_TYPES = [
     "gene_pair",
     "sanger_combination_combo_fit_feature",
     "generic",
+    "compound_dose",
 ]
 
 
@@ -108,7 +110,7 @@ def main():
     OUT.write_text(
         json.dumps(
             {"dimension_types": dimension_types, "tabular_datasets": datasets},
-            indent=1,
+            indent=2,
             sort_keys=True,
         )
         + "\n"

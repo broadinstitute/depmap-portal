@@ -4,9 +4,20 @@ from typing import Dict, List, Literal, Optional, Tuple, cast
 from breadbox.crud import dimension_types as type_crud
 from breadbox.crud.dataset import get_datasets
 from breadbox.db.session import SessionWithUser
-from breadbox.models.dataset import AnnotationType, DimensionType, TabularDataset
+from breadbox.models.dataset import (
+    AnnotationType,
+    DimensionType,
+    MatrixDataset,
+    TabularDataset,
+)
 from breadbox.schemas.types import (
     DimensionTypeReferenceGraph,
+    ReferenceGraphMatrixDataset,
+    ReferencedByTypes,
+    ReferencingColumn,
+    ReferencingTable,
+    ReferencingType,
+    ReachableColumn,
     ReferenceEdge,
     ReferenceGraphNode,
     ReferenceGraphTable,
@@ -136,4 +147,88 @@ def get_reference_graph(db: SessionWithUser, user: str) -> DimensionTypeReferenc
             )
         )
 
-    return DimensionTypeReferenceGraph(dimension_types=nodes)
+    matrix_datasets = sorted(
+        (
+            ReferenceGraphMatrixDataset(
+                id=d.id,
+                given_id=d.given_id,
+                slice_dataset_id=d.given_id or d.id,
+                name=d.name,
+                data_type=d.data_type,
+                feature_type=d.feature_type_name,
+                sample_type=d.sample_type_name,
+            )
+            for d in get_datasets(db, user)
+            if isinstance(d, MatrixDataset)
+        ),
+        key=lambda d: (d.name, d.id),
+    )
+
+    return DimensionTypeReferenceGraph(
+        dimension_types=nodes, matrix_datasets=matrix_datasets
+    )
+
+
+def get_referenced_by(db: SessionWithUser, user: str, name: str) -> ReferencedByTypes:
+    """
+    The reverse of the reference graph for one type: every table, of any type, with
+    a column that references `name`. Raises KeyError for an unknown type.
+    """
+    dimension_types, tables_by_type = load_tables(db, user)
+    if name not in tables_by_type:
+        raise KeyError(name)
+    return build_referenced_by(dimension_types, tables_by_type, name)
+
+
+def build_referenced_by(
+    dimension_types: List[DimensionType],
+    tables_by_type: Dict[str, List[LoadedTable]],
+    name: str,
+) -> ReferencedByTypes:
+    result = []
+    for dim_type in dimension_types:  # already sorted by name
+        tables = []
+        for t in tables_by_type[dim_type.name]:
+            refs = [c for c in t.edges if c.references == name]
+            if not refs:
+                continue
+            tables.append(
+                ReferencingTable(
+                    id=t.id,
+                    given_id=t.given_id,
+                    slice_dataset_id=t.slice_dataset_id,
+                    name=t.name,
+                    is_primary=t.is_primary,
+                    columns=[
+                        ReachableColumn(name=c.name, col_type=c.col_type)
+                        for c in t.columns
+                    ],
+                    references=[
+                        ReferencingColumn(
+                            column=c.name,
+                            cardinality=c.cardinality,  # type: ignore
+                            relationship_from_child="many_to_many"
+                            if c.cardinality == "list"
+                            else "many_to_one",
+                            relationship_from_parent="many_to_many"
+                            if c.cardinality == "list"
+                            else "one_to_many",
+                        )
+                        for c in refs
+                    ],
+                )
+            )
+        if tables:
+            primary = next(
+                (t for t in tables_by_type[dim_type.name] if t.is_primary), None
+            )
+            result.append(
+                ReferencingType(
+                    name=dim_type.name,
+                    display_name=dim_type.display_name,
+                    axis=cast(Literal["feature", "sample"], dim_type.axis),
+                    metadata_dataset_id=primary.id if primary else None,
+                    tables=tables,
+                )
+            )
+    return ReferencedByTypes(type=name, referenced_by=result)

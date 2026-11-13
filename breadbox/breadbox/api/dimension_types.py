@@ -40,6 +40,7 @@ from breadbox.service import reference_graph as reference_graph_service
 from breadbox.service import reachable as reachable_service
 from breadbox.schemas.types import (
     ReachableTables,
+    ReferencedByTypes,
     DimensionTypeReferenceGraph,
     DimensionType,
     UpdateDimensionType,
@@ -619,6 +620,32 @@ def get_dimension_type_reference_graph(
     Derived from the datasets visible to the caller.
     """
     return reference_graph_service.get_reference_graph(db, user)
+
+
+@router.get(
+    "/dimensions/{name}/referenced-by",
+    operation_id="get_dimension_type_referenced_by",
+    response_model=ReferencedByTypes,
+)
+def get_dimension_type_referenced_by(
+    name: str,
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+    user: Annotated[str, Depends(get_user)],
+):
+    """
+    The reverse of `reachable`: every table, of any type, with a column that
+    references the given type (many rows of the referencing type per row of this
+    one, e.g. `compound_dose.CompoundID` -> `compound_v2`). Use it to find "per dose",
+    "per timepoint" or "per replicate" child types.
+
+    Discovery only: the chain resolver cannot follow these edges, so there are no
+    slice query templates. Plot at the referencing type's level instead.
+    Derived from the datasets visible to the caller.
+    """
+    try:
+        return reference_graph_service.get_referenced_by(db, user, name)
+    except KeyError:
+        raise HTTPException(404, f"Dimension type {name} not found")
 
 
 @router.get(

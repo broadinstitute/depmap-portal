@@ -8,6 +8,12 @@
     "offered | antibody_v2_metadata.target_entrez_id | gene_metadata | list",
     "offered | antibody_v2_metadata.target_entrez_id | uniprot_gene_sc_localization_annotations | list"
   ],
+  "compound_dose": [
+    "offered |  | compound_dose_metadata | scalar",
+    "offered | compound_dose_metadata.CompoundID > compound_v2_metadata.EntrezIDsOfTargets | gene_metadata | list",
+    "offered | compound_dose_metadata.CompoundID > compound_v2_metadata.EntrezIDsOfTargets | uniprot_gene_sc_localization_annotations | list",
+    "offered | compound_dose_metadata.CompoundID | compound_v2_metadata | scalar"
+  ],
   "compound_v2": [
     "offered |  | compound_v2_metadata | scalar",
     "offered | compound_v2_metadata.EntrezIDsOfTargets | gene_metadata | list",
