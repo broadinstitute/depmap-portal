@@ -1,7 +1,19 @@
-import json
 import argparse
-from typing import Optional
+import json
 import os
+import sys
+from glob import glob
+from typing import Optional
+
+DAINTREE_CORE_BIN_PATH = "daintree-core"
+
+
+def _find_taiga_token():
+    search_path = [".taiga-token", f"{os.environ['HOME']}/.taiga/token"]
+    for path in search_path:
+        if os.path.exists(path):
+            return path
+    raise Exception(f"Could not find taiga token. Checked for it in: {search_path}")
 
 
 def create_sparkles_workflow(
@@ -12,13 +24,15 @@ def create_sparkles_workflow(
     ncpus: int,
     models_per_task: int,
     test_first_n_tasks: Optional[int],
+    norm_permutations: int,
     extra_python_files: Optional[str],
     select_n_features: int,
     filter: Optional[str],
 ):
-    extra_python_path_dir = "extra_python_files"
+    # Build prepare command with optional python-path arguments
 
-    from glob import glob
+    # I worry about the random names that
+    extra_python_path_dir = "extra_python_files"
 
     python_path_parameter = []
     python_files_to_localize = []
@@ -37,10 +51,10 @@ def create_sparkles_workflow(
             extra_python_path_dir,
         ]
 
-    prepare_command = (
-        ["daintree-runner"]
-        + python_path_parameter
-        + [
+    prepare_command = ["daintree-runner"] + python_path_parameter
+
+    prepare_command.extend(
+        [
             "prepare-and-partition",
             "--input-config",
             "model_config.json",
@@ -51,24 +65,23 @@ def create_sparkles_workflow(
         ]
     )
     if filter:
-        prepare_command += ["--filter", filter]
-
+        prepare_command.extend(["--filter", filter])
     if test_first_n_tasks:
-        prepare_command += ["--test-first-n-tasks", str(test_first_n_tasks)]
+        prepare_command.extend(["--test-first-n-tasks", str(test_first_n_tasks)])
     if test:
         prepare_command.append("--test")
 
-    fit_model_command = (
-        ["daintree-core"]
-        + python_path_parameter
-        + [
+    # Build fit-model command with optional python-path arguments
+    fit_model_command = [DAINTREE_CORE_BIN_PATH] + python_path_parameter
+    fit_model_command.extend(
+        [
             "fit-model",
             "--x",
             "out/X.ftr",
             "--y",
             "out/target_matrix_filtered.ftr",
             "--model-config",
-            "{parameter.model_config}",
+            "out/core_model_config.yaml",
             "--n-folds",
             str(nfolds),
             "--cpus",
@@ -83,11 +96,40 @@ def create_sparkles_workflow(
         ]
     )
 
+    # Build calc-feature-imp-norm command (computes the norm for every model in the config)
+    norm_command = [DAINTREE_CORE_BIN_PATH] + python_path_parameter
+    norm_command.extend(
+        [
+            "calc-feature-imp-norm",
+            "--x",
+            "out/X.ftr",
+            "--y",
+            "out/target_matrix_filtered.ftr",
+            "--model-config",
+            "out/core_model_config.yaml",
+            "--r",
+            str(norm_permutations),
+            "--output",
+            "model_norms.json",
+            "--target-chunk-size",
+            "200",
+        ]
+    )
+
     taiga_token = _find_taiga_token()
 
+    # Build paths_to_localize including python-path directories
+    paths_to_localize = [{"src": taiga_token, "dst": ".taiga-token"}]
+    for python_files_to_transfer in python_files_to_transfer:
+        paths_to_localize.append(
+            {
+                "src": python_files_to_transfer,
+                "dst": f"{transfered_python_files_dir}/{os.path.basename(python_files_to_transfer)}",
+            }
+        )
+
     workflow = {
-        "paths_to_localize": [{"src": taiga_token, "dst": ".taiga-token"}]
-        + python_files_to_localize,
+        "paths_to_localize": paths_to_localize,
         "steps": [
             {
                 "command": prepare_command,
@@ -107,14 +149,20 @@ def create_sparkles_workflow(
                     "{step.1.job_path}/1/out/partitions.csv",
                 ]
             },
+            {
+                "command": norm_command,
+                "paths_to_localize": [{"src": "{step.1.job_path}/1/out", "dst": "out"}],
+            },
         ],
         "write_on_completion": [
             {
                 "expression": {
+                    "filename": "outputs.json",
                     "sparkles_job_name": "{step.1.job_name}",
                     "features_metadata_path": "{step.1.job_path}/1/out/feature_metadata.csv",
                     "ensemble_path": "{step.3.job_path}/1/ensemble.csv",
                     "predictions_path": "{step.3.job_path}/1/predictions.csv",
+                    "feature_imp_norms_path": "{step.4.job_path}/1/model_norms.json",
                 },
                 "filename": "daintree-output.json",
             },
@@ -130,19 +178,10 @@ def create_sparkles_workflow(
         print(workflow_json)
 
 
-def _find_taiga_token():
-    search_path = [".taiga-token", f"{os.environ['HOME']}/.taiga/token"]
-    for path in search_path:
-        if os.path.exists(path):
-            return path
-    raise Exception(f"Could not find taiga token. Checked for it in: {search_path}")
-
-
-import argparse
-
-
 def main():
-    parser = argparse.ArgumentParser(description="Your script description here")
+    parser = argparse.ArgumentParser(
+        description="Generate a sparkles workflow for running daintree"
+    )
 
     parser.add_argument(
         "--config", help="Path to the json daintree model config file", required=True
@@ -175,9 +214,19 @@ def main():
     )
 
     parser.add_argument(
-        "--extra-python-files",
-        help="Path to directory which contains transforms that daintree will use",
+        "--norm-permutations",
+        default=10,
+        type=int,
+        help="Number of null permutations (R) used by calc-feature-imp-norm",
     )
+
+    parser.add_argument(
+        "--python-to-upload",
+        action="append",
+        default=[],
+        help="Directory which contains python files which should be in python search path so they can contain functions used for preprocessing data. All *.py files in this directory will be transferred to worker nodes into a single directory. May be specified multiple times.",
+    )
+
     parser.add_argument(
         "--select-n-features",
         help="How many top correlates to consider in feature selection",
@@ -195,7 +244,8 @@ def main():
         ncpus=args.ncpus,
         models_per_task=args.models_per_task,
         test_first_n_tasks=args.test_first_n_tasks,
-        extra_python_files=args.extra_python_files,
+        norm_permutations=args.norm_permutations,
+        python_to_upload=tuple(args.python_to_upload),
         select_n_features=args.select_n_features,
         filter=args.filter,
     )
