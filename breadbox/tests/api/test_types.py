@@ -10,7 +10,6 @@ from breadbox.models.dataset import (
 )
 from tests import factories
 import json
-from types import SimpleNamespace
 import os
 from pathlib import Path
 import numpy as np
@@ -2300,7 +2299,7 @@ def test_contract_schema_covers_compound_dose():
 
     tables = _contract_tables()
     types = [
-        SimpleNamespace(name=n, display_name=n, axis="feature") for n in sorted(tables)
+        DimensionType(name=n, display_name=n, axis="feature") for n in sorted(tables)
     ]
     body = build_referenced_by(types, tables, "compound_v2")
     dose = next(t for t in body.referenced_by if t.name == "compound_dose")
