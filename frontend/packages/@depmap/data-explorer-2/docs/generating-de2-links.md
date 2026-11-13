@@ -1,49 +1,136 @@
 # Generating links to Data Explorer 2
 
-This document describes how to create URLs that open [Data Explorer 2](https://cds.team/depmap/data_explorer_2/) to a desired plot. It is a reference for agents (e.g. the DepMap Delphi MCP app) that generate these links, or the equivalent plot configs, programmatically.
+This document describes version 2 of the Data Explorer 2 (DE2) plot config. It is written for agents (e.g. DepMap Delphi) that turn a user's biological question into a plot config, draw it, and link to it at `https://cds.team/depmap/data_explorer_2/`.
 
-## Available formats
+**Searching:** every `##` section has a bracketed marker such as `[SELECTED-POINTS]`. Search for the marker to jump to that section.
 
-A few different formats are supported.
+| Marker                     | Read it when…                                                                                                                                      |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `[QUICKSTART]`             | You are about to build any plot. Read this first.                                                                                                  |
+| `[QUESTION-TO-PLOT]`       | You have a biological question and must choose a plot type and config.                                                                             |
+| `[SELECTED-POINTS]`        | The user selected points in a plot and asks about them.                                                                                            |
+| `[PLOT-TYPES]`             | Choosing between density, waterfall, scatter and heatmap.                                                                                          |
+| `[DIMENSIONS]`             | Writing `dimensions` (what each axis shows).                                                                                                       |
+| `[COLOR-AND-FACET]`        | Grouping points by a property, a gene, or two hand-made groups.                                                                                    |
+| `[EXPAND-BY]`              | One axis should show every member of a set, not their aggregate.                                                                                   |
+| `[FILTERS-AND-CATEGORIES]` | Restricting which points are drawn, or "just the top N categories".                                                                                |
+| `[REGRESSION-LINE]`        | Deciding whether to add a fit line to a scatter.                                                                                                   |
+| `[CONTEXT-FORMAT]`         | Writing a `context` (a rule that selects entities).                                                                                                |
+| `[OPERATORS]`              | Writing the `expr` inside a context.                                                                                                               |
+| `[REINDEX-THROUGH]`        | A context must read a column belonging to a different entity type, or the user wants a breakdown "per dose / timepoint / replicate" (child types). |
+| `[NESTED-CONTEXTS]`        | A context must refer to another context.                                                                                                           |
 
-- **Human-readable query parameters** — these exist for backward-compatibility with Data Explorer 1. If you've seen links with `xDataset`, `yDataset`, `xFeature`, etc., that's this format. The parser is fairly feature-rich but has to make some awkward inferences (e.g. what if `xFeature` is actually a sample? That couldn't happen in DE1, but DE2 tries to support it), so it is **not recommended**. ❌
-- **Structured JSON encoded as Base64** — fairly easy to generate, so this is the **recommended** format. 👍 It uses the `?plot=...` query parameter and mirrors the data structure used internally, so you can express anything with it. The rest of this document describes this format.
-- **Structured JSON, compressed** — the same as above but additionally run through zlib (DEFLATE) compression. These are the links DE2 auto-generates. They use the `?p=...` query parameter. Not recommended unless you find you're generating URLs too long to be accepted by the web server (Gunicorn has a default `limit_request_line` of 4094 characters).
+## [QUICKSTART] Building a plot
 
-## Structured JSON format
+1. **Always include `"version": 2`.** A payload without it is read as the oldest schema, and nothing reports an error. The most visible failure: a plot with `facet_by` and no `color_by` renders every point grey. Declaring version 2 also promises that you used Breadbox `given_id`s for `dataset_id`s (never legacy Portal IDs), the field names below, and V2-format contexts.
+2. **Required fields:** `version`, `plot_type`, `index_type`, `dimensions`.
+3. **Pick `index_type` first.** It is what one point _is_ (the "Points" field in the UI): `depmap_model` makes each point a cell line model; `gene` makes each point a gene. Each axis then reads a dataset indexed by that type, and its `slice_type` is the complementary type.
+4. **Encode the config as a link.** Base64 (RFC 4648) of the UTF-8 JSON, passed as `?plot=<base64>`. Other formats exist, but don't use them: the human-readable `xDataset`/`yFeature` parameters (legacy DE1 compatibility, ambiguous) and the compressed `?p=` form (DE2's own output; only needed if a URL exceeds ~4,000 characters).
+5. **Don't guess IDs or types.** Look up dataset IDs, gene Entrez IDs, model IDs and metadata column names with your tools. A matrix dataset's `feature_type` and `sample_type` are listed in `matrix_datasets` on `GET /types/dimensions/reference-graph`; use them to choose `index_type` and `slice_type`, not the dataset's name or a column such as `CompoundID`. Names used in the start-screen examples (they may differ between deployments, so confirm them): datasets `Chronos_Combined` (CRISPR gene effect), `expression`, `copy_number_relative`, `OmicsAbsoluteCNGene`, `mutations_damaging`, `mutations_hotspot`, `ssgsea`, `Rep_all_single_pt_per_compound`; metadata `depmap_model_metadata` (columns `OncotreeLineage`, `GrowthPattern`, `ModelType`, `Sex`, `PrimaryOrMetastasis`), `gene_metadata` (columns `label`, `selectivity`, `essentiality`).
+6. **State your choices.** Say which dataset, which aggregation and which grouping you used, and why, so the user can correct you.
 
-### Required fields
+### Minimal complete example
 
-At minimum, a plot must contain a `plot_type`, an `index_type`, and `dimensions` to be considered valid. **When you generate a plot, also always include `"version": 2`** (see [Schema version](#schema-version)): a payload without it is read as the oldest schema, which changes what several omitted fields mean. Most visibly, a plot with `facet_by` and no `color_by` comes out with every point grey instead of colored.
+TP53 CRISPR gene effect across models. Gene `given_id`s are Entrez IDs; model `given_id`s are `ACH-` IDs.
 
-#### plot_type [string]
+```json
+{
+  "version": 2,
+  "plot_type": "density_1d",
+  "index_type": "depmap_model",
+  "dimensions": {
+    "x": {
+      "axis_type": "raw_slice",
+      "aggregation": "first",
+      "dataset_id": "Chronos_Combined",
+      "slice_type": "gene",
+      "context": {
+        "dimension_type": "gene",
+        "name": "TP53",
+        "expr": { "==": [{ "var": "given_id" }, "7157"] },
+        "vars": {}
+      }
+    }
+  }
+}
+```
 
-- `"density_1d"` — shows the distribution of a single `"x"` dimension.
-- `"waterfall"` — also plots a single `"x"` dimension.
-- `"scatter"` — plots `"x"` against `"y"`.
-- `"correlation_heatmap"` — somewhat unusual, so it gets its own section below. For now, note that it also uses a single `"x"` dimension.
+Later examples abbreviate repeated axes as `"x": { … }`. Real payloads must be complete.
 
-#### index_type [string]
+## [QUESTION-TO-PLOT] From a biological question to a plot config
 
-This can be any sample or feature type. It is the equivalent of setting the "Points" field through the UI. For all supported types, see the [Breadbox dimension-types endpoint](https://cds.team/depmap/breadbox/docs#/types/get_dimension_types).
+Start from what the user wants to learn, then pick the config. These patterns come from the real examples on the Data Explorer start screen, each of which answers a real question.
 
-#### dimensions [object]
+| The user wants to know…                                                                               | Config pattern                                                                                                                                                                                                                   | Example                                                                                                                                                                                                         |
+| ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| How is one gene distributed, and does it differ by lineage?                                           | `density_1d`, `raw_slice` x, `facet_by: "property"` on `OncotreeLineage`                                                                                                                                                         | SOX10 expression per lineage: which lineages express it and which don't.                                                                                                                                        |
+| Is gene A's dependency related to gene B's copy number, expression, or another dataset (a biomarker)? | `scatter`, two `raw_slice` axes from different datasets, `index_type: "depmap_model"`; add a regression line                                                                                                                     | VPS4A CRISPR gene effect vs VPS4B absolute copy number (paralog dependency). Optionally `color_by: "custom"` with a third `raw_slice` (e.g. VPS4B expression).                                                  |
+| Does a gene's dependency track with sensitivity to drugs that hit it?                                 | `scatter`, x = gene CRISPR, y = a compound **context** with `aggregation: "expansion"`, `facet_by: "expansion"`, regression line. See `[EXPAND-BY]`.                                                                             | BRAF dependency vs every compound whose `TargetOrMechanism` names BRAF, one panel per inhibitor. Genetic and pharmacological dependency should agree.                                                           |
+| Which genes are specifically essential in group A vs group B?                                         | `scatter`, `index_type: "gene"` (points are genes), x = `aggregated_slice` mean over context A, y = mean over context B, same dataset                                                                                            | EMT-high vs EMT-low adherent models (contexts built from an `ssgsea` score threshold and `GrowthPattern`); genes far from the diagonal are subtype-specific dependencies. Color by `gene_metadata.selectivity`. |
+| Which genes are up or down in group A vs group B?                                                     | Same as above with an expression dataset                                                                                                                                                                                         | RB1-loss vs RB1-intact adherent models (damaging or hotspot mutation, or low relative copy number, combined with `or`).                                                                                         |
+| How does a gene's expression compare between two subgroups of one lineage?                            | `density_1d` with `filters.visible` for the lineage, `facet_by: "aggregated_slice"` with `facet1` and `facet2`, `color_by: "facet"`                                                                                              | ERBB2 expression in HER2-amplified (copy number > 1.5) vs non-amplified breast models. The second group uses `complement`.                                                                                      |
+| Is a gene essential everywhere, or only in some lines? Is it also expressed?                          | `scatter`, `index_type: "gene"`, x and y both `aggregated_slice` mean over the context `expr: true` ("All") in two datasets, `color_by: "property"` on `gene_metadata.essentiality`                                              | Mean expression vs mean CRISPR effect: nearly all common essentials are highly expressed, but not the reverse.                                                                                                  |
+| Which genes in a pathway or complex share dependencies?                                               | `correlation_heatmap`, x = context of gene labels with `aggregation: "correlation"`; optionally `filters.distinguish1/2` to split by cell-line group                                                                             | De novo pyrimidine synthesis (CAD, CTPS1, DHODH, UMPS…) in Chronos. Distinguish adherent vs suspension models.                                                                                                  |
+| How does X relate to Y at different doses / timepoints / replicates?                                  | `scatter`, `index_type: "depmap_model"`, y = a context over the **child type** (e.g. `compound_dose`) with `aggregation: "expansion"` and `facet_by: "expansion"`. Find the child with `referenced-by`; see `[REINDEX-THROUGH]`. | BRAF expression vs ERLOTINIB viability, one panel per dose (full example under "Child types"). Don't average doses or plot dose-level data on a `compound_v2` axis.                                             |
+| Which isoform of a gene is used, and does it vary by lineage?                                         | `density_1d`, transcript context with `aggregation: "expansion"` and `facet_by: "expansion"`; then `color_by: "property"` for lineage                                                                                            | CD44 isoforms in long-read expression (needs a transcript-level dataset).                                                                                                                                       |
 
-Depending on `plot_type`, this has either just an `"x"` field or both `"x"` and `"y"` (later we'll see you can also specify a `"color"` dimension).
+Rules of thumb for choosing:
 
-Each dimension is an object with its own set of required fields:
+- **One gene or compound, one number per model** → `raw_slice`. **A group of genes, or a group of models, collapsed to one number** → `aggregated_slice` with `mean` (or another aggregation).
+- **Comparing the same quantity between two groups of models** → make the points genes (`index_type: "gene"`) and put one model-context on each axis. Don't try to do it with two groups on a model-indexed plot.
+- **"Per lineage / per subtype / per mutation status"** → facet. **"Highlight these models"** → `color_by: "raw_slice"` / `"aggregated_slice"` with a context. **"Colored by another measurement"** → `color_by: "custom"`.
+- **A relationship between two measurements of the same models** → `scatter` with `index_type: "depmap_model"`. **The distribution of one measurement** → `density_1d`. **A ranked list** → `waterfall`.
+- **If the question is ambiguous about the dataset** (e.g. "dependency" could be Chronos effect, or probability), choose the portal default, say so, and offer the alternative.
+- **Interpreting the result is part of the job.** After plotting, say what the plot shows biologically (which groups separate, outliers, direction of effect), not only that it was drawn.
 
-- **axis_type** — either `"raw_slice"` (plots a single feature or sample directly) or `"aggregated_slice"` (computes, for instance, the mean of several features).
-- **aggregation** — set to `"first"` if you're plotting a `"raw_slice"`; set to `"correlation"` if the plot type is `"correlation_heatmap"`; otherwise one of `"mean"`, `"median"`, `"25%tile"`, `"75%tile"`, `"stddev"`. There is one further value, `"expansion"`, which means "don't aggregate these members at all — give each one its own point"; see [expand_by](#expand_by-array).
-- **dataset_id** — the dataset you wish to plot. It should be indexable by the `index_type` (i.e. either the sample type or the feature type of the dataset should match the specified `index_type`).
-- **slice_type** — the complement to `index_type`. If `index_type` is a sample type, this should be a feature type, and vice versa.
-- **context** — a Context Definition describing how to derive the slice. More on this in [Context format](#context-format).
+## [SELECTED-POINTS] When the user selects points and asks about them
 
-##### Specifying the context
+The plot view lets a user box- or lasso-select points and click **Ask about these N …**, which sends a message of this shape:
 
-The precise format is covered in [Context format](#context-format) below. For now, it suffices to say that anything generated by the Context Manager will work here.
+```
+I selected 3 cell lines in the plot of <y axis> against <x axis>:
+- NAME (ACH-000001)
+- NAME (ACH-000002)
+- NAME (ACH-000003)
+```
 
-But what if you're just plotting a single `"raw_slice"`? You still have to write an expression to look it up — a quirk of how Data Explorer works, intended to keep things consistent and flexible. There is a magic variable called `given_id` that makes this easier. Say you want to plot the gene TP53, which has an Entrez ID of 7157. The context definition for that slice looks like:
+Up to 50 entities are sent. Each is the plot's `index_type` entity (cell line, gene, compound…) with its label and ID. **Plotted values are not included** — you must look up the values yourself when they matter.
+
+**Treat a selection as a hypothesis the user is forming, not as a visualization task.** The user picked those points because something about them stood out. Your job is to work out what, and test it. Do not just redraw the plot.
+
+1. **Find out what the selected entities are.** Fetch their metadata with your tools: for models, lineage, subtype, growth pattern, primary vs metastasis, and sex; for genes, chromosome arm, selectivity, pathway or complex membership; for compounds, target or mechanism. Compare to the whole plot: Are they all one lineage? Over-represented relative to the background? Mixed?
+2. **Work out why they were selected.** Use the plot's axes. Note where the points sit in the distribution of each plotted quantity: high or low outliers, one cluster, a spread across a range, above or below the diagonal. Retrieve their actual values on the plotted axes. State what the position suggests biologically. For example, very low expression of a gene in a lineage that normally expresses it could mean deletion, silencing, or a feedback loop; a model more dependent than its lineage peers may carry a mutation that creates the dependency.
+3. **Investigate biological relevance, proactively.** Check whether the selected entities share relevant alterations (mutations, copy number, fusions), whether those alterations fit the known biology of their lineage, and what other features they share (dependencies, drug sensitivities, expression of related genes). If you can compare the selected group to everyone else (a two-class comparison, with the selected IDs as one context), do it, and report the top differences.
+4. **Offer a follow-up plot only when it adds something.** A natural one is the same plot with the selected entities highlighted (`color_by: "raw_slice"` or `"aggregated_slice"` with `filters.color1` as an ID context: `{"in": [{"var": "given_id"}, ["ACH-000001", …]]}`), or a facet by the shared property you found.
+5. **Ask what they noticed if it is truly ambiguous**, e.g. "Did you select these because they have unusually low TP53 expression? I can check what might explain that." Do this _after_ giving what you can already say, not instead of it.
+6. **Be honest about limits.** A shared lineage across five models is a hint, not a conclusion; say how many of the plot's models share the property and how many would be expected by chance. If the selection is a single point, treat it as a question about that entity.
+
+Selection is only offered where one point is one entity. On a plot with `expand_by` that is not faceted by the expansion it is disabled (see `[EXPAND-BY]`).
+
+## [PLOT-TYPES] Plot types
+
+| `plot_type`           | Dimensions | Shows                                                                                          |
+| --------------------- | ---------- | ---------------------------------------------------------------------------------------------- |
+| `density_1d`          | `x`        | Distribution of one quantity. Facets become violin tracks.                                     |
+| `waterfall`           | `x`        | Sorted values of one quantity. Facets become x-axis clusters.                                  |
+| `scatter`             | `x`, `y`   | `y` against `x`. Facets become small-multiples panels.                                         |
+| `correlation_heatmap` | `x`        | Pairwise correlations among the members of `x`'s context. Cannot use `color_by` or `facet_by`. |
+
+Optional per-type fields: `sort_by` (`density_1d`/`waterfall`: `"mean_values_asc"`, `"mean_values_desc"`, `"max_values"`, `"min_values"`, `"num_points"`, `"alphabetical"`), `hide_points` (`density_1d`), `hide_identity_line` (`scatter`).
+
+## [DIMENSIONS] Dimensions
+
+`dimensions` has `x`, plus `y` for scatter. It may also have `color` and `facet` (see `[COLOR-AND-FACET]`). Each dimension is an object with these required fields:
+
+| Field         | Value                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `axis_type`   | `"raw_slice"` (one gene/model/etc. read directly) or `"aggregated_slice"` (a group collapsed to one number per point).                                                                                                                                                                                                                                                                                       |
+| `aggregation` | `"first"` for a `raw_slice`. `"correlation"` for a heatmap. Otherwise `"mean"`, `"median"`, `"25%tile"`, `"75%tile"`, `"stddev"`, or `"expansion"` (see `[EXPAND-BY]`).                                                                                                                                                                                                                                      |
+| `dataset_id`  | The dataset to read. Its sample type or feature type must equal `index_type`.                                                                                                                                                                                                                                                                                                                                |
+| `slice_type`  | The complement of `index_type`: a feature type if `index_type` is a sample type, and vice versa. It must be **exactly the dataset's other index type**, not a parent or child of it. A mismatch is not rejected: it silently returns an all-null axis. For example, a dataset indexed by `compound_dose` with `slice_type: "compound_v2"` plots nothing. **If an axis comes back empty, the type is wrong.** |
+| `context`     | A context describing which entities form the slice. See `[CONTEXT-FORMAT]`.                                                                                                                                                                                                                                                                                                                                  |
+
+**A raw slice still needs a context.** Use the magic variable `given_id`, which needs no entry in `vars` and refers to the entity's own ID (Entrez ID for genes, `ACH-` ID for models):
 
 ```json
 {
@@ -54,153 +141,9 @@ But what if you're just plotting a single `"raw_slice"`? You still have to write
 }
 ```
 
-Note that `given_id` has no corresponding entry in `vars`. That's what makes it "magic": it doesn't need (and shouldn't be given) a SliceQuery to look it up. It automatically refers to whatever ID column the `dimension_type` has (here, the `entrez_id`).
+**A feature type can be the index.** With `index_type: "gene"` and `slice_type: "depmap_model"`, each point is a gene and an axis reads one model (a `raw_slice` with a model `given_id`) or a group of models (`aggregated_slice`).
 
-## Schema version
-
-DE2 payloads carry a top-level `version` field that declares which revision of this schema the payload conforms to. **Always include it when you generate a plot.**
-
-### version [number] (always include)
-
-`version` is a sibling of `plot_type`, `index_type`, and `dimensions`. It lives in the JSON itself, so it applies to both the `?plot=` and `?p=` formats. **This document describes version 2.** Every plot you generate should include:
-
-```json
-"version": 2
-```
-
-A payload with no `version` is not assumed to be current. It is interpreted as the oldest, pre-versioning schema, and nothing reports an error when that is not what you meant. The clearest case is the `color_by` change described [below](#the-version-2-default-flip-color_by-and-facet_by): with `"version": 2`, a plot that sets `facet_by` and omits `color_by` is colored by the facet, but the same JSON without `version` is treated as version 1 and renders every point grey. DE2 uses `version` to interpret your payload against the correct schema. The schema will evolve, and some changes (like the one that produced version 2) alter what an _omitted_ field means, so stamping the version you generated against is what keeps your plot rendering as intended.
-
-Two things to keep in mind:
-
-- **Keep the number in sync with this document.** Whenever the version described here changes, emit the new number. A payload's `version` should match the version of the document it was built from.
-- **Declaring `version: 2` is a promise that the payload uses the current canonical schema** — Breadbox `given_id`s for `dataset_id` (not legacy Portal IDs), canonical field names, and V2-format contexts (as described throughout this document). Following this document satisfies that promise automatically.
-
-Every complete plot example below includes `"version": 2`. Keep it when you adapt one.
-
-#### The version 2 default flip: `color_by` and `facet_by`
-
-Version 2 changed what an **omitted `color_by`** means. Under version 1, no `color_by` meant "no coloring." Under version 2, no `color_by` means **"color by whatever `facet_by` is doing"** — pick a `facet_by` and you get matching colors for free, with no `color_by` field required. See [color_by](#color_by-string) below for the full value set, including the new `"facet"` and `"uniform"` values this flip introduces.
-
-If you are generating a link and want colors that are independent of (or in the absence of) any `facet_by`, either:
-
-- Explicitly set `color_by` to whatever value you want (`"raw_slice"`, `"aggregated_slice"`, `"property"`, or `"custom"`), or
-- Set `"color_by": "uniform"` to explicitly request no coloring at all, regardless of `facet_by`.
-
-A version-1 payload (`"version": 1`, or no `version` field at all) with no `color_by` is unaffected by this flip — DE2 migrates it on read so it keeps rendering exactly as it always did (uncolored), rather than silently picking up the new "match facet_by" default.
-
-## Basic examples
-
-### Plotting a single gene
-
-A density plot of the gene TP53 from the CRISPR dataset.
-
-```json
-{
-  "version": 2,
-  "plot_type": "density_1d",
-  "index_type": "depmap_model",
-  "dimensions": {
-    "x": {
-      "axis_type": "raw_slice",
-      "dataset_id": "Chronos_Combined",
-      "slice_type": "gene",
-      "aggregation": "first",
-      "context": {
-        "dimension_type": "gene",
-        "name": "TP53",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "7157"
-          ]
-        },
-        "vars": {}
-      }
-    }
-  }
-}
-```
-
-If you plug that JSON into a [Base64 encoder](https://emn178.github.io/online-tools/base64_encode.html?input=%7B%0A%20%20%22version%22%3A%202%2C%0A%20%20%22plot_type%22%3A%20%22density_1d%22%2C%0A%20%20%22index_type%22%3A%20%22depmap_model%22%2C%0A%20%20%22dimensions%22%3A%20%7B%0A%20%20%20%20%22x%22%3A%20%7B%0A%20%20%20%20%20%20%22axis_type%22%3A%20%22raw_slice%22%2C%0A%20%20%20%20%20%20%22dataset_id%22%3A%20%22Chronos_Combined%22%2C%0A%20%20%20%20%20%20%22slice_type%22%3A%20%22gene%22%2C%0A%20%20%20%20%20%20%22aggregation%22%3A%20%22first%22%2C%0A%20%20%20%20%20%20%22context%22%3A%20%7B%0A%20%20%20%20%20%20%20%20%22dimension_type%22%3A%20%22gene%22%2C%0A%20%20%20%20%20%20%20%20%22name%22%3A%20%22TP53%22%2C%0A%20%20%20%20%20%20%20%20%22expr%22%3A%20%7B%20%22%3D%3D%22%3A%20%5B%20%7B%20%22var%22%3A%20%22given_id%22%20%7D%2C%20%227157%22%20%5D%20%7D%2C%0A%20%20%20%20%20%20%20%20%22vars%22%3A%20%7B%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A&input_type=utf-8&format=rfc_4648), you get a `?plot=...` link.
-
-### Feature type as index
-
-Demonstrates that the index can be a feature type instead of a sample type.
-
-```json
-{
-  "version": 2,
-  "plot_type": "density_1d",
-  "index_type": "gene",
-  "dimensions": {
-    "x": {
-      "axis_type": "raw_slice",
-      "aggregation": "first",
-      "slice_type": "depmap_model",
-      "dataset_id": "Chronos_Combined",
-      "context": {
-        "name": "UACC-62",
-        "dimension_type": "depmap_model",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "ACH-000425"
-          ]
-        },
-        "vars": {}
-      }
-    }
-  }
-}
-```
-
-### Aggregation
-
-Demonstrates plotting an aggregated slice.
-
-```json
-{
-  "version": 2,
-  "plot_type": "density_1d",
-  "index_type": "gene",
-  "dimensions": {
-    "x": {
-      "axis_type": "aggregated_slice",
-      "aggregation": "mean",
-      "slice_type": "depmap_model",
-      "dataset_id": "Chronos_Combined",
-      "context": {
-        "dimension_type": "depmap_model",
-        "expr": {
-          "==": [
-            {
-              "var": "0"
-            },
-            "Breast"
-          ]
-        },
-        "name": "Breast",
-        "vars": {
-          "0": {
-            "dataset_id": "depmap_model_metadata",
-            "identifier": "OncotreeLineage",
-            "identifier_type": "column",
-            "source": "property"
-          }
-        }
-      }
-    }
-  }
-}
-```
-
-### Scatterplot
-
-Takes the previous example a step further by turning it into a scatterplot. Note the use of the `!` (logical-not) operator to negate the logic and define the "Not Breast" out-group. (The Data Explorer UI recognizes such a negation and treats the context as an out-group: when saved through the UI it reuses the in-group definition rather than creating a separate entry.)
+**Aggregating a group**: a lineage's mean dependency, with its out-group on the other axis. `!` negates, but prefer `complement` (null-safe, see `[OPERATORS]`) for out-groups:
 
 ```json
 {
@@ -216,59 +159,24 @@ Takes the previous example a step further by turning it into a scatterplot. Note
       "context": {
         "name": "Breast",
         "dimension_type": "depmap_model",
-        "expr": {
-          "==": [
-            {
-              "var": "0"
-            },
-            "Breast"
-          ]
-        },
+        "expr": { "==": [{ "var": "0" }, "Breast"] },
         "vars": {
           "0": {
             "dataset_id": "depmap_model_metadata",
             "identifier": "OncotreeLineage",
-            "identifier_type": "column",
-            "source": "property"
+            "identifier_type": "column"
           }
         }
       }
     },
     "y": {
-      "axis_type": "aggregated_slice",
-      "aggregation": "mean",
-      "slice_type": "depmap_model",
-      "dataset_id": "Chronos_Combined",
-      "context": {
-        "name": "Not Breast",
-        "dimension_type": "depmap_model",
-        "expr": {
-          "!": {
-            "==": [
-              {
-                "var": "0"
-              },
-              "Breast"
-            ]
-          }
-        },
-        "vars": {
-          "0": {
-            "dataset_id": "depmap_model_metadata",
-            "identifier": "OncotreeLineage",
-            "identifier_type": "column",
-            "source": "property"
-          }
-        }
-      }
+      "…": "same as x, but name 'Not Breast' and expr {\"complement\": {\"==\": [{\"var\": \"0\"}, \"Breast\"]}}"
     }
   }
 }
 ```
 
-### Correlation heatmap
-
-The `correlation_heatmap` plot type is unusual. You specify a single `"x"` dimension, but its context isn't used for aggregating (though you should still set `"aggregation"` to `"correlation"`). Instead, the context is the set of features (or samples) from which pairwise comparisons are drawn.
+**Correlation heatmap**: `x`'s context is the _set of features_ to correlate (not something to aggregate), with `aggregation: "correlation"`.
 
 ```json
 {
@@ -284,29 +192,9 @@ The `correlation_heatmap` plot type is unusual. You specify a single `"x"` dimen
       "context": {
         "name": "DeNovoPyrimidine",
         "dimension_type": "gene",
-        "expr": {
-          "in": [
-            {
-              "var": "gene label"
-            },
-            [
-              "CAD",
-              "CMPK1",
-              "CMPK2",
-              "CTPS1",
-              "CTPS2",
-              "DHODH",
-              "NME1",
-              "NME2",
-              "NME1-NME2",
-              "NME4",
-              "NME6",
-              "UMPS"
-            ]
-          ]
-        },
+        "expr": { "in": [{ "var": "0" }, ["CAD", "CTPS1", "DHODH", "UMPS"]] },
         "vars": {
-          "gene label": {
+          "0": {
             "dataset_id": "gene_metadata",
             "identifier": "label",
             "identifier_type": "column"
@@ -318,683 +206,71 @@ The `correlation_heatmap` plot type is unusual. You specify a single `"x"` dimen
 }
 ```
 
-## Advanced examples
+**`filters.distinguish1` / `distinguish2`** (heatmap only) pre-filter the `index_type` entities before correlating, producing two heatmaps (e.g. Lung vs `complement` of Lung). Hovering a cell shows its value in both. Set both; one alone is supported but not meaningful.
 
-### Correlation heatmap with "distinguish"
+## [COLOR-AND-FACET] Coloring and faceting
 
-The "distinguish" feature pre-filters the entities of type `index_type` before computing correlations, to show how that differentially affects the results. Applying a single distinguish operation doesn't make much sense (though it's supported); you would usually define both `filters.distinguish1` and `filters.distinguish2`.
+`color_by` and `facet_by` are independent, with one link: **in version 2, an omitted `color_by` means "color by whatever `facet_by` is doing."** (In version 1 it meant no color. That is why `version` must be stamped.) Neither can be used with `correlation_heatmap`.
+
+### Prefer faceting for high-cardinality groupings
+
+Coloring draws every category in the same space; with 30+ lineages the points overplot and the legend is unreadable. Faceting gives each category its own track, cluster or panel. **For categorical properties with many values (e.g. `OncotreeLineage`), set `facet_by`, not just `color_by`.** With `version: 2` and `color_by` omitted, you get both. Use a standalone `color_by` (with `facet_by` unset, or `color_by: "uniform"`) only for low-cardinality groupings or continuous values.
+
+### Backing fields by mode
+
+Both fields take a mode, and each mode reads its own backing field:
+
+| Mode                 | `color_by` reads                       | `facet_by` reads                    | Notes                                                                                                                                                                   |
+| -------------------- | -------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `"raw_slice"`        | `filters.color1`, optional `color2`    | `filters.facet1`, optional `facet2` | One entity per group. Contexts must have `dimension_type` = `index_type`. Points in neither group go to an automatic "Other"; overlap (with two groups) goes to "Both". |
+| `"aggregated_slice"` | `filters.color1/2`                     | `filters.facet1/2`                  | Same, but each context resolves to many entities.                                                                                                                       |
+| `"property"`         | `metadata.color_property`              | `metadata.facet_property`           | A SliceQuery to a categorical/text column. A continuous column is binned automatically.                                                                                 |
+| `"custom"`           | `dimensions.color`                     | `dimensions.facet`                  | A raw or aggregated slice. Continuous values are binned.                                                                                                                |
+| `"expansion"`        | —                                      | needs `expand_by`                   | See `[EXPAND-BY]`. Without `expand_by` it is dropped.                                                                                                                   |
+| `"facet"`            | defer to `facet_by` (same as omitting) | —                                   |                                                                                                                                                                         |
+| `"uniform"`          | no coloring, even if `facet_by` is set | —                                   |                                                                                                                                                                         |
+
+**There is no `facet3`. Two hand-made groups is the maximum** with `raw_slice`/`aggregated_slice`. For three or more groups, facet by a property.
+
+Fragments:
 
 ```json
-{
-  "version": 2,
-  "plot_type": "correlation_heatmap",
-  "index_type": "depmap_model",
-  "dimensions": {
-    "x": {
-      "axis_type": "aggregated_slice",
-      "aggregation": "correlation",
-      "dataset_id": "Chronos_Combined",
-      "slice_type": "gene",
-      "context": {
-        "name": "DeNovoPyrimidine",
-        "dimension_type": "gene",
-        "expr": {
-          "in": [
-            {
-              "var": "entity_label"
-            },
-            [
-              "CAD",
-              "CMPK1",
-              "CMPK2",
-              "CTPS1",
-              "CTPS2",
-              "DHODH",
-              "NME1",
-              "NME2",
-              "NME1-NME2",
-              "NME4",
-              "NME6",
-              "UMPS"
-            ]
-          ]
-        },
-        "vars": {
-          "entity_label": {
-            "dataset_id": "gene_metadata",
-            "identifier": "label",
-            "identifier_type": "column"
-          }
-        }
-      }
-    }
-  },
-  "filters": {
-    "distinguish1": {
-      "name": "Lung",
-      "dimension_type": "depmap_model",
-      "expr": {
-        "==": [
-          {
-            "var": "0"
-          },
-          "Lung"
-        ]
-      },
-      "vars": {
-        "0": {
-          "dataset_id": "depmap_model_metadata",
-          "identifier": "OncotreeLineage",
-          "identifier_type": "column"
-        }
-      }
-    },
-    "distinguish2": {
-      "name": "Not Lung",
-      "dimension_type": "depmap_model",
-      "expr": {
-        "complement": {
-          "==": [
-            {
-              "var": "0"
-            },
-            "Lung"
-          ]
-        }
-      },
-      "vars": {
-        "0": {
-          "dataset_id": "depmap_model_metadata",
-          "identifier": "OncotreeLineage",
-          "identifier_type": "column"
-        }
-      }
-    }
+"facet_by": "property",
+"metadata": {
+  "facet_property": {
+    "dataset_id": "depmap_model_metadata",
+    "identifier": "OncotreeLineage",
+    "identifier_type": "column"
   }
 }
 ```
 
-This produces two heatmaps on the same page: the first is the correlation of the 11 genes distinguished by "Lung" models, the second the correlation distinguished by "Not Lung" models (note the null-safe [complement](#complement) operator). Hovering over a cell shows both that cell's value and the value from the parallel heatmap, so you can see how each context affects the result.
-
-### Faceted scatterplot (small multiples)
-
-Setting `facet_by` on a `scatter` plot is the most visually distinctive case: instead of one panel, DE2 renders one small-multiples panel per facet, each with its own regression line (if `show_regression_line` is set — or one line per color, with [show_regression_line_per_color](#show_regression_line_per_color-boolean)) and identity line. This example facets the same TP53-CRISPR-vs-TP53-expression scatterplot from the [basic scatterplot example](#scatterplot) above by `OncotreeLineage`, producing one panel per lineage.
-
 ```json
-{
-  "version": 2,
-  "plot_type": "scatter",
-  "index_type": "depmap_model",
-  "dimensions": {
-    "x": {
-      "axis_type": "raw_slice",
-      "aggregation": "first",
-      "dataset_id": "Chronos_Combined",
-      "slice_type": "gene",
-      "context": {
-        "dimension_type": "gene",
-        "name": "TP53",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "7157"
-          ]
-        },
-        "vars": {}
-      }
-    },
-    "y": {
-      "axis_type": "raw_slice",
-      "aggregation": "first",
-      "dataset_id": "expression",
-      "slice_type": "gene",
-      "context": {
-        "dimension_type": "gene",
-        "name": "TP53",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "7157"
-          ]
-        },
-        "vars": {}
-      }
-    }
-  },
-  "facet_by": "property",
-  "metadata": {
-    "facet_property": {
-      "identifier_type": "column",
-      "dataset_id": "depmap_model_metadata",
-      "identifier": "OncotreeLineage"
-    }
-  }
+"color_by": "aggregated_slice",
+"filters": {
+  "color1": { "name": "Breast", "dimension_type": "depmap_model", "expr": { "==": [{ "var": "0" }, "Breast"] }, "vars": { "0": { "dataset_id": "depmap_model_metadata", "identifier": "OncotreeLineage", "identifier_type": "column" } } }
 }
 ```
 
-`color_by` is omitted, so each panel's points are also colored to match its facet, per the version 2 default — no separate `color_by` needed. If you instead want the panels to keep this faceted layout but color points by something unrelated (say, a different property), just add an explicit `color_by`/`metadata.color_property` (or any other `color_by` mode) alongside `facet_by`; the two are fully independent (see [facet_by](#facet_by-string) above).
-
-## Optional fields
-
-The following fields color, facet, filter, or annotate a plot.
-
-### Prefer faceting over coloring for high-cardinality groupings
-
-Coloring and faceting can both express "group these points by X," but they scale very differently. Coloring draws every category in the same space, so each category is plotted right on top of the others. That is fine for a handful of groups, but for something like lineage (30+ categories) the result is overplotting: categories hide one another, and a legend with that many near-indistinguishable colors is hard to read.
-
-Faceting gives each category its own track (`density_1d`), x-axis cluster (`waterfall`) or panel (`scatter`), so nothing is drawn on top of anything else. **For high-cardinality categorical properties such as `OncotreeLineage`, a link should usually set `facet_by` rather than (only) `color_by`.**
-
-Because of the version 2 default (see [above](#the-version-2-default-flip-color_by-and-facet_by)), you get both for free: set `facet_by`, include `"version": 2`, and omit `color_by`, and each facet is also given its own color. (Without `version`, an omitted `color_by` means "no coloring", so either stamp the version or set `"color_by": "facet"` explicitly.) Reserve a standalone `color_by` (with `facet_by` unset, or with `"color_by": "uniform"` to drop color) for low-cardinality groupings, or for a continuous value where there are no discrete groups to separate.
-
-The same applies to the `color1`/`color2` [shorthand URL parameters](#available-formats): they are interpreted as faceting _and_ coloring, as if `facet1`/`facet2` had been given with `color_by` deferring to them.
-
-See [Faceted scatterplot (small multiples)](#faceted-scatterplot-small-multiples) and the [facet_by](#facet_by-string) `property` example below.
-
-If the request is for only _some_ of a high-cardinality property's categories ("just the top 5 lineages"), see [Showing only some categories](#showing-only-some-categories).
-
-### color_by [string]
-
-Specifies how the plot should be colored. There are several strategies: some map directly to values (continuous or categorical), while others map to membership of an arbitrary facet. The supported values are `"raw_slice"`, `"aggregated_slice"`, `"property"`, `"custom"`, `"facet"`, and `"uniform"`.
-
-Note that `color_by` cannot be used with the `correlation_heatmap` plot type.
-
-**If `color_by` is omitted entirely** (version 2 default — see [above](#the-version-2-default-flip-color_by-and-facet_by)), the plot colors by whatever `facet_by` resolves to, exactly as if you had set `"color_by": "facet"`. If `facet_by` is also unset, the plot is uncolored.
-
-#### raw_slice
-
-Assigns a color to a single sample or feature. `filters.color1` (and optionally `filters.color2`) should be set to a context that resolves to that slice. They should have a `dimension_type` matching the `index_type`.
-
 ```json
-{
-  "version": 2,
-  "plot_type": "density_1d",
-  "index_type": "depmap_model",
-  "dimensions": {
-    "x": {
-      "axis_type": "raw_slice",
-      "aggregation": "first",
-      "dataset_id": "Chronos_Combined",
-      "slice_type": "gene",
-      "context": {
-        "dimension_type": "gene",
-        "name": "TP53",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "7157"
-          ]
-        },
-        "vars": {}
-      }
-    }
-  },
-  "color_by": "raw_slice",
-  "filters": {
-    "color1": {
-      "name": "UACC-62",
-      "dimension_type": "depmap_model",
-      "expr": {
-        "==": [
-          {
-            "var": "given_id"
-          },
-          "ACH-000425"
-        ]
-      },
-      "vars": {}
-    },
-    "color2": {
-      "name": "UACC-257",
-      "dimension_type": "depmap_model",
-      "expr": {
-        "==": [
-          {
-            "var": "given_id"
-          },
-          "ACH-000579"
-        ]
-      },
-      "vars": {}
-    }
-  }
-}
+"color_by": "custom",
+"dimensions": { "x": { "…": "…" }, "color": { "…": "a raw or aggregated slice, same shape as x" } }
 ```
 
-#### aggregated_slice
+A plot with `facet_by` and `color_by: "property"` on different properties colors by one and facets by the other.
 
-Works like `raw_slice`, but the context(s) should resolve to multiple features/samples. Any overlap between the two contexts is visualized as a third color.
+### Hover metadata
 
-```json
-{
-  "version": 2,
-  "plot_type": "density_1d",
-  "index_type": "depmap_model",
-  "dimensions": {
-    "x": {
-      "axis_type": "raw_slice",
-      "aggregation": "first",
-      "dataset_id": "Chronos_Combined",
-      "slice_type": "gene",
-      "context": {
-        "dimension_type": "gene",
-        "name": "TP53",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "7157"
-          ]
-        },
-        "vars": {}
-      }
-    }
-  },
-  "color_by": "aggregated_slice",
-  "filters": {
-    "color1": {
-      "dimension_type": "depmap_model",
-      "expr": {
-        "==": [
-          {
-            "var": "0"
-          },
-          "Breast"
-        ]
-      },
-      "name": "Breast",
-      "vars": {
-        "0": {
-          "dataset_id": "depmap_model_metadata",
-          "identifier": "OncotreeLineage",
-          "identifier_type": "column"
-        }
-      }
-    },
-    "color2": {
-      "name": "Organoid",
-      "dimension_type": "depmap_model",
-      "expr": {
-        "==": [
-          {
-            "var": "0"
-          },
-          "Organoid"
-        ]
-      },
-      "vars": {
-        "0": {
-          "dataset_id": "depmap_model_metadata",
-          "identifier_type": "column",
-          "identifier": "ModelType"
-        }
-      }
-    }
-  }
-}
-```
+`metadata` also holds extra annotations shown on hover: any keys except `color_property` (and `facet_property`), each a SliceQuery. Example: `"metadata": {"sex": {"dataset_id": "depmap_model_metadata", "identifier": "Sex", "identifier_type": "column"}}`.
 
-#### property
+## [EXPAND-BY] Expanding instead of aggregating
 
-Set `color_by` to `"property"` to map a set of categorical values to colors. `metadata.color_property` should be set to a SliceQuery referring to a column with a `col_type` of `"categorical"` or `"text"` (in practice we mostly use the latter).
+Normally an `aggregated_slice` collapses a context (all transcripts of CD44; all BRAF inhibitors) into one number per point. **Expansion** instead gives each member its own point, so N models × M members yields N×M points.
 
-```json
-{
-  "version": 2,
-  "plot_type": "density_1d",
-  "index_type": "depmap_model",
-  "dimensions": {
-    "x": {
-      "axis_type": "raw_slice",
-      "aggregation": "first",
-      "dataset_id": "Chronos_Combined",
-      "slice_type": "gene",
-      "context": {
-        "dimension_type": "gene",
-        "name": "TP53",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "7157"
-          ]
-        },
-        "vars": {}
-      }
-    }
-  },
-  "color_by": "property",
-  "metadata": {
-    "color_property": {
-      "identifier_type": "column",
-      "dataset_id": "depmap_model_metadata",
-      "identifier": "OncotreeLineage"
-    }
-  }
-}
-```
+Both of these are required:
 
-#### custom
-
-Set `color_by` to `"custom"` to use a continuous color scheme keyed on numeric values. `dimensions.color` should be set to a raw or aggregated continuous slice.
-
-```json
-{
-  "version": 2,
-  "plot_type": "density_1d",
-  "index_type": "depmap_model",
-  "dimensions": {
-    "x": {
-      "axis_type": "raw_slice",
-      "aggregation": "first",
-      "dataset_id": "Chronos_Combined",
-      "slice_type": "gene",
-      "context": {
-        "dimension_type": "gene",
-        "name": "TP53",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "7157"
-          ]
-        },
-        "vars": {}
-      }
-    },
-    "color": {
-      "axis_type": "raw_slice",
-      "aggregation": "first",
-      "dataset_id": "expression",
-      "slice_type": "gene",
-      "context": {
-        "dimension_type": "gene",
-        "name": "TP53",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "7157"
-          ]
-        },
-        "vars": {}
-      }
-    }
-  },
-  "color_by": "custom"
-}
-```
-
-#### facet
-
-Set `color_by` to `"facet"` to explicitly defer coloring to `facet_by`'s own resolution (see [facet_by](#facet_by-string) below) — the plot is colored using whatever categorical/continuous/custom-filter/expansion source `facet_by` is already reading, with no separate color backing of its own. This is the same behavior you get by omitting `color_by` entirely (the version 2 default); writing it out explicitly is only useful if you want to be unambiguous in a hand-authored payload, or to override a previously-set `color_by` back to matching `facet_by`.
-
-`color_by: "facet"` has no backing fields of its own — no `filters.color1`/`color2`, `metadata.color_property`, or `dimensions.color` — since it borrows `facet_by`'s. If `facet_by` is itself unset, the plot is uncolored (equivalent to `"uniform"`).
-
-#### uniform
-
-Set `color_by` to `"uniform"` to explicitly request no coloring, regardless of whether `facet_by` is set. This is the one value with no analog in `filters`/`metadata`/`dimensions` — it has nothing to configure. Use it when you want a plain, single-color plot but also want to set a `facet_by` (which would otherwise supply matching colors by default).
-
-```json
-{
-  "version": 2,
-  "plot_type": "density_1d",
-  "index_type": "depmap_model",
-  "dimensions": {
-    "x": {
-      "axis_type": "raw_slice",
-      "aggregation": "first",
-      "dataset_id": "Chronos_Combined",
-      "slice_type": "gene",
-      "context": {
-        "dimension_type": "gene",
-        "name": "TP53",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "7157"
-          ]
-        },
-        "vars": {}
-      }
-    }
-  },
-  "facet_by": "property",
-  "metadata": {
-    "facet_property": {
-      "identifier_type": "column",
-      "dataset_id": "depmap_model_metadata",
-      "identifier": "OncotreeLineage"
-    }
-  },
-  "color_by": "uniform"
-}
-```
-
-### facet_by [string]
-
-Specifies how points should be clustered/faceted — driving the violin tracks in a `density_1d` plot, the x-axis clustering in a `waterfall` plot, and the per-facet layout/regression fits in a `scatter` plot. `facet_by` is a fully independent axis from `color_by`: setting one does not implicitly set the other, and clearing one leaves the other untouched. (The one link between them is the version 2 default described [above](#the-version-2-default-flip-color_by-and-facet_by): an omitted `color_by` colors by whatever `facet_by` resolves to.)
-
-The supported values mirror `color_by`'s (minus `"facet"`/`"uniform"`, which are meaningless for `facet_by` itself): `"raw_slice"`, `"aggregated_slice"`, `"property"`, `"custom"`, and `"expansion"`.
-
-Note that `facet_by` cannot be used with the `correlation_heatmap` plot type.
-
-#### raw_slice / aggregated_slice
-
-Backed by `filters.facet1` (and optionally `filters.facet2`; **there is no `facet3`, so two groups is the maximum**; for three or more groups use the `property` facet below), exactly like `color_by`'s `filters.color1`/`color2` — a context per facet, an automatic "Other" cluster for points in neither, and a "Both" cluster for the overlap when two groups are given. On a `density_1d` plot this draws one violin track per facet; on `waterfall`, one x-axis cluster per facet; on `scatter`, one small-multiples panel per facet.
-
-```json
-{
-  "version": 2,
-  "plot_type": "density_1d",
-  "index_type": "depmap_model",
-  "dimensions": {
-    "x": {
-      "axis_type": "raw_slice",
-      "aggregation": "first",
-      "dataset_id": "Chronos_Combined",
-      "slice_type": "gene",
-      "context": {
-        "dimension_type": "gene",
-        "name": "TP53",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "7157"
-          ]
-        },
-        "vars": {}
-      }
-    }
-  },
-  "facet_by": "raw_slice",
-  "filters": {
-    "facet1": {
-      "name": "UACC-62",
-      "dimension_type": "depmap_model",
-      "expr": {
-        "==": [
-          {
-            "var": "given_id"
-          },
-          "ACH-000425"
-        ]
-      },
-      "vars": {}
-    },
-    "facet2": {
-      "name": "UACC-257",
-      "dimension_type": "depmap_model",
-      "expr": {
-        "==": [
-          {
-            "var": "given_id"
-          },
-          "ACH-000579"
-        ]
-      },
-      "vars": {}
-    }
-  }
-}
-```
-
-Since `color_by` is omitted here, this also colors the plot to match — one color per facet, per the version 2 default. `aggregated_slice` works identically, just with contexts that resolve to multiple features/samples, exactly like `color_by`'s `aggregated_slice`.
-
-#### property
-
-Backed by `metadata.facet_property`, a SliceQuery referring to a categorical/text column — exactly like `color_by`'s `metadata.color_property`.
-
-```json
-{
-  "version": 2,
-  "plot_type": "density_1d",
-  "index_type": "depmap_model",
-  "dimensions": {
-    "x": {
-      "axis_type": "raw_slice",
-      "aggregation": "first",
-      "dataset_id": "Chronos_Combined",
-      "slice_type": "gene",
-      "context": {
-        "dimension_type": "gene",
-        "name": "TP53",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "7157"
-          ]
-        },
-        "vars": {}
-      }
-    }
-  },
-  "facet_by": "property",
-  "metadata": {
-    "facet_property": {
-      "identifier_type": "column",
-      "dataset_id": "depmap_model_metadata",
-      "identifier": "OncotreeLineage"
-    }
-  }
-}
-```
-
-A `facet_property` (or `dimensions.facet`, below) that resolves to a **continuous** value is also supported: points are automatically binned, the same way `color_by: "custom"` bins continuous color values.
-
-#### custom
-
-Backed by `dimensions.facet`, mirroring `dimensions.color` — a raw or aggregated slice, continuous or categorical.
-
-```json
-{
-  "version": 2,
-  "plot_type": "density_1d",
-  "index_type": "depmap_model",
-  "dimensions": {
-    "x": {
-      "axis_type": "raw_slice",
-      "aggregation": "first",
-      "dataset_id": "Chronos_Combined",
-      "slice_type": "gene",
-      "context": {
-        "dimension_type": "gene",
-        "name": "TP53",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "7157"
-          ]
-        },
-        "vars": {}
-      }
-    },
-    "facet": {
-      "axis_type": "raw_slice",
-      "aggregation": "first",
-      "dataset_id": "expression",
-      "slice_type": "gene",
-      "context": {
-        "dimension_type": "gene",
-        "name": "TP53",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "7157"
-          ]
-        },
-        "vars": {}
-      }
-    }
-  },
-  "facet_by": "custom"
-}
-```
-
-This example facets the TP53 CRISPR-effect density plot by TP53's own (continuous) expression, so it's automatically binned into ranges rather than split into discrete groups.
-
-#### expansion
-
-Groups points by their expansion member. Requires [expand_by](#expand_by-array) to be set — without it, `facet_by: "expansion"` has nothing to facet by and is dropped.
-
-### expand_by [array]
-
-Turns one axis's context from something to _aggregate_ into something to _expand_. Normally an `aggregated_slice` axis over "the transcripts of CD44" collapses those transcripts into a single number per model. Expanding instead gives each transcript its own point, so a plot of N models over M transcripts becomes N×M points, one per (model, transcript).
-
-Two fields together express this, and both are required:
-
-1. The expanding axis sets `"aggregation": "expansion"` in place of `"mean"` and friends.
-2. A plot-level `expand_by` — a sibling of `dimensions` — records the member set, mirroring that axis's own `slice_type` and `context`.
-
-`expand_by` is an array to leave room for future multi-expansion, but **at most one entry is supported today**; two or more is rejected outright. Each entry has:
-
-- **slice_type** and **context** — the same values as the expanding axis's. They're repeated here because this is what the renderer, `color_by: "expansion"` and `facet_by: "expansion"` all read.
-
-- **members** _(optional)_ — the exact members to draw, chosen by hand. Omit it and the plot picks for you, keeping the ones whose values vary most across the entities being plotted (honoring the `visible` filter, if there is one). Set it and your list wins outright, which is what makes a link show your reader what you were looking at rather than what the data says today.
-
-  **How many get drawn is not 16, and is not fixed.** The cap scales down as the plot gets denser, because what stays legible depends on how many points each member is adding:
-
-  ```
-  cap = clamp(round(430 / sqrt(N)), 2, 16)
-  ```
-
-  `N` is the number of entities on the expanding dataset's index axis — its features when `index_type` is a feature type, its samples otherwise. Deliberately the dataset's own size, not the number left after the `visible` filter: hiding cell lines shouldn't silently change how many panels a plot is allowed.
-
-  | `N`        | cap |
-  | ---------- | --- |
-  | up to ~769 | 16  |
-  | 1,000      | 14  |
-  | 1,800      | 10  |
-  | 5,000      | 6   |
-  | 20,000     | 3   |
-  | 46,000     | 2   |
-
-  So 16 is only the ceiling, reached by a small cohort; a genome-wide index gets a handful. **A hand-picked `members` list is subject to the same cap** — deliberateness doesn't buy extra panels — so a list written against one dataset may be trimmed when the same link is pointed at a larger one. Ids that aren't in `context` are ignored rather than honored, so this can't smuggle in entities the expansion doesn't contain; if none of them survive, the plot falls back to picking for you.
-
-  Because the cap is derived, don't record it in a link. There is no field for it, and any number you computed yourself goes stale as soon as the plot points at a differently sized dataset.
-
-Older links may also carry `limit` and `offset` — a page size and a window, from when the members shown were an arbitrary prefix. They are ignored.
-
-**For a `scatter` plot, whenever you set `expand_by`, also set `"facet_by": "expansion"`.** Do not generate a scatter plot with `expand_by` and any other `facet_by` (or none), in particular one whose points are colored by the expansion without being faceted by it. Every entity then appears many times in the same panel, which readers find confusing, and the reader cannot select points on such a plot (selecting points to ask about them is only available when each entity is one point per panel).
+1. The expanding axis sets `"aggregation": "expansion"`.
+2. A plot-level `expand_by` (sibling of `dimensions`) with one entry repeating that axis's `slice_type` and `context`.
 
 ```json
 {
@@ -1042,550 +318,91 @@ Older links may also carry `limit` and `offset` — a page size and a window, fr
 }
 ```
 
-#### Expanding both axes
+Rules:
 
-A **second** axis may expand the same members, reading them from a different dataset — one point per (model, transcript) with short-read expression on x and long-read on y, say. Give it `"aggregation": "expansion"` too, along with the _same_ `slice_type` and `context` as the first; only its `dataset_id` differs. There is still just one `expand_by`.
+- **At most one `expand_by` entry** (an array only for future use).
+- **For a `scatter`, whenever you set `expand_by`, also set `"facet_by": "expansion"`.** Never emit an expanded scatter with another `facet_by` or none: every entity then appears many times in one panel, which readers find confusing, and the user cannot select points on such a plot.
+- **Which members are drawn.** Omit `members` and the plot picks the ones whose values vary most. Set `members` (a list of IDs) to choose by hand. The cap is `clamp(round(430 / sqrt(N)), 2, 16)` where N is the dataset's index-axis size (≈16 for a few hundred models, ≈3 for 20,000 genes), and applies to hand-picked lists too. Ids not in the context are ignored. Don't record the cap in a link.
+- **Only `x` and `y` may expand.** `dimensions.color` and `dimensions.facet` with `"expansion"` are rejected; use `color_by`/`facet_by: "expansion"`.
+- **Both axes may expand the same members** from different datasets (short-read vs long-read expression): give each `"expansion"` and the same `slice_type` and `context`; only `dataset_id` differs. Every expanding axis must share `expand_by`'s `slice_type`, or it silently comes out all-null.
+- An axis over the same `slice_type` with a **real aggregation** is aggregated and broadcast: one value per model repeated across the members. Useful for "each transcript against the gene's mean".
+- Old `limit`/`offset` fields are ignored.
 
-Three rules govern this, and all of them hold whether one axis expands or two:
+## [FILTERS-AND-CATEGORIES] Filtering and showing only some categories
 
-- **Only `x` and `y` may expand.** Putting `"aggregation": "expansion"` on `dimensions.color` or `dimensions.facet` is rejected. An expansion says what a _point_ is, and the point set is defined by the axes — color and facet are readings of it. To partition points by their expansion member, set `color_by` or [`facet_by`](#expansion) to `"expansion"`; those are the supported way to do it and need no dimension of their own.
-- Every expanding axis must be over the **same `slice_type` as `expand_by`**. Its values are looked up by finding the expansion's member ids in its own dataset, so a mismatch silently produces an all-null axis rather than an error.
-- An axis that shares the expansion's `slice_type` but keeps a **real aggregation** is _not_ expanded — it's aggregated and broadcast, one value per model repeated across that model's transcripts. That combination is deliberate and useful: "each transcript's expression (x) against the mean over all of the gene's transcripts (y)".
-
-### filters
-
-Apply a filter with `filters.visible`, using a context to restrict which points are shown.
+**`filters.visible`** is a context that restricts which points are drawn. Everything else is removed.
 
 ```json
-{
-  "version": 2,
-  "plot_type": "density_1d",
-  "index_type": "depmap_model",
-  "dimensions": {
-    "x": {
-      "axis_type": "raw_slice",
-      "aggregation": "first",
-      "dataset_id": "Chronos_Combined",
-      "slice_type": "gene",
-      "context": {
-        "dimension_type": "gene",
-        "name": "TP53",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "7157"
-          ]
-        },
-        "vars": {}
-      }
-    }
-  },
-  "filters": {
-    "visible": {
-      "name": "Skin",
-      "dimension_type": "depmap_model",
-      "expr": {
-        "==": [
-          {
-            "var": "0"
-          },
-          "Skin"
-        ]
-      },
-      "vars": {
-        "0": {
-          "dataset_id": "depmap_model_metadata",
-          "identifier": "OncotreeLineage",
-          "identifier_type": "column"
-        }
-      }
-    }
-  }
+"filters": {
+  "visible": { "name": "Skin", "dimension_type": "depmap_model", "expr": { "==": [{ "var": "0" }, "Skin"] }, "vars": { "0": { "dataset_id": "depmap_model_metadata", "identifier": "OncotreeLineage", "identifier_type": "column" } } }
 }
 ```
 
-### Showing only some categories
-
-When a user asks for a handful of categories out of a high-cardinality property ("the top 5 lineages", "just Lung and Skin"), facet by the property and choose how the remaining categories are treated. Do not reach for `facet_by: "aggregated_slice"` with `facet1`/`facet2`: it supports at most two groups.
-
-**Default: `filters.visible`.** Facet with `facet_by: "property"` and restrict the plot to the wanted categories with an `in` expression. Every other point is removed, so the plot contains exactly the categories that were asked for, with no "Other" panel. Use this unless the user wants the rest kept as context.
-
-```json
-{
-  "version": 2,
-  "plot_type": "scatter",
-  "index_type": "depmap_model",
-  "dimensions": { "x": "...", "y": "..." },
-  "facet_by": "property",
-  "metadata": {
-    "facet_property": {
-      "dataset_id": "depmap_model_metadata",
-      "identifier": "OncotreeLineage",
-      "identifier_type": "column"
-    }
-  },
-  "filters": {
-    "visible": {
-      "name": "Top 5 Lineages",
-      "dimension_type": "depmap_model",
-      "expr": {
-        "in": [
-          { "var": "0" },
-          ["Lymphoid", "Lung", "CNS/Brain", "Esophagus/Stomach", "Skin"]
-        ]
-      },
-      "vars": {
-        "0": {
-          "dataset_id": "depmap_model_metadata",
-          "identifier": "OncotreeLineage",
-          "identifier_type": "column"
-        }
-      }
-    }
-  }
-}
-```
-
-**Alternative: `facet_categories`.** A list of category names that get their own panel (or track, or cluster). Points in every other category are _not_ removed: they are collapsed into a single "Other" bucket. Use this when the user wants to highlight some categories while keeping the rest of the data on the plot for comparison.
-
-```json
-"facet_by": "property",
-"facet_categories": ["Lymphoid", "Lung", "CNS/Brain", "Esophagus/Stomach", "Skin"]
-```
-
-Notes:
-
-- `facet_categories` overrides the default ranking, which otherwise picks the categories whose points sit somewhere distinctive on the plotted axes. Omit it to get that ranking.
-- At most 40 categories are drawn. Names that aren't in the data are ignored; if none match, the plot falls back to the default ranking rather than rendering empty.
-- `color_categories` is the equivalent for `color_by`. When `color_by` is omitted or `"facet"`, `facet_categories` governs the colors too.
-- Because "top N" is a judgment call, say which categories you chose and by what criterion (for example, number of cell lines) so the user can correct it.
-
-### metadata
-
-Augments the information shown when hovering over a point. `metadata` is an object, but the keys aren't meaningful — you can use anything except `"color_property"`, which is reserved. The values are SliceQueries.
-
-```json
-{
-  "version": 2,
-  "plot_type": "density_1d",
-  "index_type": "depmap_model",
-  "dimensions": {
-    "x": {
-      "axis_type": "raw_slice",
-      "aggregation": "first",
-      "dataset_id": "Chronos_Combined",
-      "slice_type": "gene",
-      "context": {
-        "dimension_type": "gene",
-        "name": "TP53",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "7157"
-          ]
-        },
-        "vars": {}
-      }
-    }
-  },
-  "metadata": {
-    "annotation 1": {
-      "identifier_type": "column",
-      "dataset_id": "depmap_model_metadata",
-      "identifier": "ModelType"
-    },
-    "annotation 2": {
-      "identifier_type": "column",
-      "dataset_id": "depmap_model_metadata",
-      "identifier": "Sex"
-    },
-    "annotation 3": {
-      "identifier_type": "column",
-      "dataset_id": "depmap_model_metadata",
-      "identifier": "PatientTreatmentStatus"
-    }
-  }
-}
-```
-
-### show_regression_line [boolean]
-
-Only works with the `scatter` plot type. Toggles the optional linear regression line.
-
-```json
-{
-  "version": 2,
-  "plot_type": "scatter",
-  "index_type": "depmap_model",
-  "dimensions": {
-    "x": {
-      "axis_type": "raw_slice",
-      "aggregation": "first",
-      "dataset_id": "Chronos_Combined",
-      "slice_type": "gene",
-      "context": {
-        "dimension_type": "gene",
-        "name": "TP53",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "7157"
-          ]
-        },
-        "vars": {}
-      }
-    },
-    "y": {
-      "axis_type": "raw_slice",
-      "aggregation": "first",
-      "dataset_id": "expression",
-      "slice_type": "gene",
-      "context": {
-        "dimension_type": "gene",
-        "name": "TP53",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "7157"
-          ]
-        },
-        "vars": {}
-      }
-    }
-  },
-  "show_regression_line": true
-}
-```
-
-#### When to show a regression line
-
-Treat it as a default to lean toward, not a requirement.
-
-**Include it** when the user is asking whether x and y are related ("correlate", "track", "predict", "does X depend on Y"), and on faceted scatterplots with a modest number of panels (roughly 8 or fewer), where comparing per-panel slopes is the point of faceting.
-
-**Omit it** when:
-
-- The user is looking for outliers or structure rather than a trend.
-- x and y measure the same quantity (replicates, two releases of one dataset). The identity line is the useful reference there.
-- There are many panels (say 30+), where a fit per small panel is clutter and invites over-reading.
-- The points fall into distinct clusters that the plot isn't already faceted or colored by. A single line through separated groups (for example TP53 mutant vs. wild-type) suggests a relationship that is really just group separation.
-
-When a plot is colored by a different partition than it is faceted by, a pooled line can mislead in the same way. Consider [show_regression_line_per_color](#show_regression_line_per_color-boolean).
-
-If it's a close call, include it. A line the user doesn't want is easy to toggle off; one that is missing is easy to overlook.
-
-### show_regression_line_per_color [boolean]
-
-A sub-option of `show_regression_line`, and only meaningful on a **faceted** `scatter` plot whose `color_by` shows a _different_ partition than its `facet_by`.
-
-By default, each small-multiples panel gets **one** regression line, fit over all of that panel's points regardless of color. Setting this to `true` instead fits **one line per color within each panel**, each drawn in its legend color.
-
-This is off by default deliberately: a panel with many colors becomes hard to read. Set it only when the per-color trends are the point of the plot.
-
-It is ignored (and dropped from the plot config) unless all of the following hold, since there is otherwise nothing to split:
-
-- `plot_type` is `scatter`
-- `facet_by` is set and complete
-- `color_by` is set and complete, and is not `"facet"` or `"uniform"`
-- `color_by` and `facet_by` do not resolve to the same annotation
-
-```json
-{
-  "version": 2,
-  "plot_type": "scatter",
-  "index_type": "depmap_model",
-  "dimensions": {
-    "x": {
-      "axis_type": "raw_slice",
-      "aggregation": "first",
-      "dataset_id": "Chronos_Combined",
-      "slice_type": "gene",
-      "context": {
-        "dimension_type": "gene",
-        "name": "TP53",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "7157"
-          ]
-        },
-        "vars": {}
-      }
-    },
-    "y": {
-      "axis_type": "raw_slice",
-      "aggregation": "first",
-      "dataset_id": "expression",
-      "slice_type": "gene",
-      "context": {
-        "dimension_type": "gene",
-        "name": "TP53",
-        "expr": {
-          "==": [
-            {
-              "var": "given_id"
-            },
-            "7157"
-          ]
-        },
-        "vars": {}
-      }
-    }
-  },
-  "facet_by": "property",
-  "color_by": "property",
-  "metadata": {
-    "facet_property": {
-      "identifier_type": "column",
-      "dataset_id": "depmap_model_metadata",
-      "identifier": "OncotreeLineage"
-    },
-    "color_property": {
-      "identifier_type": "column",
-      "dataset_id": "depmap_model_metadata",
-      "identifier": "PrimaryOrMetastasis"
-    }
-  },
-  "show_regression_line": true,
-  "show_regression_line_per_color": true
-}
-```
-
-## Context format
-
-The notion of a "context" is reused many times:
-
-- `dimensions.x.context`
-- `dimensions.y.context`
-- `dimensions.color.context`
-- `dimensions.facet.context`
-- `filters.color1`
-- `filters.color2`
-- `filters.facet1`
-- `filters.facet2`
-- `filters.visible`
-- `filters.distinguish1` (heatmap only)
-- `filters.distinguish2` (heatmap only)
-
-Breadbox even supports [evaluating a context](https://cds.team/depmap/breadbox/docs#/temp/evaluate_context) directly, so it's worth understanding its structure.
-
-### Fields
-
-A context has five top-level fields — four required, one optional.
-
-#### name [string]
-
-A human-readable identifier. It isn't used by the evaluation engine, but the UI uses it extensively to save, load, and apply contexts. It also appears in places like axis labels.
-
-#### dimension_type [string]
-
-Any sample or feature type. It specifies the type of input variables you may use and the type of output entities they evaluate to — in other words, it constrains the logical rules you can write and the type of IDs you get back.
-
-#### expr [object | boolean]
-
-This powers the rules engine. The expression is evaluated on each member of the given `dimension_type` to determine whether it appears in the result set. A trivial `expr` of `true` is supported when you want the entire set back. Otherwise it is a JSON object encoding logical rules.
+**"Just the top 5 lineages" / "only Lung and Skin".** Facet by the property and choose how the rest is treated. Don't use `facet_by: "aggregated_slice"` (two groups max).
 
-The format derives from a library called JsonLogic, chosen because it is implemented in both JavaScript and Python (making rules portable between frontend and backend) and because it has a consistent shape: `{"operator": ["values", ...]}`, always. A good starting point is the [JsonLogic documentation](https://jsonlogic.com/operations.html). The important operators are summarized below.
+- **Default: `filters.visible` with an `in` expression** (`{"in": [{"var": "0"}, ["Lung", "Skin"]]}`). Other points vanish; no "Other" panel.
+- **Alternative: `facet_categories`** — `"facet_by": "property", "facet_categories": ["Lung", "Skin"]`. Other points are kept and collapsed into one "Other" group. Use it when the user wants the rest as context.
+- Notes: `facet_categories` overrides the default ranking (categories with distinctive positions); at most 40 are drawn; unknown names are ignored, and if none match the default ranking is used. `color_categories` is the `color_by` equivalent; when `color_by` is omitted or `"facet"`, `facet_categories` governs colors too.
+- **"Top N" is a judgment call.** Say which you chose and by what criterion (e.g. number of cell lines).
 
-##### JsonLogic-derived operators
+## [REGRESSION-LINE] Regression lines
 
-- **var** — retrieves data by looking up variables by name. There is a "global variable" `given_id` that is always available; all other variables must be explicitly defined (see [vars](#vars-object)). Example: `{ "var": "given_id" }`
-- **==** — equality, with type coercion. Two arguments. Example: `{"==": [1, 1]}`
-- **!=** — not-equal, with type coercion. Example: `{"!=": [1, 2]}`
-- **or** — boolean OR, one or more arguments. Example: `{"or": [true, false]}`
-- **and** — boolean AND, one or more arguments. Example: `{"and": [true, true]}`
-- **>**, **>=**, **<**, **<=** — the usual comparisons.
-- **in** — if the second argument is an array, tests membership. (JsonLogic also supports substring matching with `in`, but the Context Builder UI does not.)
-
-##### Custom operators
-
-The set of operators is kept close to JsonLogic, but certain features required extensions.
-
-**!in** — negated membership; a convenience form of `{"!": {"in": [a, b]}}`. Returns true when `a` is **not** a member of `b` (a list or a string).
-
-`{"!in": [{"var": "symbol"}, ["BRAF", "KRAS"]]}`
-
-Matches entities whose gene symbol is neither BRAF nor KRAS.
-
-**in_context** — tests whether a value falls inside a named context, i.e. whether it appears in the set of IDs that context resolves to. The right-hand side is a `{"context": "<name>"}` reference: a node resolved before evaluation by recursively evaluating the named context and substituting the flat list of IDs it matches. The left-hand side is permissive: a scalar matches when it is a member of the set, while a list-valued variable (e.g. a `list_strings` column reached through `reindex_through`) matches when it overlaps the set.
-
-`{"in_context": [{"var": "given_id"}, {"context": "Aneuploid Models"}]}`
-
-Matches entities that belong to the Aneuploid Models context.
-
-**!in_context** — negation of `in_context`. Returns true when the value is not in the named context. As with the other negated operators, a null value never satisfies it (see [Null handling](#null-handling)).
-
-`{"!in_context": [{"var": "given_id"}, {"context": "Aneuploid Models"}]}`
-
-**has_any** — set-overlap test between two lists. Returns true when the two lists share at least one element. If either operand is not a list, returns false.
-
-`{"has_any": [{"var": "pathways"}, ["MAPK", "PI3K"]]}`
-
-Matches entities whose pathways list contains MAPK, PI3K, or both.
-
-**!has_any** — negation of `has_any`. Returns true when the two lists are disjoint, or when either operand is not a list. A null left-hand value never satisfies it (see [Null handling](#null-handling)).
-
-`{"!has_any": [{"var": "pathways"}, ["MAPK", "PI3K"]]}`
-
-**is_null** — a unary operator that returns true when its single operand is null. Use it to explicitly match entities that have no value for a variable.
-
-`{"is_null": {"var": "mutation_status"}}`
-
-**not_null** — a unary operator that returns true when its operand is not null. The inverse of `is_null`.
-
-`{"not_null": {"var": "mutation_status"}}`
-
-##### Null handling
-
-Four operators negate a condition: `!=`, `!in`, `!has_any`, and `!in_context`. In plain JsonLogic these return true for a missing value — a null is "not in" any list, for instance — which would quietly pull entities that have no data into a negative filter. To prevent that, the evaluator rewrites these operators into a null-guarded form whenever they are applied to a `{"var": ...}` reference. The practical rule is simple: **a null value never satisfies a negated operator.** If you actually want to match missing values, use `is_null`.
-
-##### complement
-
-Produces the null-safe negation of an expression: it matches the entities that fall outside the given expression while preserving the same data-completeness guarantees. An entity that lacks the data needed to be evaluated is excluded from both the original expression and its complement, rather than defaulting into the complement.
-
-The Context Builder UI never emits `complement`; it is synthesized for Custom Analyses, where it supplies a null-safe out-group — for example, defining the comparison group as "everything outside the positive class, among the entities we can actually evaluate." You may, however, write it by hand when authoring a payload directly (as the distinguish example above does). Like the negated operators, it is desugared into a null-guarded negation before evaluation, so it never reaches the core engine directly.
-
-`{"complement": {"==": [{"var": "0"}, "Lung"]}}`
-
-As an out-group against a "Lung" positive class: matches the evaluable models that are not Lung, while excluding any model whose lineage is unknown.
-
-### vars [object]
-
-`vars` maps variable names to **SliceQuery** objects. Every name you define here can be referenced from `expr` with a `{"var": "<name>"}` node. When the context is evaluated, each var's slice is loaded once, and the value for the entity currently being tested is substituted into the expression before it runs.
-
-Recall that `given_id` is the one exception: it is always available and never needs an entry here, because it refers to the ID of the entity being evaluated rather than to a looked-up slice. Every other variable used in `expr` must have a matching entry in `vars`, or construction fails.
-
-#### SliceQuery format
-
-A SliceQuery identifies a single slice of data — a feature, a sample, or a column — within one dataset. It has three required fields:
-
-- **dataset_id** — the dataset to read from.
-- **identifier** — which row or column to pull.
-- **identifier_type** — how `identifier` should be interpreted. One of `feature_id`, `feature_label`, `sample_id`, `sample_label`, or `column`.
-
-Saved vars often carry extra fields such as `label` and `source` that the UI uses for display; the evaluator ignores them. A var normally resolves to one value per entity of the context's `dimension_type`, and to null for any entity that has no value — the case the null-safe operators are careful about.
-
-```json
-{
-  "dataset_id": "depmap_model_metadata",
-  "identifier": "OncotreeLineage",
-  "identifier_type": "column"
-}
-```
-
-A column var: each entity's OncotreeLineage value, drawn from the model metadata table.
-
-#### reindex_through
-
-By default a var must live on the same `dimension_type` as the context that uses it — a gene context can only read gene-indexed slices. `reindex_through` removes that restriction. It lets a var pull values stored against a **different** dimension type by following one or more foreign-key columns until the data lands on the context's own dimension type.
-
-The mental model: the outer query names the value you actually want, and `reindex_through` names the bridge — the foreign-key column that re-keys that value. The composed result is indexed by the dimension type at the **innermost** end of the chain, which is your context's `dimension_type`.
-
-Do not work out chains by hand. Which chains exist, and which of them Data Explorer can display, is answered by a Breadbox endpoint; see [Choosing a chain](#choosing-a-chain) below. The examples that follow explain what a chain means.
-
-For example, a context over `screen` can read the lineage of each screen's model. OncotreeLineage lives on the model metadata; the screen metadata's ModelID column is the bridge from screen to model:
-
-```json
-{
-  "dataset_id": "depmap_model_metadata",
-  "identifier": "OncotreeLineage",
-  "identifier_type": "column",
-  "reindex_through": {
-    "dataset_id": "screen_metadata",
-    "identifier": "ModelID",
-    "identifier_type": "column"
-  }
-}
-```
-
-Reads as: take model OncotreeLineage (model → lineage), re-indexed through ModelID (screen → model), giving screen → lineage.
-
-Because `reindex_through` is itself a SliceQuery, chains nest to cover multi-step relationships such as `sanger_combination_combo_fit_feature` → `sgdc_compound` → `compound_v2`. A Sanger combination feature carries two compound foreign keys — `anch_drug_id` and `lib_drug_id` — so a chain follows whichever drug you mean; this one follows the anchor. Each hop bridges to the next dimension type in turn: `anch_drug_id` resolves to an `sgdc_compound`, whose `CompoundID` then resolves to a `compound_v2`:
-
-```json
-{
-  "dataset_id": "compound_v2_metadata",
-  "identifier": "TargetOrMechanism",
-  "identifier_type": "column",
-  "reindex_through": {
-    "dataset_id": "sgdc_compound_metadata",
-    "identifier": "CompoundID",
-    "identifier_type": "column",
-    "reindex_through": {
-      "dataset_id": "sanger_combination_combo_fit_feature_metadata",
-      "identifier": "anch_drug_id",
-      "identifier_type": "column"
-    }
-  }
-}
-```
-
-Now indexed by `sanger_combination_combo_fit_feature`, following each feature's anchor drug: FEAT_X → DRUG_1 → CPD_A → its target or mechanism ([see table](https://cds.team/depmap/dev/table-tester?slices=W3siZGF0YXNldF9pZCI6ImNvbXBvdW5kX3YyX21ldGFkYXRhIiwiaWRlbnRpZmllciI6IlRhcmdldE9yTWVjaGFuaXNtIiwiaWRlbnRpZmllcl90eXBlIjoiY29sdW1uIiwicmVpbmRleF90aHJvdWdoIjp7ImRhdGFzZXRfaWQiOiJzZ2RjX2NvbXBvdW5kX21ldGFkYXRhIiwiaWRlbnRpZmllciI6IkNvbXBvdW5kSUQiLCJpZGVudGlmaWVyX3R5cGUiOiJjb2x1bW4iLCJyZWluZGV4X3Rocm91Z2giOnsiZGF0YXNldF9pZCI6InNhbmdlcl9jb21iaW5hdGlvbl9jb21ib19maXRfZmVhdHVyZV9tZXRhZGF0YSIsImlkZW50aWZpZXIiOiJhbmNoX2RydWdfaWQiLCJpZGVudGlmaWVyX3R5cGUiOiJjb2x1bW4ifX19XQ%3D%3D&index_type_name=sanger_combination_combo_fit_feature)).
-
-A few rules govern these chains:
-
-- Every intermediate step must use `identifier_type: "column"` and name a foreign-key column whose values are IDs of the next dimension type. Only the final (outermost) step — the value you are actually reading — may use another identifier type.
-- **No level-skipping.** Each hop must reference the immediately adjacent dimension type; there is no shortcut that crosses two relationships at once.
-- The join is a **left join** from the context's point of view: every entity of the context's dimension type appears in the result. Where the chain cannot be resolved — for instance, a foreign-key value with no matching target — the variable resolves to null.
-- **Chains are bounded.** Circular references and chains beyond the maximum supported depth are rejected with an error.
-
-Because the column restriction applies only to intermediate steps, the value at the leaf of a chain does not have to be a tabular column. It can be a matrix slice — addressed by `feature_id`, `feature_label`, `sample_id`, or `sample_label` — and Breadbox will resolve the chain and return those matrix values. Note, however, that the Data Explorer UI does not yet build or support matrix-dataset leaves, so for now reaching one means calling the API directly.
-
-If a bridge column is a `list_strings` column — each row holding a list of foreign IDs rather than a single one — the lookup fans out across every element and the variable resolves to a **list** of values, deduplicated and in first-encountered order. An empty list resolves to null. This list-valued shape is exactly what the `in_context` and `has_any` operators accept on their left-hand side:
-
-```json
-{
-  "dimension_type": "antibody_v2",
-  "expr": {
-    "has_any": [{ "var": "arms" }, ["14q", "10q"]]
-  },
-  "vars": {
-    "arms": {
-      "dataset_id": "gene_metadata",
-      "identifier": "arm",
-      "identifier_type": "column",
-      "reindex_through": {
-        "dataset_id": "antibody_v2_metadata",
-        "identifier": "target_entrez_id",
-        "identifier_type": "column"
-      }
-    }
-  }
-}
-```
-
-Each antibody's `target_entrez_id` is a list of genes; the var resolves to the de-duplicated list of those genes' chromosome arms, and `has_any` matches antibodies that hit 14q or 10q.
-
-##### Choosing a chain
-
-Ask Breadbox which chains exist instead of assembling them from `references` metadata. For the context's `dimension_type` (the index type the chain starts from), call the [reachable endpoint](https://cds.team/depmap/breadbox/docs#/types/get_dimension_type_reachable):
-
-```
-GET /types/dimensions/{dimension_type}/reachable
-```
-
-It returns every table you can reach by following foreign keys from that type, as a list of `routes`. Each route has:
-
-- **start_table** — the table at `dimension_type` that holds the first foreign-key column.
-- **hops** — the foreign-key columns followed, in order. Each has `column`, `target_type`, and `cardinality` (`"scalar"` or `"list"`).
-- **result_is_list** — `true` if any hop is list-valued.
-- **tables** — the tables you land on, each with its `columns` and a ready-made `slice_query_template`.
-
-A route with no hops is a table at the index type itself, which needs no `reindex_through`.
-
-To use one, take the `slice_query_template` of the table you want, **copy it verbatim**, and add one field: `identifier`, set to the name of one of that table's `columns`. The template already has the right `dataset_id`, `identifier_type`, and nested `reindex_through`. Do not edit, reorder, or rebuild the chain. The one change to make is to drop any `reindex_through` whose value is `null`; leave the key out.
-
-For a context over `screen`, the route that follows `ModelConditionID` then `ModelID` lands on the model metadata table. Its template, with `identifier: "OncotreeLineage"` added (one of that table's columns), is:
+`"show_regression_line": true` (scatter only) adds a linear fit. Treat it as a default to lean toward.
+
+**Include it** when asking whether x and y are related ("correlate", "track", "predict", "does X depend on Y"), and on faceted scatters with ≲8 panels, where comparing slopes is the point.
+
+**Omit it** when looking for outliers or structure rather than a trend; when x and y measure the same quantity (replicates, two releases), where the identity line is the reference; with many panels (30+); or when points form distinct clusters the plot is not faceted or colored by (a single line through separated groups suggests a relationship that is really group separation).
+
+When close, include it: an unwanted line is easy to toggle off.
+
+**`"show_regression_line_per_color": true`** fits one line per color within each panel. It only applies on a faceted scatter whose `color_by` is a _different_ partition than `facet_by` (not `"facet"`/`"uniform"`), and it is dropped otherwise. Off by default because many colors become unreadable; use it only when per-color trends are the point.
+
+## [CONTEXT-FORMAT] Contexts
+
+A context is a rule that selects entities of one type. It appears in `dimensions.*.context`, `filters.*` (`color1/2`, `facet1/2`, `visible`, `distinguish1/2`), and inside other contexts. Fields:
+
+| Field            | Meaning                                                                                        |
+| ---------------- | ---------------------------------------------------------------------------------------------- |
+| `name`           | Human-readable label. Not used in evaluation, but used in the UI and axis labels.              |
+| `dimension_type` | The entity type the rule applies to and returns IDs of.                                        |
+| `expr`           | A JsonLogic rule evaluated on each entity, or `true` for all entities.                         |
+| `vars`           | Maps variable names used in `expr` to SliceQueries. `given_id` is built in and needs no entry. |
+| `contexts`       | _(optional)_ Named inner contexts. See `[NESTED-CONTEXTS]`.                                    |
+
+**SliceQuery**: `{"dataset_id", "identifier", "identifier_type"}` where `identifier_type` is one of `feature_id`, `feature_label`, `sample_id`, `sample_label`, `column`. Extra fields (`label`, `source`) are ignored. A var resolves to one value per entity (null if missing). Examples: a metadata column (`depmap_model_metadata`/`OncotreeLineage`/`column`), a gene's expression (`expression`/`RB1`/`feature_label`), a gene's copy number (`copy_number_relative`/`2064`/`feature_id`).
+
+**Combine data types freely.** A context can mix metadata and measurements, e.g. "adherent models with EMT score > 0.25" = `and` of a `ssgsea` var `>` 0.25 and a `GrowthPattern` var `==` "Adherent". Context Manager contexts work anywhere a context is accepted.
+
+## [OPERATORS] Operators in `expr`
+
+Syntax is JsonLogic: `{"operator": [args…]}`.
+
+| Operator                    | Meaning                                                                                                  |
+| --------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `var`                       | Look up a variable: `{"var": "given_id"}`                                                                |
+| `==`, `!=`                  | Equality / inequality                                                                                    |
+| `>`, `>=`, `<`, `<=`        | Comparisons                                                                                              |
+| `and`, `or`                 | One or more arguments                                                                                    |
+| `in`                        | Membership of a value in an array                                                                        |
+| `!in`                       | Not a member                                                                                             |
+| `has_any`, `!has_any`       | Two lists share (do not share) an element. For list-valued vars.                                         |
+| `in_context`, `!in_context` | Value is (is not) in a named inner context: `{"in_context": [{"var": "given_id"}, {"context": "Name"}]}` |
+| `is_null`, `not_null`       | Unary; test for missing values                                                                           |
+| `complement`                | Null-safe negation of a whole expression. Use it for out-groups. Hand-written is fine.                   |
+
+**Null handling:** a null never satisfies `!=`, `!in`, `!has_any`, `!in_context` or `complement`. Entities with no data for a variable are excluded from both a group and its complement. Use `is_null` if you want to match missing values.
+
+## [REINDEX-THROUGH] Reading a column from a different entity type
+
+By default a var lives on the context's own `dimension_type`. `reindex_through` lets a var follow a foreign-key column to a different type. The outer query is the value you want; `reindex_through` names the bridge column, nested one level per hop. The result is indexed by the context's own type.
+
+**Don't build chains by hand. Ask Breadbox:** `GET /types/dimensions/{dimension_type}/reachable`. It returns `routes`, each with `hops` (`column`, `target_type`, `cardinality`), `result_is_list`, and `tables`, each with `columns` and a `slice_query_template`.
+
+1. Take the `slice_query_template` of the table you want and **copy it verbatim**.
+2. Add one field, `identifier`, set to one of that table's `columns`.
+3. Drop any `reindex_through` whose value is `null`.
+
+Example, a `screen` context reading the lineage of its model through two hops:
 
 ```json
 {
@@ -1605,33 +422,116 @@ For a context over `screen`, the route that follows `ModelConditionID` then `Mod
 }
 ```
 
-The outermost object is the value you read; the innermost is the first hop from `screen`.
+Choosing among routes:
 
-Rules for choosing among the routes:
+- **Only use tables with `offered_by_picker: true`.** Others resolve but the UI cannot display them as the selected value.
+- **Several routes can reach the same table** (e.g. control vs test arm of a `screen_pair`). They answer different questions; choose by the `hops` column names and the user's request, and **ask if the request does not say.**
+- **If `result_is_list` is true**, test with `in_context` or `has_any`, never `==` or `in`.
+- **A type with no routes that have hops is unreachable.** Don't invent a chain.
+- Chains are depth-limited (`max_depth`, default 4), must use `column` for every intermediate step, cannot skip levels, and left-join (unresolved values are null).
+- The endpoint only lists datasets the caller may read.
 
-- **Only use tables with `offered_by_picker: true`.** Breadbox accepts more chains than Data Explorer can show as a selection. A link built from any other route still resolves, but the UI cannot display it as the selected value. Some redundant routes are deliberately not offered: a table reached by a direct column when a longer route through an intermediate type gives the same result, for example.
-- **Several routes can reach the same table** (for example the control and test arm of a `screen_pair`, which each point at a screen). They are different questions, not duplicates. Choose by what the user asked for, using the foreign-key column names in `hops`. Do not guess; if the request does not say which, ask.
-- **Check `result_is_list`.** When it is `true`, the variable resolves to a list, so test it with `in_context` or `has_any`, never `==` or `in`.
-- **A type with no routes that have hops is not reachable.** There is no way to read other types' columns from it. Do not invent a chain.
-- Chains are limited in depth. The endpoint takes an optional `max_depth` (default 4) and never returns a chain the API would reject.
-- The endpoint returns only datasets the caller may read. Use only what it returns.
+### Child types: "per dose", "per timepoint", "per replicate"
 
-### contexts [object] (optional)
+`reachable` only goes **forward**, to types that your type's columns reference. It never shows a type that references _yours_. When a user wants a breakdown per member of a type, the data may live in a **child type**: one with a foreign-key column pointing at your type, many child rows to one parent. For example, `compound_dose` has `CompoundID` (referencing `compound_v2`) and `Dose`. Timepoints and replicates have the same shape.
 
-`contexts` is the optional fifth field of a context. It parallels `vars`, one level up. Where a `{"var": "<name>"}` node looks up a named entry in `vars` to get a single value, a `{"context": "<name>"}` node looks up a named entry in `contexts` to get a whole set of matching IDs.
+If the type you have shows no such data, don't conclude it doesn't exist. Ask Breadbox what references it:
 
-Each entry in `contexts` is itself a complete context, with its own `dimension_type`, `expr`, and — optionally — its own `vars` and `contexts`. When the outer context is built, every `{"context": "<name>"}` node is resolved up front, before the outer expression runs: the named context is evaluated, and the node is replaced with the flat list of IDs it matched. Those IDs are of the **inner** context's `dimension_type`, not the outer one's.
+```
+GET /types/dimensions/{type}/referenced-by
+```
 
-That makes a context reference something you can test membership against. It pairs naturally with `in_context` and — because the reference is just a list of IDs by the time operators run — with the standard `in` and `!in` operators too. The one thing to keep straight is type alignment: since the reference resolves to IDs of the inner context's `dimension_type`, the value you test on the other side must be that same kind of ID.
+Each entry of `referenced_by` is a type with `tables`; each table has `slice_dataset_id`, `is_primary`, `columns`, and `references` (the columns pointing at `{type}`, with `cardinality` and `relationship_from_child`: `many_to_one`, or `many_to_many` for list columns). To find datasets at that level, call `GET /types/dimensions/reference-graph` and look in `matrix_datasets` for one whose `feature_type` or `sample_type` is the child.
 
-For example, a `gene_pair` context can keep only the pairs whose first gene is "strongly selective," where that judgment is itself expressed as a nested gene context:
+- **A type can have several children.** `compound_v2` is referenced by `compound_dose`, `compound_sample`, `ctd2_sample` and `sgdc_compound`, each through `CompoundID`. Pick by the child's columns (a `Dose` column marks dose level) and by whether any dataset is indexed by it. If several fit, say which you chose and why.
+- **Several datasets can sit at the child level** (seven are indexed by `compound_dose`, e.g. `GDSC1_Viability`, `GDSC2_Viability`, `CTRP_Viability`, `Prism_oncology_viability`, `REPURPOSING_Viability`). Choose by what the user asked, say which and why, and offer the alternatives.
+- **A dataset contains only the child rows it screened.** The compound's doses may be missing from the dataset you pick, so check the plot is not empty.
+- **`referenced-by` is discovery only.** It has no `slice_query_template`. Never use `reindex_through` to go from parent to children; that would mean choosing among or aggregating many rows.
+- **Ignore self-references** (a type that references itself) in `referenced-by`. Grandchildren (a child's children) need one `referenced-by` call per level; stop after one or two levels.
+- **Plot at the child level.** A dose-level matrix goes on a `compound_dose` axis, not a `compound_v2` one. Don't average, pick a dose, or otherwise aggregate for the user. If they want one number per compound, ask which.
+- **To bring parent attributes onto a child axis, go forward:** `GET /types/dimensions/compound_dose/reachable` lists `compound_v2` via `CompoundID` with a ready template.
+- **Every `reindex_through` you emit comes verbatim from a `reachable` template.** Neither `referenced-by` nor `reference-graph` supplies one.
+- **The expansion cap applies to child rows.** A compound can have more doses than the member cap (ERLOTINIB has 54 dose rows across datasets). Unless `members` is set, only the members whose values vary most are drawn (see `[EXPAND-BY]`). Tell the user that not every dose is shown.
+- Like the other endpoints, these return only what the caller may read.
+
+**Worked example: BRAF expression against ERLOTINIB viability, one panel per dose.** It combines `[EXPAND-BY]`, `[REINDEX-THROUGH]` and the rules above. The compound is selected through the verbatim `compound_dose` → `compound_v2` template (from `reachable`) with `identifier: "label"` added, and `expand_by` repeats the y axis's `slice_type` and `context`. `"show_regression_line": true` is a reasonable addition.
+
+```json
+{
+  "version": 2,
+  "plot_type": "scatter",
+  "index_type": "depmap_model",
+  "dimensions": {
+    "x": {
+      "axis_type": "raw_slice",
+      "aggregation": "first",
+      "dataset_id": "expression",
+      "slice_type": "gene",
+      "context": {
+        "dimension_type": "gene",
+        "name": "BRAF",
+        "expr": { "==": [{ "var": "given_id" }, "673"] },
+        "vars": {}
+      }
+    },
+    "y": {
+      "axis_type": "aggregated_slice",
+      "aggregation": "expansion",
+      "dataset_id": "GDSC1_Viability",
+      "slice_type": "compound_dose",
+      "context": {
+        "dimension_type": "compound_dose",
+        "name": "ERLOTINIB doses",
+        "expr": { "==": [{ "var": "compound" }, "ERLOTINIB"] },
+        "vars": {
+          "compound": {
+            "dataset_id": "compound_v2_metadata",
+            "identifier": "label",
+            "identifier_type": "column",
+            "reindex_through": {
+              "dataset_id": "compound_dose_metadata",
+              "identifier": "CompoundID",
+              "identifier_type": "column"
+            }
+          }
+        }
+      }
+    }
+  },
+  "expand_by": [
+    {
+      "slice_type": "compound_dose",
+      "context": {
+        "dimension_type": "compound_dose",
+        "name": "ERLOTINIB doses",
+        "expr": { "==": [{ "var": "compound" }, "ERLOTINIB"] },
+        "vars": {
+          "compound": {
+            "dataset_id": "compound_v2_metadata",
+            "identifier": "label",
+            "identifier_type": "column",
+            "reindex_through": {
+              "dataset_id": "compound_dose_metadata",
+              "identifier": "CompoundID",
+              "identifier_type": "column"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "facet_by": "expansion"
+}
+```
+
+## [NESTED-CONTEXTS] Contexts that refer to contexts
+
+`contexts` maps names to complete inner contexts. A `{"context": "<name>"}` node in `expr` resolves to the list of IDs that inner context matches, which are IDs of the **inner** context's `dimension_type`, so the value tested against them must be that same kind of ID. Pair it with `in_context`. Referencing an undefined name, or nesting too deeply, is an error.
 
 ```json
 {
   "dimension_type": "gene_pair",
-  "expr": {
-    "in_context": [{ "var": "gene_1" }, { "context": "selective" }]
-  },
+  "expr": { "in_context": [{ "var": "gene_1" }, { "context": "selective" }] },
   "vars": {
     "gene_1": {
       "dataset_id": "gene_pair_metadata",
@@ -1643,9 +543,7 @@ For example, a `gene_pair` context can keep only the pairs whose first gene is "
     "selective": {
       "name": "Strongly Selective Genes",
       "dimension_type": "gene",
-      "expr": {
-        "==": [{ "var": "0" }, "strongly selective"]
-      },
+      "expr": { "==": [{ "var": "0" }, "strongly selective"] },
       "vars": {
         "0": {
           "dataset_id": "gene_metadata",
@@ -1657,7 +555,3 @@ For example, a `gene_pair` context can keep only the pairs whose first gene is "
   }
 }
 ```
-
-The inner `selective` context resolves to the list of gene IDs it matches; the outer context then keeps the gene pairs whose `gene_1` is one of them.
-
-Because each nested context can declare its own `contexts`, references can chain several levels deep — a context that refers to a context that refers to another. The nesting is bounded, so chains beyond the supported depth are rejected, and referring to a name not defined in `contexts` is an error.
