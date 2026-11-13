@@ -185,6 +185,7 @@ function BoxPlot({
     urlPrefix,
     isLevel0,
     isActivePlot,
+    codeToNodeNameMapping,
     tab,
     onLoad,
   ]);
