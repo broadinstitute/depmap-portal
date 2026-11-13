@@ -15,6 +15,7 @@ import {
 } from "@depmap/types";
 import type { PlotSelection } from "./PlotSelection";
 import ScatterLoader from "../../loaders/ScatterLoader";
+import useBuiltinLegendClick from "./useBuiltinLegendClick";
 
 interface Props {
   data: DataExplorerPlotResponse | null;
@@ -69,6 +70,8 @@ function EmbeddedScatterPlot({
     contLegendKeys,
     colorMap,
     legendForDownload,
+    builtinLegend,
+    legendState,
     pointVisibility,
     regressionLines,
     showIdentityLine,
@@ -81,6 +84,8 @@ function EmbeddedScatterPlot({
     palette,
     canShowIdentityLine(data)
   );
+
+  const onClickLegendItem = useBuiltinLegendClick(legendState, colorMap);
 
   // facet_categories is the user's own pick from the category picker, and it
   // overrides computeFacets' ranking entirely — omit it and an embedded link
@@ -128,6 +133,8 @@ function EmbeddedScatterPlot({
             xLabel={formattedData?.xLabel || ""}
             yLabel={formattedData?.yLabel || ""}
             legendForDownload={legendForDownload}
+            builtinLegend={builtinLegend}
+            onClickLegendItem={onClickLegendItem}
             facetKeys={facetKeys || []}
             facetOrder={facetOrder}
             // Data Explorer seeds its "Facets" panel with these same keys, so
@@ -179,6 +186,8 @@ function EmbeddedScatterPlot({
             showIdentityLine={showIdentityLine}
             regressionLines={regressionLines}
             legendForDownload={legendForDownload}
+            builtinLegend={builtinLegend}
+            onClickLegendItem={onClickLegendItem}
             pointSize={pointSize}
             pointOpacity={pointOpacity}
             outlineWidth={outlineWidth}

@@ -107,6 +107,13 @@ interface Props {
   // which have no surrounding UI to host the custom legend. Mirrors
   // PrototypeScatterPlot's identical prop.
   showBuiltinLegend?: boolean;
+  // Makes the built-in legend interactive. `builtinLegend` is the full entry
+  // list (hidden ones included, flagged) drawn in place of
+  // `legendForDownload`; a click calls `onClickLegendItem` with the entry's
+  // key and the caller feeds the resulting hidden state back through
+  // `pointVisibility`. Mirrors PrototypeScatterPlot's identical props.
+  builtinLegend?: LegendInfo;
+  onClickLegendItem?: (key: LegendKey, isDoubleClick: boolean) => void;
   hoverTextKey?: string;
   annotationTextKey?: string;
   colorKey1?: string;
@@ -248,6 +255,8 @@ function SmallMultiplesScatter({
   height,
   legendForDownload,
   showBuiltinLegend = false,
+  builtinLegend = undefined,
+  onClickLegendItem = undefined,
   hoverTextKey,
   annotationTextKey,
   colorKey1,
@@ -766,11 +775,14 @@ function SmallMultiplesScatter({
       }
     });
 
+    const builtinLegendItems = builtinLegend ?? legendForDownload!;
+    const firstLegendTrace = plotlyData.length;
+
     if (showBuiltinLegend) {
       const legendTemplateTrace = {
         marker: { size: pointSize, line: { width: outlineWidth } },
       };
-      getLegendTraces(legendForDownload!, legendTemplateTrace).forEach((t) =>
+      getLegendTraces(builtinLegendItems, legendTemplateTrace).forEach((t) =>
         plotlyData.push(t as typeof plotlyData[number])
       );
     }
@@ -1218,12 +1230,23 @@ function SmallMultiplesScatter({
     // The legend is drawn from dummy traces (getLegendTraces) that hold no
     // real points, so Plotly's default click behavior toggles the dummy and
     // nothing else: the entry greys out while the plot stays put. Returning
-    // false suppresses that, leaving the legend a static key rather than a
-    // control that appears to do something. Registered unconditionally — with
-    // no legend shown (Data Explorer's case) these never fire.
-    // TODO: make these actually filter, as Data Explorer's own legend does.
-    on("plotly_legendclick", () => false);
-    on("plotly_legenddoubleclick", () => false);
+    // false always suppresses that. When the caller supplied
+    // `onClickLegendItem` the click is routed to it instead and the legend is
+    // redrawn from the resulting state; otherwise the legend is a static key.
+    // Registered unconditionally — with no legend shown (Data Explorer's
+    // case) these never fire.
+    const routeLegendClick = (isDoubleClick: boolean) => (e: any) => {
+      const item = builtinLegendItems.items[e.curveNumber - firstLegendTrace];
+
+      if (onClickLegendItem && showBuiltinLegend && item?.key !== undefined) {
+        onClickLegendItem(item.key, isDoubleClick);
+      }
+
+      return false;
+    };
+
+    on("plotly_legendclick", routeLegendClick(false));
+    on("plotly_legenddoubleclick", routeLegendClick(true));
 
     // https://github.com/plotly/plotly.js/blob/55dda47/src/lib/prepare_regl.js
     // Mirrors PrototypeScatterPlot's handling; this renderer didn't have it.
@@ -1345,6 +1368,8 @@ function SmallMultiplesScatter({
     height,
     legendForDownload,
     showBuiltinLegend,
+    builtinLegend,
+    onClickLegendItem,
     hoverTextKey,
     annotationTextKey,
     colorKey1,

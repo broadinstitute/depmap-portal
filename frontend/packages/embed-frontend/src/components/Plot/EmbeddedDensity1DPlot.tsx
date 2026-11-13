@@ -9,6 +9,7 @@ import {
 } from "@depmap/types";
 import type { PlotSelection } from "./PlotSelection";
 import DensityLoader from "../../loaders/DensityLoader";
+import useBuiltinLegendClick from "./useBuiltinLegendClick";
 
 interface Props {
   data: DataExplorerPlotResponse | null;
@@ -58,6 +59,8 @@ function EmbeddedDensity1DPlot({
   // it an empty facet renders as a blank track.
   const { hiddenLegendValues: hiddenFacetValues } = facetLegendState;
 
+  const onClickLegendItem = useBuiltinLegendClick(legendState, colorMap);
+
   if (!formattedData) {
     return null;
   }
@@ -87,6 +90,7 @@ function EmbeddedDensity1DPlot({
         facetDisplayNames={facetDisplayNames}
         legendTitle={legendTitle}
         showBuiltinLegend={showBuiltinLegend}
+        onClickLegendItem={onClickLegendItem}
         pointVisibility={pointVisibility || undefined}
         useSemiOpaqueViolins={!plotConfig.hide_points}
         placeholderEmptyTracks={Boolean(plotConfig.expand_by?.length)}
