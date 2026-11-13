@@ -30,7 +30,7 @@ export default class StackedBoxplotUtils {
     labels: Array<string>,
     dataMatrix: Array<Array<number | null>>
   ) {
-    this.d3 = window.d3 || (window.Plotly ? window.Plotly.d3 : null);
+    this.d3 = window.d3 || (window.Plotly ? (window.Plotly as any).d3 : null);
 
     // Remove any existing d3 elements from the container before re-rendering
     this.d3.select(d3Container.current).selectAll("*").remove();

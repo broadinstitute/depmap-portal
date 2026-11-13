@@ -1,7 +1,5 @@
 import { colorPalette } from "depmap-shared";
 
-type PlotlyType = typeof import("plotly.js");
-
 type HighlightFunction<T> = (
   cellLine: string,
   cellLinesToHighlight: Set<string>
@@ -36,15 +34,6 @@ export const getDefaultColor = (entityType = "gene") => {
     return colorPalette.compound_color;
   }
   return colorPalette.gene_color;
-};
-
-let categoryColor: d3.scale.Ordinal<string, string>;
-export const getCategoryToColor = (
-  Plotly: PlotlyType,
-  category: number | string = ""
-) => {
-  categoryColor = categoryColor || Plotly.d3.scale.category10();
-  return categoryColor(category.toString());
 };
 
 export const mutationNumToColor = (color_num: number, entityType = "gene") => {

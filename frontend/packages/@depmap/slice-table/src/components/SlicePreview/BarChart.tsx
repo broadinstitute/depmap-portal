@@ -300,7 +300,8 @@ function PrototypeBarChart({
 
       // Collect all selected points across all traces
       const selectedIndices = new Set<number>();
-      plot.data.forEach((trace) => {
+      plot.data.forEach((t) => {
+        const trace = t as Partial<PlotData>;
         const traceSelected = trace.selectedpoints as number[] | undefined;
         if (traceSelected) {
           // Map trace-relative indices back to original indices
