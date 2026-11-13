@@ -94,14 +94,14 @@ RUN python3.13 -m venv /install/conseq && \
 RUN cp /install/conseq/lib/python3.13/site-packages/conseq/helper.py /helper.py
 
 # install Poetry
-RUN python3.9 -m venv /install/poetry && \
+RUN python3.10 -m venv /install/poetry && \
     /install/poetry/bin/pip install -U pip setuptools && \
-    /install/poetry/bin/pip install poetry && \
+    /install/poetry/bin/pip install poetry==2.4.1 && \
     ln -s /install/poetry/bin/poetry /root/.local/bin
 
 # set up the virtual env we want to use as the default python interpreter (by adding to the front of the path)
 # this one will have all the dependencies we require installed
-WORKDIR /work/pipline-run-docker
+WORKDIR /work/pipeline-run-docker
 COPY pyproject.toml poetry.lock ./
 RUN python3.9 -m venv /install/default-python && . /install/default-python/bin/activate && /install/poetry/bin/poetry install
 
