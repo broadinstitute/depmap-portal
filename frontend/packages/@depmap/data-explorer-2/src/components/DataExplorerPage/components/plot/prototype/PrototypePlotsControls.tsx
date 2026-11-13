@@ -203,18 +203,20 @@ function PlotControls({
               <MenuItem onClick={onDownload}>Export CSV…</MenuItem>
               <MenuItem
                 onClick={() => {
-                  const params = new URLSearchParams(window.location.search);
-                  const pParam = params.get("p");
-                  const stylesJson = JSON.stringify(plotStyles);
-                  const encodedStyles = Base64.encode(stylesJson, true);
-
                   const baseUrl =
                     process.env.NODE_ENV === "development"
                       ? "http://localhost:8002/embed"
                       : "../breadbox/embed";
 
+                  const params = new URLSearchParams(window.location.search);
+                  const key = params.get("p") ? "p" : "plot";
+                  const value = params.get("p") || params.get("plot");
+
+                  const stylesJson = JSON.stringify(plotStyles);
+                  const encodedStyles = Base64.encode(stylesJson, true);
+
                   window.open(
-                    `${baseUrl}/plot?p=${pParam}&styles=${encodedStyles}`
+                    `${baseUrl}/plot?${key}=${value}&styles=${encodedStyles}`
                   );
                 }}
               >
