@@ -163,6 +163,7 @@ Turn 3, "can we plot this against EGFR CRISPR gene effect?" **Wrong:** the doses
 
 ```json
 {
+  "version": 2,
   "plot_type": "scatter",
   "dimensions": {
     "x": {
