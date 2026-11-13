@@ -7,6 +7,7 @@ import PlotlyLoader, {
 import { BoxPlotInfo } from "src/contextExplorer/models/types";
 import { PlotlyHTMLElement } from "plotly.js";
 import styles from "./styles.scss";
+import { Tooltip } from "@depmap/common-components";
 
 export interface BoxPlotProps {
   boxData: BoxPlotInfo[];
@@ -19,6 +20,7 @@ export interface BoxPlotProps {
   xAxisRange?: any[];
   xAxisTitle?: string;
   bottomMargin?: number;
+  codeToNodeNameMapping?: Record<string, string>;
   topMargin?: number;
   urlPrefix?: string; // Required if linking y-axis from somewhere other than context explorer (e.g. gene page)
   tab?: string; // Required if linking y-axis from somewhere other than context explorer (e.g. gene page)
@@ -36,6 +38,7 @@ function BoxPlot({
   plotHeight = undefined,
   xAxisRange = undefined,
   xAxisTitle = undefined,
+  codeToNodeNameMapping = undefined,
   bottomMargin = 0,
   topMargin = 0,
   urlPrefix = undefined,
@@ -191,6 +194,7 @@ function BoxPlot({
 
 export default function LazyBoxPlot({
   boxData,
+  codeToNodeNameMapping = undefined,
   isLevel0 = false,
   isActivePlot = false,
   plotHeight = undefined,
@@ -248,17 +252,31 @@ export default function LazyBoxPlot({
                     box?.name.split("/").map((code, j) => (
                       <React.Fragment key={code}>
                         {code === selectedCode ? (
-                          <span style={{ color: "#333333", fontWeight: "600" }}>
-                            {code}
-                          </span>
-                        ) : (
-                          <a
-                            href={getNewContextUrl(code, urlPrefix, tab)}
-                            rel="noreferrer"
-                            target="_blank"
+                          <Tooltip
+                            id={`${box.name}-${code}-tooltip`}
+                            content={`${codeToNodeNameMapping?.[code] || code}`}
+                            placement="top"
                           >
-                            {code}
-                          </a>
+                            <span
+                              style={{ color: "#333333", fontWeight: "600" }}
+                            >
+                              {code}
+                            </span>
+                          </Tooltip>
+                        ) : (
+                          <Tooltip
+                            id={`${box.name}-${code}-tooltip`}
+                            content={`${codeToNodeNameMapping?.[code] || code}`}
+                            placement="top"
+                          >
+                            <a
+                              href={getNewContextUrl(code, urlPrefix, tab)}
+                              rel="noreferrer"
+                              target="_blank"
+                            >
+                              {code}
+                            </a>
+                          </Tooltip>
                         )}
                         {j < box?.name.split("/").length - 1 && "/"}
                       </React.Fragment>

@@ -255,6 +255,7 @@ function CollapsibleBoxPlots({
           tab={tab}
           drugDottedLine={drugDottedLine}
           xAxisTitle={xAxisTitle}
+          codeToNodeNameMapping={boxPlotData?.codes_to_node_name}
         />
       )}
       <>
@@ -282,6 +283,7 @@ function CollapsibleBoxPlots({
                   urlPrefix={urlPrefix}
                   tab={tab}
                   xAxisTitle={xAxisTitle}
+                  codeToNodeNameMapping={boxPlotData?.codes_to_node_name}
                 />
               </Panel>
             ))
