@@ -6,6 +6,12 @@ import math
 from typing import List, Dict, Any, Optional
 
 screens = ["crispr", "rnai", "oncref", "repurposing"]
+screen_to_dim_type = {
+    "crispr": "gene",
+    "rnai": "gene",
+    "oncref": "compound_v2",
+    "repurposing": "compound_v2",
+}
 
 
 def generate_daintree_configs(
@@ -70,6 +76,7 @@ def generate_daintree_configs(
                 "table_type": "target_matrix",
                 "preprocess": "daintree_preprocess:drop_sparse_columns",
                 "relation": model_config["Relation"],
+                "dim_type": screen_to_dim_type[screen],
             }
 
             # Map features to their corresponding inputs
