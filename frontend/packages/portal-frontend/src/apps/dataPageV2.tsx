@@ -17,7 +17,7 @@ if (!dataElement || !dataElement.textContent) {
     `Expected a DOM element like <script type="application/json">{ ... }</script>'`
   );
 }
-const data = JSON.parse(dataElement.textContent);
+// const data = JSON.parse(dataElement.textContent);
 
 // const { releaseNotesUrl, forumUrl } = data;
 const App = () => {
