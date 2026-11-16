@@ -72,7 +72,7 @@ RUN python3.13 -m venv /install/dsub && \
 
 # install sparkles v5 (requires python==3.10)
 RUN python3.10 -m venv /install/sparkles && \
-    /install/sparkles/bin/pip install pip sparklespray==6.0.4 --extra-index-url https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple/ && \
+    /install/sparkles/bin/pip install pip https://github.com/broadinstitute/sparklespray/releases/download/v5.18.1/sparklespray-5.18.1.tar.gz && \
     ln -s /install/sparkles/bin/sparkles /root/.local/bin
 
 # install gcloud SDK
@@ -87,21 +87,21 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.c
 # install conseq in virtual environment
 COPY conseq-settings /root/.conseq
 RUN python3.13 -m venv /install/conseq && \
-      /install/conseq/bin/pip install https://github.com/broadinstitute/conseq/archive/refs/tags/v2.2.1.tar.gz && \
+      /install/conseq/bin/pip install https://github.com/broadinstitute/conseq/archive/refs/tags/v2.3.0.tar.gz && \
     ln -s /install/conseq/bin/conseq /root/.local/bin
 
 # copy the conseq helper into known location
 RUN cp /install/conseq/lib/python3.13/site-packages/conseq/helper.py /helper.py
 
 # install Poetry
-RUN python3.9 -m venv /install/poetry && \
+RUN python3.10 -m venv /install/poetry && \
     /install/poetry/bin/pip install -U pip setuptools && \
-    /install/poetry/bin/pip install poetry && \
+    /install/poetry/bin/pip install poetry==2.4.1 && \
     ln -s /install/poetry/bin/poetry /root/.local/bin
 
 # set up the virtual env we want to use as the default python interpreter (by adding to the front of the path)
 # this one will have all the dependencies we require installed
-WORKDIR /work/pipline-run-docker
+WORKDIR /work/pipeline-run-docker
 COPY pyproject.toml poetry.lock ./
 RUN python3.9 -m venv /install/default-python && . /install/default-python/bin/activate && /install/poetry/bin/poetry install
 

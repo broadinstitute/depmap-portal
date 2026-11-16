@@ -22,6 +22,7 @@ import {
   LEGEND_BOTH,
   LEGEND_NEITHER,
   LEGEND_OTHER,
+  LegendInfo,
   LegendKey,
   nullifyUnplottableValues,
   RegressionLine,
@@ -69,6 +70,11 @@ export interface ScatterPlotData {
     items: { name: string; hexColor: string }[];
     isTrivial: boolean;
   };
+  // The live counterpart of `legendForDownload`, for a caller that draws
+  // Plotly's own legend (the embeddable plot). It keeps hidden entries — as
+  // `hidden: true`, so they render dimmed and can be clicked back on — and
+  // tags each with its LegendKey so a click can be routed to `legendState`.
+  builtinLegend: LegendInfo;
   pointVisibility: boolean[] | null;
   regressionLines: RegressionLine[] | null;
   // Per-facet fits for the faceted renderer, keyed by facet label. null when
@@ -204,7 +210,7 @@ export default function useScatterPlotData(
   ]);
 
   // The plot only needs legend info if the user is downloading an image of it.
-  const legendForDownload = useMemo(() => {
+  const { legendForDownload, builtinLegend } = useMemo(() => {
     let title = "";
 
     // dataset_label is legitimately absent for "primary" metadata datasets
@@ -228,30 +234,35 @@ export default function useScatterPlotData(
       }
     }
 
-    const items: { name: string; hexColor: string }[] = [];
-
-    [...colorMap.keys()].forEach((key) => {
-      if (!hiddenLegendValues.has(key)) {
+    const allItems: NonNullable<LegendInfo["items"]> = [...colorMap.keys()].map(
+      (key) => {
         const name = categoryToDisplayName(
           key as LegendKey,
           data as DataExplorerPlotResponse,
           continuousBins,
           colorMode.target
         );
-        const formattedName =
-          typeof name === "string" ? name : `${name[0]} – ${name[1]}`;
 
-        items.push({
-          name: formattedName,
+        return {
+          key,
+          name: typeof name === "string" ? name : `${name[0]} – ${name[1]}`,
           hexColor: colorMap.get(key)!,
-        });
+          hidden: hiddenLegendValues.has(key),
+        };
       }
-    });
+    );
+
+    const isTrivial = colorMap.size === 1 && colorMap.has(LEGEND_ALL);
 
     return {
-      title,
-      items,
-      isTrivial: colorMap.size === 1 && colorMap.has(LEGEND_ALL),
+      builtinLegend: { title, items: allItems, isTrivial },
+      legendForDownload: {
+        title,
+        items: allItems
+          .filter((item) => !item.hidden)
+          .map(({ name, hexColor }) => ({ name, hexColor })),
+        isTrivial,
+      },
     };
   }, [colorMap, data, continuousBins, hiddenLegendValues, colorMode]);
 
@@ -667,6 +678,7 @@ export default function useScatterPlotData(
     facetKeysWithNoData,
     colorMap,
     legendForDownload,
+    builtinLegend,
     pointVisibility,
     regressionLines,
     regressionLinesByFacet,

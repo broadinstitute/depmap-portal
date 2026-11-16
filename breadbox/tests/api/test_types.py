@@ -10,6 +10,8 @@ from breadbox.models.dataset import (
 )
 from tests import factories
 import json
+import os
+from pathlib import Path
 import numpy as np
 from tests.factories import feature_type_with_metadata
 from io import BytesIO
@@ -19,6 +21,8 @@ from breadbox.schemas.dataset import ColumnMetadata
 import pandas as pd
 from ..utils import assert_status_ok, assert_status_not_ok
 from breadbox.service.search import _get_datatypes_referencing
+from breadbox.service.reachable import MAX_HOPS, build_reachable
+from breadbox.service.reference_graph import LoadedColumn, LoadedTable
 
 
 def test_all_dimension_type_methods(client: TestClient, minimal_db, settings):
@@ -1690,3 +1694,709 @@ def test_get_dimension_type_identifiers_etag(client: TestClient, minimal_db, set
     fourth = client.get(url, headers={**headers, "If-None-Match": etag})
     assert fourth.status_code == 200
     assert fourth.headers["ETag"] != etag
+
+
+def _reference_graph_fixture(db, settings):
+    admin = settings.admin_users[0]
+    factories.feature_type(db, admin, "gene", display_name="Gene")
+    factories.sample_type(
+        db,
+        admin,
+        "screen",
+        display_name="Screen",
+        given_ids=["S1"],
+        metadata_given_id="screen_metadata",
+    )
+    return factories.tabular_dataset(
+        db,
+        settings,
+        index_type_name="screen",
+        given_id="screen_extras",
+        name="Screen extras",
+        data_df=pd.DataFrame(
+            {
+                "id": ["S1"],
+                "label": ["S1"],
+                "GeneID": ["G1"],
+                "Genes": [json.dumps(["G1", "G2"])],
+            }
+        ),
+        columns_metadata={
+            "id": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+            "GeneID": ColumnMetadata(col_type=AnnotationType.text, references="gene"),
+            "Genes": ColumnMetadata(
+                col_type=AnnotationType.list_strings, references="gene"
+            ),
+        },
+    )
+
+
+def test_reference_graph(client: TestClient, minimal_db, settings):
+    _reference_graph_fixture(minimal_db, settings)
+
+    response = client.get(
+        "types/dimensions/reference-graph",
+        headers={"X-Forwarded-Email": "anyone@example.com"},
+    )
+    assert_status_ok(response)
+    nodes = {n["name"]: n for n in response.json()["dimension_types"]}
+
+    screen = nodes["screen"]
+    assert screen["display_name"] == "Screen"
+    primary, extras = screen["tables"]
+    assert primary["is_primary"] is True
+    assert primary["slice_dataset_id"] == "screen_metadata"
+    assert primary["references"] == []
+    assert screen["metadata_dataset_id"] == primary["id"]
+
+    assert extras["is_primary"] is False
+    assert extras["slice_dataset_id"] == "screen_extras"
+    assert extras["references"] == [
+        {"column": "GeneID", "target_type": "gene", "cardinality": "scalar"},
+        {"column": "Genes", "target_type": "gene", "cardinality": "list"},
+    ]
+
+    # a type with no tables and no references (a hub) is still listed
+    assert nodes["gene"]["tables"] == []
+    assert nodes["gene"]["metadata_dataset_id"] is None
+
+
+def test_reference_graph_slice_dataset_id_falls_back_to_id(
+    client: TestClient, minimal_db, settings
+):
+    dataset = _reference_graph_fixture(minimal_db, settings)
+    other = factories.tabular_dataset(
+        minimal_db,
+        settings,
+        index_type_name="screen",
+        data_df=pd.DataFrame({"id": ["S1"], "label": ["S1"]}),
+        columns_metadata={
+            "id": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+        },
+    )
+
+    response = client.get(
+        "types/dimensions/reference-graph",
+        headers={"X-Forwarded-Email": "anyone@example.com"},
+    )
+    tables = {
+        t["id"]: t
+        for t in next(
+            n for n in response.json()["dimension_types"] if n["name"] == "screen"
+        )["tables"]
+    }
+    assert tables[other.id]["given_id"] is None
+    assert tables[other.id]["slice_dataset_id"] == other.id
+    assert tables[dataset.id]["slice_dataset_id"] == "screen_extras"
+
+
+def test_reference_graph_hides_private_tables(
+    client: TestClient, minimal_db, settings, private_group
+):
+    _reference_graph_fixture(minimal_db, settings)
+    factories.tabular_dataset(
+        minimal_db,
+        settings,
+        index_type_name="screen",
+        given_id="private_screen_table",
+        group_id=private_group["id"],
+        data_df=pd.DataFrame({"id": ["S1"], "label": ["S1"], "SecretGeneID": ["G1"]}),
+        columns_metadata={
+            "id": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+            "SecretGeneID": ColumnMetadata(
+                col_type=AnnotationType.text, references="gene"
+            ),
+        },
+        user=settings.admin_users[0],
+    )
+
+    def screen_table_ids(email):
+        response = client.get(
+            "types/dimensions/reference-graph", headers={"X-Forwarded-Email": email},
+        )
+        assert_status_ok(response)
+        screen = next(
+            n for n in response.json()["dimension_types"] if n["name"] == "screen"
+        )
+        return {t["slice_dataset_id"] for t in screen["tables"]}
+
+    assert "private_screen_table" not in screen_table_ids("anyone@example.com")
+    assert "private_screen_table" in screen_table_ids("someone@private-group.com")
+
+
+def _reachable_fixture(db, settings):
+    """
+    pair --CtrlArmScreenID/TestArmScreenID--> screen
+    screen --ModelConditionID--> mcond --ModelID--> model, and screen --ModelID--> model
+    pair also has a supplemental table with a direct ModelID and a list-valued
+    ScreenList.
+    """
+    admin = settings.admin_users[0]
+    text = AnnotationType.text
+
+    def add_type(name, extra_cols, refs, rows):
+        cols = {"ID": text, "label": text, **extra_cols}
+        factories.add_dimension_type(
+            db,
+            settings,
+            user=admin,
+            name=name,
+            display_name=name.title(),
+            id_column="ID",
+            axis="sample",
+            annotation_type_mapping=cols,
+            reference_column_mappings=refs,
+            metadata_df=pd.DataFrame(
+                {"ID": [r[0] for r in rows], "label": [r[0] for r in rows]}
+                | {col: [r[i + 1] for r in rows] for i, col in enumerate(extra_cols)}
+            ),
+        )
+
+    add_type("rmodel", {"Lineage": text}, {}, [("M1", "Breast"), ("M2", "Lung")])
+    add_type(
+        "rmcond", {"ModelID": text}, {"ModelID": "rmodel"}, [("C1", "M1"), ("C2", "M2")]
+    )
+    add_type(
+        "rscreen",
+        {"ModelID": text, "ModelConditionID": text},
+        {"ModelID": "rmodel", "ModelConditionID": "rmcond"},
+        [("S1", "M1", "C1"), ("S2", "M2", "C2")],
+    )
+    add_type(
+        "rpair",
+        {"CtrlArmScreenID": text, "TestArmScreenID": text},
+        {"CtrlArmScreenID": "rscreen", "TestArmScreenID": "rscreen"},
+        [("P1", "S1", "S2")],
+    )
+    factories.tabular_dataset(
+        db,
+        settings,
+        given_id="rpair_extra",
+        name="Pair extra",
+        index_type_name="rpair",
+        data_df=pd.DataFrame(
+            {
+                "ID": ["P1"],
+                "label": ["P1"],
+                "ModelID": ["M1"],
+                "ScreenList": ['["S1", "S2"]'],
+            }
+        ),
+        columns_metadata={
+            "ID": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+            "ModelID": ColumnMetadata(
+                col_type=AnnotationType.text, references="rmodel"
+            ),
+            "ScreenList": ColumnMetadata(
+                col_type=AnnotationType.list_strings, references="rscreen"
+            ),
+        },
+    )
+
+
+def _route(routes, start, columns):
+    return next(
+        r
+        for r in routes
+        if r["start_table"] == start and [h["column"] for h in r["hops"]] == columns
+    )
+
+
+def test_reachable_routes(client: TestClient, minimal_db, settings):
+    _reachable_fixture(minimal_db, settings)
+    headers = {"X-Forwarded-Email": "anyone@example.com"}
+
+    response = client.get("types/dimensions/rpair/reachable", headers=headers)
+    assert_status_ok(response)
+    body = response.json()
+    routes = body["routes"]
+    primary_id = next(r["start_table"] for r in routes if not r["hops"])
+
+    # The two arms are distinct routes to the same table.
+    ctrl = _route(routes, primary_id, ["CtrlArmScreenID"])
+    test = _route(routes, primary_id, ["TestArmScreenID"])
+    assert ctrl["tables"][0]["slice_query_template"] != (
+        test["tables"][0]["slice_query_template"]
+    )
+
+    # Multi-hop route with the template nested innermost-first.
+    deep = _route(
+        routes, primary_id, ["CtrlArmScreenID", "ModelConditionID", "ModelID"]
+    )
+    (model_table,) = deep["tables"]
+    template = model_table["slice_query_template"]
+    assert template["dataset_id"] == model_table["slice_dataset_id"]
+    assert template["identifier_type"] == "column"
+    chain = template["reindex_through"]
+    assert chain["identifier"] == "ModelID"
+    assert chain["reindex_through"]["identifier"] == "ModelConditionID"
+    assert (
+        chain["reindex_through"]["reindex_through"]["identifier"] == "CtrlArmScreenID"
+    )
+    assert chain["reindex_through"]["reindex_through"].get("reindex_through") is None
+    assert "Lineage" in [c["name"] for c in model_table["columns"]]
+    assert model_table["offered_by_picker"] is True
+
+    # screen -> model: the direct ModelID is a shortcut, so it is listed but not
+    # offered by the picker; the route through the condition is.
+    via_cond = _route(
+        routes, primary_id, ["CtrlArmScreenID", "ModelConditionID", "ModelID"]
+    )
+    direct = _route(routes, primary_id, ["CtrlArmScreenID", "ModelID"])
+    assert via_cond["tables"][0]["offered_by_picker"] is True
+    assert direct["tables"][0]["offered_by_picker"] is False
+
+    # Supplemental start table, with a list-valued hop.
+    listed = _route(routes, "rpair_extra", ["ScreenList"])
+    assert listed["hops"][0]["cardinality"] == "list"
+    assert listed["result_is_list"] is True
+    assert _route(routes, primary_id, ["CtrlArmScreenID"])["result_is_list"] is False
+
+    # A hub has no outgoing routes: model only lists its own table.
+    hub = client.get("types/dimensions/rmodel/reachable", headers=headers).json()
+    assert all(not r["hops"] for r in hub["routes"])
+
+
+def test_reachable_max_depth(client: TestClient, minimal_db, settings):
+    _reachable_fixture(minimal_db, settings)
+    headers = {"X-Forwarded-Email": "anyone@example.com"}
+
+    def depths(max_depth):
+        r = client.get(
+            f"types/dimensions/rpair/reachable?max_depth={max_depth}", headers=headers
+        )
+        assert_status_ok(r)
+        return {len(route["hops"]) for route in r.json()["routes"]}
+
+    assert depths(0) == {0}
+    assert depths(1) == {0, 1}
+    assert max(depths(9)) == 3  # the graph's longest chain
+
+    assert (
+        client.get(
+            "types/dimensions/rpair/reachable?max_depth=10", headers=headers
+        ).status_code
+        == 422
+    )
+    assert (
+        client.get("types/dimensions/nope/reachable", headers=headers).status_code
+        == 404
+    )
+
+
+def test_reachable_templates_resolve(client: TestClient, minimal_db, settings):
+    """Every route and column the endpoint advertises must resolve."""
+    _reachable_fixture(minimal_db, settings)
+    headers = {"X-Forwarded-Email": "anyone@example.com"}
+    body = client.get(
+        "types/dimensions/rpair/reachable?max_depth=9", headers=headers
+    ).json()
+
+    checked = 0
+    for route in body["routes"]:
+        for table in route["tables"]:
+            for column in table["columns"]:
+                query = {
+                    **table["slice_query_template"],
+                    "identifier": column["name"],
+                }
+                response = client.post(
+                    "/datasets/dimension/data", json=query, headers=headers
+                )
+                assert response.status_code == 200, (
+                    route["hops"],
+                    query,
+                    response.text,
+                )
+                checked += 1
+
+    assert checked > 20
+
+
+def test_reachable_hides_private_tables(
+    client: TestClient, minimal_db, settings, private_group
+):
+    _reachable_fixture(minimal_db, settings)
+    factories.tabular_dataset(
+        minimal_db,
+        settings,
+        given_id="rpair_private",
+        index_type_name="rpair",
+        group_id=private_group["id"],
+        data_df=pd.DataFrame({"ID": ["P1"], "label": ["P1"], "SecretModel": ["M1"]}),
+        columns_metadata={
+            "ID": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+            "SecretModel": ColumnMetadata(
+                col_type=AnnotationType.text, references="rmodel"
+            ),
+        },
+        user=settings.admin_users[0],
+    )
+
+    def start_tables(email):
+        response = client.get(
+            "types/dimensions/rpair/reachable", headers={"X-Forwarded-Email": email}
+        )
+        assert_status_ok(response)
+        return {r["start_table"] for r in response.json()["routes"]}
+
+    assert "rpair_private" not in start_tables("anyone@example.com")
+    assert "rpair_private" in start_tables("someone@private-group.com")
+
+
+def _dose_fixture(db, settings):
+    """
+    rdose --CompoundID--> rcompound: many dose rows per compound, plus a matrix
+    indexed by rdose (a dose-level matrix) and a second list-valued child.
+    """
+    admin = settings.admin_users[0]
+    text = AnnotationType.text
+
+    factories.add_dimension_type(
+        db,
+        settings,
+        user=admin,
+        name="rcompound",
+        display_name="Compound",
+        id_column="ID",
+        axis="feature",
+        annotation_type_mapping={"ID": text, "label": text},
+        reference_column_mappings={},
+        metadata_df=pd.DataFrame({"ID": ["C1", "C2"], "label": ["C1", "C2"]}),
+    )
+    factories.add_dimension_type(
+        db,
+        settings,
+        user=admin,
+        name="rdose",
+        display_name="Compound Dose",
+        id_column="ID",
+        axis="feature",
+        annotation_type_mapping={
+            "ID": text,
+            "label": text,
+            "CompoundID": text,
+            "Dose": text,
+        },
+        reference_column_mappings={"CompoundID": "rcompound"},
+        metadata_df=pd.DataFrame(
+            {
+                "ID": ["D1", "D2", "D3"],
+                "label": ["D1", "D2", "D3"],
+                "CompoundID": ["C1", "C1", "C2"],
+                "Dose": ["0.1", "1", "0.1"],
+            }
+        ),
+    )
+    factories.tabular_dataset(
+        db,
+        settings,
+        given_id="rcompound_panels",
+        name="Compound panels",
+        index_type_name="rcompound",
+        data_df=pd.DataFrame(
+            {"ID": ["C1", "C2"], "label": ["C1", "C2"], "Related": ['["C2"]', '["C1"]']}
+        ),
+        columns_metadata={
+            "ID": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+            "Related": ColumnMetadata(
+                col_type=AnnotationType.list_strings, references="rcompound"
+            ),
+        },
+    )
+    factories.sample_type(
+        db, admin, "rline", display_name="Line", given_ids=["L1", "L2"]
+    )
+    factories.matrix_dataset(
+        db,
+        settings,
+        feature_type="rdose",
+        sample_type="rline",
+        given_id="dose_matrix",
+        dataset_name="Dose matrix",
+        data_file=factories.continuous_matrix_csv_file(
+            feature_ids=["D1", "D2", "D3"], sample_ids=["L1", "L2"]
+        ),
+    )
+
+
+def test_referenced_by(client: TestClient, minimal_db, settings):
+    _dose_fixture(minimal_db, settings)
+    headers = {"X-Forwarded-Email": "anyone@example.com"}
+
+    body = client.get(
+        "types/dimensions/rcompound/referenced-by", headers=headers
+    ).json()
+    assert body["type"] == "rcompound"
+    by_name = {t["name"]: t for t in body["referenced_by"]}
+    # the type itself appears: rcompound_panels.Related is a self-reference
+    assert sorted(by_name) == ["rcompound", "rdose"]
+
+    dose = by_name["rdose"]
+    assert dose["display_name"] == "Compound Dose"
+    assert dose["axis"] == "feature"
+    (table,) = dose["tables"]
+    assert table["is_primary"] is True
+    assert dose["metadata_dataset_id"] == table["id"]
+    assert [c["name"] for c in table["columns"]] == [
+        "CompoundID",
+        "Dose",
+        "ID",
+        "label",
+    ]
+    assert table["references"] == [
+        {
+            "column": "CompoundID",
+            "cardinality": "scalar",
+            "relationship_from_child": "many_to_one",
+            "relationship_from_parent": "one_to_many",
+        }
+    ]
+    assert "slice_query_template" not in table
+
+    (panels,) = by_name["rcompound"]["tables"]
+    assert panels["is_primary"] is False
+    assert panels["references"] == [
+        {
+            "column": "Related",
+            "cardinality": "list",
+            "relationship_from_child": "many_to_many",
+            "relationship_from_parent": "many_to_many",
+        }
+    ]
+
+    # nothing references rdose
+    leaf = client.get("types/dimensions/rdose/referenced-by", headers=headers).json()
+    assert leaf["referenced_by"] == []
+
+    assert (
+        client.get("types/dimensions/nope/referenced-by", headers=headers).status_code
+        == 404
+    )
+
+
+def test_referenced_by_columns_resolve(client: TestClient, minimal_db, settings):
+    """Every advertised child column loads as a plain slice, and the reverse edge
+    is the mirror of a forward route that `reachable` lists and the resolver accepts."""
+    _dose_fixture(minimal_db, settings)
+    headers = {"X-Forwarded-Email": "anyone@example.com"}
+    body = client.get(
+        "types/dimensions/rcompound/referenced-by", headers=headers
+    ).json()
+
+    checked = 0
+    for child in body["referenced_by"]:
+        for table in child["tables"]:
+            for column in table["columns"]:
+                query = {
+                    "dataset_id": table["slice_dataset_id"],
+                    "identifier_type": "column",
+                    "identifier": column["name"],
+                }
+                response = client.post(
+                    "/datasets/dimension/data", json=query, headers=headers
+                )
+                assert response.status_code == 200, (query, response.text)
+                checked += 1
+            for ref in table["references"]:
+                if child["name"] == "rcompound":
+                    # Self-references are listed here but are not forward routes:
+                    # the resolver rejects revisiting a type.
+                    continue
+                forward = client.get(
+                    f"types/dimensions/{child['name']}/reachable", headers=headers
+                ).json()
+                assert any(
+                    r["start_table"] == table["slice_dataset_id"]
+                    and [(h["column"], h["target_type"]) for h in r["hops"]]
+                    == [(ref["column"], "rcompound")]
+                    for r in forward["routes"]
+                ), ref
+    assert checked == 7
+
+
+def test_reverse_routes_are_not_resolvable(client: TestClient, minimal_db, settings):
+    """Why referenced-by carries no templates: a chain from the parent through
+    the child's FK column does not resolve to child-level values."""
+    _dose_fixture(minimal_db, settings)
+    headers = {"X-Forwarded-Email": "anyone@example.com"}
+    query = {
+        "dataset_id": "rdose_metadata",
+        "identifier_type": "column",
+        "identifier": "Dose",
+        "reindex_through": {
+            "dataset_id": "rdose_metadata",
+            "identifier": "CompoundID",
+            "identifier_type": "column",
+        },
+    }
+    response = client.post("/datasets/dimension/data", json=query, headers=headers)
+    # Either rejected or silently empty, never one value per dose.
+    assert response.status_code != 200 or response.json()["values"] == []
+
+
+def test_reference_graph_lists_matrix_datasets(
+    client: TestClient, minimal_db, settings
+):
+    _dose_fixture(minimal_db, settings)
+    body = client.get(
+        "types/dimensions/reference-graph",
+        headers={"X-Forwarded-Email": "anyone@example.com"},
+    ).json()
+    matrices = {m["slice_dataset_id"]: m for m in body["matrix_datasets"]}
+    dose = matrices["dose_matrix"]
+    assert dose["name"] == "Dose matrix"
+    assert dose["feature_type"] == "rdose"
+    assert dose["sample_type"] == "rline"
+    # tabular datasets stay under their type, not in matrix_datasets
+    assert "rdose_metadata" not in matrices
+
+
+def test_referenced_by_hides_private_tables(
+    client: TestClient, minimal_db, settings, private_group
+):
+    _dose_fixture(minimal_db, settings)
+    factories.tabular_dataset(
+        minimal_db,
+        settings,
+        given_id="rdose_private",
+        index_type_name="rdose",
+        group_id=private_group["id"],
+        data_df=pd.DataFrame({"ID": ["D1"], "label": ["D1"], "Secret": ["C1"]}),
+        columns_metadata={
+            "ID": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+            "Secret": ColumnMetadata(
+                col_type=AnnotationType.text, references="rcompound"
+            ),
+        },
+        user=settings.admin_users[0],
+    )
+
+    def tables(email):
+        body = client.get(
+            "types/dimensions/rcompound/referenced-by",
+            headers={"X-Forwarded-Email": email},
+        ).json()
+        return {
+            t["slice_dataset_id"] for c in body["referenced_by"] for t in c["tables"]
+        }
+
+    assert "rdose_private" not in tables("anyone@example.com")
+    assert "rdose_private" in tables("someone@private-group.com")
+
+
+def test_contract_schema_covers_compound_dose():
+    """The checked-in schema keeps compound_dose (a synthetic child of compound_v2),
+    so Delphi's acceptance test sees the many-to-one case."""
+    from breadbox.service.reference_graph import build_referenced_by
+
+    tables = _contract_tables()
+    types = [
+        DimensionType(name=n, display_name=n, axis="feature") for n in sorted(tables)
+    ]
+    body = build_referenced_by(types, tables, "compound_v2")
+    dose = next(t for t in body.referenced_by if t.name == "compound_dose")
+    (table,) = dose.tables
+    assert table.is_primary
+    assert [r.column for r in table.references] == ["CompoundID"]
+    assert "Dose" in [c["name"] for c in table.columns]
+
+    forward = build_reachable(tables, "compound_dose", MAX_HOPS)
+    assert any(
+        [(h.column, h.target_type) for h in r.hops] == [("CompoundID", "compound_v2")]
+        for r in forward.routes
+    )
+
+
+CONTRACT_DIR = Path(__file__).parent.parent / "fixtures" / "reference_graph"
+
+
+def _contract_tables():
+    """Tables from the checked-in copy of the live schema, as the service sees them."""
+    schema = json.loads((CONTRACT_DIR / "schema.json").read_text())
+    primary = {t["name"]: t["metadata_dataset_id"] for t in schema["dimension_types"]}
+    tables = {name: [] for name in primary}
+    for d in schema["tabular_datasets"]:
+        tables[d["index_type_name"]].append(
+            LoadedTable(
+                id=d["id"],
+                given_id=d["given_id"],
+                name=d["name"],
+                data_type="",
+                index_type=d["index_type_name"],
+                is_primary=primary[d["index_type_name"]] == d["id"],
+                columns=tuple(
+                    LoadedColumn(name, m["col_type"], m["references"])
+                    for name, m in sorted(d["columns_metadata"].items())
+                ),
+            )
+        )
+    for group in tables.values():
+        group.sort(key=lambda t: (not t.is_primary, t.name, t.id))
+    return tables
+
+
+def _contract_projection(reachable):
+    """
+    One line per reachable table, so the fixture stays small and diffs well:
+
+        offered | first_hop_table.fk > next_hop_table.fk | end_table | list
+
+    The hops are the template's own `reindex_through` chain read innermost
+    first, so what is checked is the SliceQuery a caller would use. Columns are
+    not repeated; they come from schema.json. `list` is present when
+    `result_is_list` is true.
+    """
+    lines = []
+    for route in reachable.routes:
+        for table in route.tables:
+            template = table.slice_query_template
+            steps = []
+            node = template.reindex_through
+            while node is not None:
+                assert node.identifier_type == "column"
+                steps.append(f"{node.dataset_id}.{node.identifier}")
+                node = node.reindex_through
+            steps.reverse()
+            assert template.identifier_type == "column"
+            assert [h.column for h in route.hops] == [s.split(".", 1)[1] for s in steps]
+            lines.append(
+                " | ".join(
+                    [
+                        "offered" if table.offered_by_picker else "not offered",
+                        " > ".join(steps),
+                        template.dataset_id,
+                        "list" if route.result_is_list else "scalar",
+                    ]
+                )
+            )
+    return sorted(lines)
+
+
+def test_reachable_matches_contract_fixture():
+    """
+    reachable.json is the other half of the cross-language contract test: the
+    Jest test AnnotationSelect/__tests__/referenceGraphContract.test.ts checks
+    that the annotation picker agrees with it. Any change to what the endpoint
+    returns for the live schema shows up here as a diff. To accept a change:
+
+        UPDATE_CONTRACT_FIXTURES=1 pytest tests/api/test_types.py -k contract
+    """
+    tables = _contract_tables()
+    actual = {
+        dim: _contract_projection(build_reachable(tables, dim, MAX_HOPS))
+        for dim in sorted(tables)
+    }
+    path = CONTRACT_DIR / "reachable.json"
+
+    if os.environ.get("UPDATE_CONTRACT_FIXTURES"):
+        path.write_text(json.dumps(actual, indent=2, sort_keys=True) + "\n")
+
+    assert actual == json.loads(path.read_text())

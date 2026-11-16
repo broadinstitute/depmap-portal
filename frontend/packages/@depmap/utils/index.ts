@@ -13,7 +13,6 @@ export {
 } from "./src/url";
 
 export {
-  getCategoryToColor,
   getCorrelationColor,
   getDefaultColor,
   getHighlightArrayOrDefault,

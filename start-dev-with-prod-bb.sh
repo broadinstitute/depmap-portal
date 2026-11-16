@@ -57,7 +57,7 @@ procs:
   nginx:
     shell: "nginx -e stderr -c $nginx_conf"
   ssh-tunnel:
-    shell: "ssh -L $nginx_upstream_port:127.0.0.1:$nginx_upstream_port dev.cds.team"
+    shell: "ssh -L $nginx_upstream_port:127.0.0.1:$nginx_upstream_port ubuntu@dev.cds.team"
   webpack:
     shell: 'cd portal-backend && poetry run \$PWD/flask webpack'
   flask:

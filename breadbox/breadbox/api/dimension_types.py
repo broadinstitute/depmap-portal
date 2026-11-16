@@ -36,7 +36,12 @@ from ..schemas.custom_http_exception import UserError, ResourceNotFoundError
 from breadbox.models.dataset import AnnotationType, DimensionType as DimensionTypeModel
 from breadbox.crud.cache_invalidation import GET_DATASETS, DIMENSION_TYPES
 import breadbox.service.dataset as dataset_service
+from breadbox.service import reference_graph as reference_graph_service
+from breadbox.service import reachable as reachable_service
 from breadbox.schemas.types import (
+    ReachableTables,
+    ReferencedByTypes,
+    DimensionTypeReferenceGraph,
     DimensionType,
     UpdateDimensionType,
     AddDimensionType,
@@ -596,6 +601,83 @@ def add_dimension_type_endpoint(
         )
 
         return _dim_type_to_response(result)
+
+
+@router.get(
+    "/dimensions/reference-graph",
+    operation_id="get_dimension_type_reference_graph",
+    response_model=DimensionTypeReferenceGraph,
+)
+def get_dimension_type_reference_graph(
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+    user: Annotated[str, Depends(get_user)],
+):
+    """
+    The reference graph between dimension types: for each type, the tabular
+    datasets indexed by it (the primary metadata table flagged) and which of
+    their columns reference other types, with scalar/list cardinality.
+
+    Derived from the datasets visible to the caller.
+    """
+    return reference_graph_service.get_reference_graph(db, user)
+
+
+@router.get(
+    "/dimensions/{name}/referenced-by",
+    operation_id="get_dimension_type_referenced_by",
+    response_model=ReferencedByTypes,
+)
+def get_dimension_type_referenced_by(
+    name: str,
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+    user: Annotated[str, Depends(get_user)],
+):
+    """
+    The reverse of `reachable`: every table, of any type, with a column that
+    references the given type (many rows of the referencing type per row of this
+    one, e.g. `compound_dose.CompoundID` -> `compound_v2`). Use it to find "per dose",
+    "per timepoint" or "per replicate" child types.
+
+    Discovery only: the chain resolver cannot follow these edges, so there are no
+    slice query templates. Plot at the referencing type's level instead.
+    Derived from the datasets visible to the caller.
+    """
+    try:
+        return reference_graph_service.get_referenced_by(db, user, name)
+    except KeyError:
+        raise HTTPException(404, f"Dimension type {name} not found")
+
+
+@router.get(
+    "/dimensions/{name}/reachable",
+    operation_id="get_dimension_type_reachable",
+    response_model=ReachableTables,
+)
+def get_dimension_type_reachable(
+    name: str,
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+    user: Annotated[str, Depends(get_user)],
+    max_depth: Annotated[
+        int,
+        Query(
+            ge=0,
+            le=reachable_service.MAX_HOPS,
+            description="Maximum number of FK hops. The resolver allows at most 9.",
+        ),
+    ] = 4,
+):
+    """
+    Every table reachable from the given dimension type by following forward FK
+    columns, grouped by route (the FK columns taken). Each table carries a
+    `slice_query_template`: set its `identifier` to one of the table's columns
+    and use it verbatim as a SliceQuery. Do not build chains by hand.
+
+    Derived from the datasets visible to the caller.
+    """
+    try:
+        return reachable_service.get_reachable(db, user, name, max_depth)
+    except KeyError:
+        raise HTTPException(404, f"Dimension type {name} not found")
 
 
 @router.get(

@@ -1,10 +1,10 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from depmap import data_access
 from depmap.cell_line.models_new import DepmapModel
 import sqlalchemy
 from sqlalchemy import and_, func, desc
 import enum
-from typing import Any, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 import pandas as pd
 from depmap.gene.models import Gene
 from depmap.compound.models import Compound
@@ -83,6 +83,7 @@ class ContextPlotBoxData:
     feature_label: str
     feature_overview_page_label: str
     dataset_units: str
+    codes_to_node_name: Dict[str, str] = field(default_factory=dict)
 
 
 @dataclass

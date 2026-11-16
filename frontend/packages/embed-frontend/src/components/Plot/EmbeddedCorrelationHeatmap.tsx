@@ -11,12 +11,14 @@ import {
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
 } from "@depmap/types";
+import type { HeatmapSelection } from "./PlotSelection";
 import HeatmapLoader from "../../loaders/HeatmapLoader";
 
 interface Props {
   data: DataExplorerPlotResponse | null;
   height: number;
   plotConfig: DataExplorerPlotConfig;
+  selection?: HeatmapSelection;
 }
 
 function TooManyEntitiesWarning({
@@ -62,7 +64,12 @@ function TooManyEntitiesWarning({
   );
 }
 
-function DataExplorerCorrelationHeatmap({ data, height, plotConfig }: Props) {
+function DataExplorerCorrelationHeatmap({
+  data,
+  height,
+  plotConfig,
+  selection = undefined,
+}: Props) {
   const { plotStyles } = useDataExplorerSettings();
   const { palette, xAxisFontSize } = plotStyles;
 
@@ -104,6 +111,7 @@ function DataExplorerCorrelationHeatmap({ data, height, plotConfig }: Props) {
         xAxisFontSize={xAxisFontSize}
         distinguish1Label={plotConfig.filters?.distinguish1?.name}
         distinguish2Label={plotConfig.filters?.distinguish2?.name}
+        {...selection}
       />
     </PlotlyLoaderProvider>
   );

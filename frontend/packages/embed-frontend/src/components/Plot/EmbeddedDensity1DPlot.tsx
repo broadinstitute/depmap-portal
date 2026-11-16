@@ -7,15 +7,23 @@ import {
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
 } from "@depmap/types";
+import type { PlotSelection } from "./PlotSelection";
 import DensityLoader from "../../loaders/DensityLoader";
+import useBuiltinLegendClick from "./useBuiltinLegendClick";
 
 interface Props {
   data: DataExplorerPlotResponse | null;
   height: number;
   plotConfig: DataExplorerPlotConfig;
+  selection?: PlotSelection;
 }
 
-function EmbeddedDensity1DPlot({ data, height, plotConfig }: Props) {
+function EmbeddedDensity1DPlot({
+  data,
+  height,
+  plotConfig,
+  selection = undefined,
+}: Props) {
   const { plotStyles } = useDataExplorerSettings();
   const {
     pointSize,
@@ -51,6 +59,8 @@ function EmbeddedDensity1DPlot({ data, height, plotConfig }: Props) {
   // it an empty facet renders as a blank track.
   const { hiddenLegendValues: hiddenFacetValues } = facetLegendState;
 
+  const onClickLegendItem = useBuiltinLegendClick(legendState, colorMap);
+
   if (!formattedData) {
     return null;
   }
@@ -80,6 +90,7 @@ function EmbeddedDensity1DPlot({ data, height, plotConfig }: Props) {
         facetDisplayNames={facetDisplayNames}
         legendTitle={legendTitle}
         showBuiltinLegend={showBuiltinLegend}
+        onClickLegendItem={onClickLegendItem}
         pointVisibility={pointVisibility || undefined}
         useSemiOpaqueViolins={!plotConfig.hide_points}
         placeholderEmptyTracks={Boolean(plotConfig.expand_by?.length)}
@@ -95,6 +106,12 @@ function EmbeddedDensity1DPlot({ data, height, plotConfig }: Props) {
         annotationFontSize={annotationFontSize}
         xAxisFontSize={xAxisFontSize}
         yAxisFontSize={yAxisFontSize}
+        // As in Data Explorer: under facet_by "expansion" a selection gesture
+        // stays within one track.
+        enforceSingleFacetSelection={
+          Boolean(selection) && plotConfig.facet_by === "expansion"
+        }
+        {...selection}
       />
     </PlotlyLoaderProvider>
   );

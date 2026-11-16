@@ -68,6 +68,7 @@ export interface ContextPlotBoxData {
   feature_label: string;
   feature_overview_page_label: string;
   dataset_units: string;
+  codes_to_node_name: Record<string, string>;
 }
 
 export interface ContextNameInfo {
