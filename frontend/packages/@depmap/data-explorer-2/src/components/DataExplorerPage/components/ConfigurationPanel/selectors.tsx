@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useReducer, useRef, useState } from "react";
 import { Checkbox } from "react-bootstrap";
 import { breadboxAPI, cached } from "@depmap/api";
 import {
@@ -75,13 +75,17 @@ export function PointsSelector({
     })();
   }, []);
 
+  // `getDimensionTypeLabel` and `sortDimensionTypes` fall back to raw type names
+  // until the dimension types have loaded. Re-render when they do.
+  const [, rerender] = useReducer((n: number) => n + 1, 0);
+
   const unsortedTypes = Object.keys(datasetsByIndexType || {});
 
   if (value && !unsortedTypes.includes(value)) {
     unsortedTypes.push(value);
   }
 
-  const sortedTypes = sortDimensionTypes(unsortedTypes)
+  const sortedTypes = sortDimensionTypes(unsortedTypes, rerender)
     // TODO: Remove this filter. It's only relevant to legacy mode.
     .filter((index_type) => {
       if (
@@ -102,7 +106,7 @@ export function PointsSelector({
     : sortedTypes.reduce(
         (memo, index_type) => ({
           ...memo,
-          [index_type]: pluralize(getDimensionTypeLabel(index_type)),
+          [index_type]: pluralize(getDimensionTypeLabel(index_type, rerender)),
         }),
         {}
       );
