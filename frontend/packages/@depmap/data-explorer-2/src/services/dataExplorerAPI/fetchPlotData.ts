@@ -7,7 +7,7 @@ import {
 import { isExpansionDimension } from "../../utils/dimensionHelpers";
 import {
   fetchCorrelation,
-  fetchLinearRegression,
+  computeLinearRegression,
   fetchPlotDimensions,
   fetchWaterfall,
 } from "./standardPlot";
@@ -59,7 +59,7 @@ export async function fetchPlotData(
 // The regression fit shown alongside a scatter plot. It's separate from
 // fetchPlotData because the page renders the plot first and the fit when it
 // arrives. Resolves to null when the config doesn't call for one.
-export async function fetchPlotLinearRegression(
+export async function computePlotLinearRegression(
   plotConfig: DataExplorerPlotConfig
 ): Promise<LinRegInfo[] | null> {
   if (
@@ -67,7 +67,7 @@ export async function fetchPlotLinearRegression(
     !plotConfig.dimensions.x ||
     !plotConfig.dimensions.y ||
     // Expanded plots get their fit from the faceted regression path;
-    // fetchLinearRegression assumes one value per index entity, so skip it
+    // computeLinearRegression assumes one value per index entity, so skip it
     // when any axis carries the "expansion" sentinel (it would otherwise
     // throw at the aggregate materializer).
     Object.values(plotConfig.dimensions).some(isExpansionDimension)
@@ -75,7 +75,7 @@ export async function fetchPlotLinearRegression(
     return null;
   }
 
-  return fetchLinearRegression(
+  return computeLinearRegression(
     plotConfig.index_type,
     plotConfig.dimensions,
     plotConfig.filters,
