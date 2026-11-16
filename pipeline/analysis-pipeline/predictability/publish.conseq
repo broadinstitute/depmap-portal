@@ -28,3 +28,7 @@ rule publish_daintree_results_to_taiga:
 rule publish_breadbox_daintree_outputs:
     inputs: outputs=all {"type": "breadbox-daintree-output"}
     publish: "{{config.publish_dest}}/breadbox-daintree-outputs.json"
+
+rule publish_daintree_config_norm_table:
+    inputs: norms={"type": "daintree_config_norm_table"}
+    publish: "{{config.publish_dest}}/breadbox-daintree-norms.json"

@@ -29,6 +29,34 @@ add-if-missing {
 let reference_genes_for_testing="CDK6|CDK4|VPS4A|UBE3A|PAX8|JUP|MCL1|WRN|PELO|BRAF"
 let reference_compounds_for_testing="PRC-005235888|PRC-008717476|PRC-008138974|PRC-000699183|PRC-008831813|BRD:BRD-K56343971-001-10-6|BRD:BRD-K56343971-001-14-8|PRC-000323635-836-07"
 
+# Types of artifacts produced by the rules below
+type daintree_input_config:
+    description: "Input config for a single daintree run (one per model and screen)"
+    fields: 
+        model_name, 
+        screen_name, 
+        filename, 
+        models_per_task
+
+type breadbox-model-configs:
+    description: "Model configuration information that breadbox needs"
+    fields: filename
+
+type daintree_output:
+    description: "References to the files produced by a daintree run for one model and screen"
+    fields: 
+        model_name,
+        screen_name, 
+        sparkles_job_name, 
+        daintree_input_config_filename, 
+        features_metadata_filename, 
+        ensemble_filename, 
+        predictions_filename, 
+        feature_imp_norm_filename
+
+
+
+
 # creates artifacts for each run of daintree with the parameters daintree will need. Also emits a file containing the model config information that breadbox needs
 rule process_model_config:
     inputs:
@@ -63,6 +91,8 @@ rule process_model_config:
         # whether this is a test run or not
         is_test_run={"type": "daintree-test-run-flags"}
 
+    output_types: (daintree_input_config+, breadbox-model-configs)
+
     run "python" with """
     import json
 
@@ -93,6 +123,8 @@ rule run_fit_models:
         check_daintree_cache=fileref("scripts/check_daintree_cache.py"),
         # whether this is a test run or not
         is_test_run={"type": "daintree-test-run-flags"}
+
+    output_types: (daintree_output)
 
     run "cp {{ inputs.sparkles_config.filename }} .sparkles"
     run "mkdir -p extra_python_files"
@@ -126,6 +158,8 @@ rule run_fit_models:
       {{ inputs.daintree_input_config.filename }} \
         {% endif %}{{config.sparkles_path}} workflow run \
         --nodes 300 \
+        --parameter model_name={{ inputs.daintree_input_config.model_name }} \
+        --parameter screen_name={{ inputs.daintree_input_config.screen_name }} \
         --retry \
         --add-hash-to-job-id \
         -i {{ config.daintree_docker_image }} \
@@ -181,3 +215,18 @@ rule merge_feature_metadata_files:
     """
     run "python {{inputs.script.filename}} artifacts.json feature_metadata.csv"
 
+rule create_daintree_config_norm_table:
+    inputs:
+        daintree_outputs = all {"type": "daintree_output"},
+        script = fileref("scripts/create_daintree_config_norm_table.py")
+    outputs:
+        {
+            "type": "daintree_config_norm_table",
+            "filename":  {"$filename": "norms.csv"}
+        }
+    run "bash" with """
+        cat > artifacts.json <<EOF
+        {{ inputs.daintree_outputs | quoted }}
+        EOF
+    """
+    run "python {{inputs.script.filename}} artifacts.json norms.csv"
