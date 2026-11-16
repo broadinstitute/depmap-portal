@@ -3,7 +3,7 @@ import ReactDOM from "react-dom";
 import { readPlotFromQueryString } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
 import {
   fetchPlotData,
-  fetchPlotLinearRegression,
+  computePlotLinearRegression,
 } from "@depmap/data-explorer-2/src/services/dataExplorerAPI/fetchPlotData";
 
 // Dev-only stand-in for an MCP host. It is NOT conformant (no CSP, sandbox, or
@@ -108,7 +108,7 @@ function Host() {
           const config = msg.params.arguments.params;
           const [data, linreg] = await Promise.all([
             fetchPlotData(config),
-            fetchPlotLinearRegression(config),
+            computePlotLinearRegression(config),
           ]);
           const text = JSON.stringify({
             ...data,
