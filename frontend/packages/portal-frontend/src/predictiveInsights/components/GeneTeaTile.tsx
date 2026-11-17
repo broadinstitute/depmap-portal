@@ -5,6 +5,13 @@ import { ModelConfigOut } from "@depmap/types";
 import { ScreenTypeData } from "../hooks/usePredictiveInsightsData";
 import { useDatasetNames } from "../hooks/useDatasetNames";
 import { useFeatureLabels } from "../hooks/useFeatureLabels";
+import {
+  normKey,
+  useFeatureImportanceNorms,
+} from "../hooks/useFeatureImportanceNorms";
+import InfoIcon from "src/common/components/InfoIcon";
+import { Spinner } from "@depmap/common-components";
+import { getScreenTypeLabel } from "../screenTypeLabel";
 import { getFeatureLabel } from "../featureLabel";
 import { getModelColor } from "../modelColors";
 import TopFeaturesBarChart, { TopFeatureBarDatum } from "./TopFeaturesBarChart";
@@ -61,26 +68,84 @@ export default function GeneTeaTile({ title, screenType, configs }: Props) {
 
   const datasetIds = useMemo(
     () => [
-      ...new Set(topFeatures.map(({ feature }) => feature.feature_dataset_id)),
+      ...new Set(
+        screenType.response.model_fits.flatMap((fit) =>
+          fit.top_features.map((f) => f.feature_dataset_id)
+        )
+      ),
     ],
-    [topFeatures]
+    [screenType]
   );
   const datasetNames = useDatasetNames(datasetIds);
   const featureLabels = useFeatureLabels(datasetIds);
 
-  const barData: TopFeatureBarDatum[] = useMemo(
-    () =>
-      topFeatures.map(({ feature, configName }) => ({
-        label: getFeatureLabel(feature, featureLabels),
-        importance: feature.importance,
-        modelName: configName,
-        datasetName:
+  const { norms, error: normsError } = useFeatureImportanceNorms();
+
+  // Normalized feature importance = correlation^2 / norm * model accuracy,
+  // computed per (model, feature) and stacked by model for each feature label.
+  const barData: TopFeatureBarDatum[] = useMemo(() => {
+    if (!norms) {
+      return [];
+    }
+
+    // Norms are keyed by short screen names like "crispr" or "oncref".
+    const screenName = getScreenTypeLabel(screenType)
+      .replace(/^PRISM\s+/i, "")
+      .toLowerCase();
+
+    const byLabel = new Map<string, TopFeatureBarDatum>();
+
+    screenType.response.model_fits.forEach((fit) => {
+      const norm = norms[normKey(screenName, fit.config_name)];
+
+      if (!norm) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `No normalization factor for screen "${screenName}" and model "${fit.config_name}"; skipping.`
+        );
+        return;
+      }
+
+      fit.top_features.forEach((feature) => {
+        const label = getFeatureLabel(feature, featureLabels);
+        const value =
+          (feature.correlation_with_actual ** 2 / norm) *
+          fit.prediction_actual_correlation;
+        const datasetName =
           datasetNames[feature.feature_dataset_id] ||
-          feature.feature_dataset_id,
-        color: getModelColor(configName, configs),
-      })),
-    [topFeatures, configs, featureLabels, datasetNames]
-  );
+          feature.feature_dataset_id;
+
+        let datum = byLabel.get(label);
+        if (!datum) {
+          datum = { label, total: 0, segments: [] };
+          byLabel.set(label, datum);
+        }
+
+        let segment = datum.segments.find(
+          (seg) => seg.modelName === fit.config_name
+        );
+        if (!segment) {
+          segment = {
+            modelName: fit.config_name,
+            value: 0,
+            color: getModelColor(fit.config_name, configs),
+            datasetNames: [],
+          };
+          datum.segments.push(segment);
+        }
+
+        segment.value += value;
+        datum.total += value;
+        if (!segment.datasetNames.includes(datasetName)) {
+          segment.datasetNames.push(datasetName);
+        }
+      });
+    });
+
+    return [...byLabel.values()]
+      .sort((a, b) => b.total - a.total)
+      .slice(0, MAX_TOP_FEATURES);
+  }, [norms, screenType, configs, featureLabels, datasetNames]);
 
   // Open question (see spec doc): mapping an arbitrary feature back to "the
   // gene it references" isn't well-defined for non-gene-level feature types.
@@ -96,6 +161,19 @@ export default function GeneTeaTile({ title, screenType, configs }: Props) {
     [topFeatures, featureLabels]
   );
 
+  let topFeaturesContent: React.ReactNode;
+  if (normsError) {
+    topFeaturesContent = (
+      <div className={styles.errorBanner}>
+        Could not load the normalization factors.
+      </div>
+    );
+  } else if (!norms) {
+    topFeaturesContent = <Spinner position="static" />;
+  } else {
+    topFeaturesContent = <TopFeaturesBarChart features={barData} />;
+  }
+
   return (
     <article className="card_wrapper">
       <div className="card_border container_fluid">
@@ -104,8 +182,57 @@ export default function GeneTeaTile({ title, screenType, configs }: Props) {
           defaultActiveKey="top-features"
           id={`gene-tea-tile-tabs-${title}`}
         >
-          <Tab eventKey="top-features" title="Top Features Overall">
-            <TopFeaturesBarChart features={barData} />
+          <Tab
+            eventKey="top-features"
+            title={
+              <span>
+                Top Features Overall
+                <InfoIcon
+                  popoverContent={
+                    <div>
+                      <p>
+                        <b>Normalized feature importance</b> is computed for
+                        every feature in each model&apos;s list of top features
+                        as:
+                      </p>
+                      <p>
+                        <i>
+                          (correlation between the feature and the screen data)²
+                          ÷ norm × model accuracy
+                        </i>
+                      </p>
+                      <ul>
+                        <li>
+                          <b>correlation</b> is the feature&apos;s correlation
+                          with the observed data, squared so that positive and
+                          negative relationships count equally.
+                        </li>
+                        <li>
+                          <b>norm</b> is a normalization factor specific to each
+                          screen and model, so that models with different
+                          numbers of features can be compared.
+                        </li>
+                        <li>
+                          <b>model accuracy</b> is the correlation between the
+                          model&apos;s predictions and the observed data.
+                        </li>
+                      </ul>
+                      <p>
+                        Each bar is one feature label. Its segments are the
+                        values from each model that listed it as a top feature,
+                        stacked and colored by model. The longest bars (largest
+                        totals) are shown, up to {MAX_TOP_FEATURES}.
+                      </p>
+                    </div>
+                  }
+                  popoverId={`top-features-info-${title.replace(/\W+/g, "-")}`}
+                  trigger={["click"]}
+                  placement="bottom"
+                />
+              </span>
+            }
+          >
+            {topFeaturesContent}
           </Tab>
           <Tab eventKey="gene-tea" title="GeneTEA Results">
             <GeneTea
