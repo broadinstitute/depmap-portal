@@ -73,6 +73,7 @@ exec docker run --rm \
   -e GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS} \
   -e PYTHONUNBUFFERED=1 \
   -e SPRINKLES_KEY=${SPRINKLES_KEY:-} \
+  -e CONSEQ_SEQ=blocking \
   --name ${DOCKER_CONTAINER_NAME} \
   ${DOCKER_IMAGE} \
   poetry run "$@"
