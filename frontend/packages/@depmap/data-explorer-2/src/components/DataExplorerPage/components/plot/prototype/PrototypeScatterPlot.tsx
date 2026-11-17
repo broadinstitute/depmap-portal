@@ -158,6 +158,10 @@ interface Props {
   // Produce these with `captureTransientState` against the live plot.
   initialAxes?: Partial<Layout>;
   initialAnnotationTails?: Record<string, AnnotationTail>;
+  // A caller-owned store for the tails, used in place of the instance's own.
+  // Lets them outlive this component (e.g. when it is unmounted while off
+  // screen and later remounted). Takes precedence over initialAnnotationTails.
+  annotationTailsRef?: { current: Record<string, AnnotationTail> };
 }
 
 type PlotlyType = typeof Plotly;
@@ -258,6 +262,7 @@ function PrototypeScatterPlot({
   hasFacetOptionsEnabled = false,
   initialAxes = undefined,
   initialAnnotationTails = undefined,
+  annotationTailsRef = undefined,
   Plotly,
 }: PropsWithPlotly) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -295,9 +300,10 @@ function PrototypeScatterPlot({
     );
   }, [showIdentityLine, regressionLines, extents]);
 
-  const annotationTails = useRef<Record<string, AnnotationTail>>(
+  const ownAnnotationTails = useRef<Record<string, AnnotationTail>>(
     initialAnnotationTails ? { ...initialAnnotationTails } : {}
   );
+  const annotationTails = annotationTailsRef ?? ownAnnotationTails;
 
   const [dragmode, setDragmode] = useState<Layout["dragmode"]>("zoom");
 
@@ -1338,6 +1344,7 @@ function PrototypeScatterPlot({
       stopWatchingContextRestore();
     };
   }, [
+    annotationTails,
     data,
     xKey,
     yKey,
