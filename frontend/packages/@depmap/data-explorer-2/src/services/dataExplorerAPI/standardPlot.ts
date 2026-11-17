@@ -754,7 +754,7 @@ export const fetchDatasetsByIndexType = memoize(async () => {
 // single-panel scatter it reads as the overall trend. It's also retained
 // as the basis for an opt-in global reference line (one ungrouped fit,
 // neutral color, drawn over every panel) alongside the faceted lines.
-export const fetchLinearRegression = memoize(
+export const computeLinearRegression = memoize(
   async (
     index_type: string,
     dimensions: Record<string, DataExplorerPlotConfigDimension>,
@@ -763,7 +763,7 @@ export const fetchLinearRegression = memoize(
   ) => {
     if (Object.values(dimensions).some(isExpansionDimension)) {
       throw new Error(
-        `fetchLinearRegression received a dimension carrying the "expansion" ` +
+        `computeLinearRegression received a dimension carrying the "expansion" ` +
           `sentinel. Its color-faceted fit assumes one value per index entity, ` +
           `but an expansion axis is N×M (entity, member) pairs and is handled by ` +
           `the faceted regression path. Expanded plots must not reach this ` +

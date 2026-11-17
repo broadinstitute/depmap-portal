@@ -18,6 +18,10 @@ import {
 // so these utils can be called synchronously.
 let dimensionTypes = null as DimensionType[] | null;
 
+// Callbacks waiting for `dimensionTypes` to arrive. A Set, so a component that
+// passes the same (stable) function on every render only registers once.
+const pendingCallbacks = new Set<() => void>();
+
 // Starts loading `dimensionTypes`. This is called once, by the package root
 // (index.ts), and is deliberately not run on import: the embed and the Node
 // bundle import this module by deep path and must not make a request (or rely
@@ -31,10 +35,33 @@ export function primeDimensionTypes() {
     .getDimensionTypes()
     .then((result) => {
       dimensionTypes = result;
+
+      const callbacks = [...pendingCallbacks];
+      pendingCallbacks.clear();
+      callbacks.forEach((callback) => callback());
+    })
+    .catch((e) => {
+      window.console.error(e);
     });
 }
 
-export function getDimensionTypeLabel(dimension_type?: string) {
+// Returns the display name for a dimension type. This is synchronous, so until
+// `dimensionTypes` has loaded it returns a fallback derived from the raw name.
+//
+// If you render this value, pass `onTypesLoaded` (e.g. a state setter or a
+// forceUpdate) to be told when the real display names become available. It is
+// called at most once, and only if the types weren't ready at call time — when
+// they were, the returned label is already correct. It must be a stable
+// reference (like a useReducer dispatch); a fresh closure each render would be
+// queued each time.
+export function getDimensionTypeLabel(
+  dimension_type?: string,
+  onTypesLoaded?: () => void
+) {
+  if (!dimensionTypes && onTypesLoaded) {
+    pendingCallbacks.add(onTypesLoaded);
+  }
+
   if (!dimension_type) {
     return "";
   }
@@ -220,7 +247,14 @@ export const uncapitalize = (str: string) => {
   return str && str.replace(/\b[A-Z][^A-Z]/g, (s: string) => s.toLowerCase());
 };
 
-export const sortDimensionTypes = (typeNames: string[]) => {
+export const sortDimensionTypes = (
+  typeNames: string[],
+  onTypesLoaded?: () => void
+) => {
+  if (!dimensionTypes && onTypesLoaded) {
+    pendingCallbacks.add(onTypesLoaded);
+  }
+
   const set = new Set(typeNames);
 
   const displayNameMap = Object.fromEntries(
