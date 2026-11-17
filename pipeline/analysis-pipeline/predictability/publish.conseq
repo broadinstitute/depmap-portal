@@ -14,6 +14,7 @@ rule publish_daintree_results_to_taiga:
         actuals={"type":"target_matrix", "label":target_label},
         daintree_output={"type": "daintree_output", "screen_name": target_label},
         script=fileref("scripts/upload_fit_results_to_taiga.py")
+    outputs: none
     run "bash" with """
         python3 {{inputs.script.filename}} \
             --actuals {{inputs.daintree_output.screen_name}} \
