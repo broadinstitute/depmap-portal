@@ -179,15 +179,23 @@ const calcPlotHeight = (plot: HTMLDivElement) => {
   return window.innerHeight - plot.offsetTop - 22;
 };
 
-// HACK: Plotly doesn't allow you to put a violin on top of a scatter plot, so
-// we'll improvise.
+// HACK: Plotly doesn't have an official way to put a violin on top of a
+// scatter plot, so we'll reach into the DOM and re-order some elements.
 const movePointsBehindViolinPlot = (plot: HTMLDivElement) => {
+  // Move the points container behind the violin container.
   const gl = plot.querySelector(".gl-container") as HTMLElement;
   gl.parentElement!.prepend(gl);
 
+  // Make the violin container's background transparent
+  // (instead of white) so it doesn't occlude te points.
   const svg = plot.querySelector(".main-svg") as HTMLElement;
   svg.style.background = "transparent";
 
+  // Set a white background on the top-level container instead.
+  // eslint-disable-next-line no-param-reassign
+  plot.style.background = "#FFF";
+
+  // Push the grid lines to the back so they don't sit on top of the points.
   svg.querySelectorAll(".gridlayer path").forEach((path) => {
     // eslint-disable-next-line no-param-reassign
     (path as HTMLElement).style.stroke = "#000";
@@ -195,8 +203,8 @@ const movePointsBehindViolinPlot = (plot: HTMLDivElement) => {
     (path as HTMLElement).style.strokeOpacity = "0.08";
   });
 
-  // Also nudge the hover label slightly to the right. It can sometimes get in
-  // the way when trying to click on a point.
+  // Also nudge the hover label slightly to the right. Otherwise,
+  // it can sometimes get in the way when trying to click on a point.
   const hoverlayer = plot.querySelector(".hoverlayer") as HTMLElement;
   hoverlayer.style.transform = "translateX(8px)";
 };
