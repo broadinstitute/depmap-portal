@@ -165,6 +165,10 @@ interface Props {
   // back at its default position.
   initialAxes?: Partial<Layout>;
   initialAnnotationTails?: Record<string, AnnotationTail>;
+  // A caller-owned store for the tails, used in place of the instance's own.
+  // Lets them outlive this component (e.g. when it is unmounted while off
+  // screen and later remounted). Takes precedence over initialAnnotationTails.
+  annotationTailsRef?: { current: Record<string, AnnotationTail> };
 }
 
 const calcPlotHeight = (plot: HTMLDivElement) => {
@@ -286,6 +290,7 @@ function PrototypeDensity1D({
   selectionCount,
   initialAxes = undefined,
   initialAnnotationTails = undefined,
+  annotationTailsRef = undefined,
   Plotly,
 }: any) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -298,9 +303,10 @@ function PrototypeDensity1D({
     }
   );
 
-  const annotationTails = useRef<Record<string, AnnotationTail>>(
+  const ownAnnotationTails = useRef<Record<string, AnnotationTail>>(
     initialAnnotationTails ? { ...initialAnnotationTails } : {}
   );
+  const annotationTails = annotationTailsRef ?? ownAnnotationTails;
 
   const [dragmode, setDragmode] = useState<Layout["dragmode"]>("zoom");
 
@@ -1539,6 +1545,7 @@ function PrototypeDensity1D({
       stopWatchingContextRestore();
     };
   }, [
+    annotationTails,
     data,
     xKey,
     colorMap,
