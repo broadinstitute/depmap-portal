@@ -1,8 +1,7 @@
 # ADR 0005 — `facet_by` reaches full UI parity with `color_by`
 
 - **Status:** Accepted
-- **Applies to:** `@depmap/data-explorer-2` — `ConfigurationPanel/{ViewOptions,FacetByViewOptions,
-  ColorByViewOptions,selectors}.tsx`, `utils.ts` (`canSwapColorAndFacet`), `reducers/plotConfigReducer.ts`
+- **Applies to:** `@depmap/data-explorer-2` — `ConfigurationPanel/{ViewOptions,FacetByViewOptions, ColorByViewOptions,selectors}.tsx`, `utils.ts` (`canSwapColorAndFacet`), `reducers/plotConfigReducer.ts`
   (`swap_color_and_facet`), `components/plot/PlotFacets.tsx`, `components/plot/prototype/plotUtils.ts`
   (`useLegendState`'s `targetOverride`, `computeFacets`/`computeFacetedLinReg`'s `target`,
   `NEUTRAL_FACET_FILL`), the three `use*PlotData.ts` hooks and their container components,
@@ -16,6 +15,10 @@
 
 ---
 
+> **Note (renamed):** `fetchLinearRegression`, referred to below, is now
+> `computeLinearRegression`. It fetches the plot's dimensions and then fits the lines in the
+> browser; the old name suggested a backend call. The text below keeps the original name.
+
 ## Context
 
 ADR 0004 made `facet_by` color-matching the default and gave Transcript Explorer its own
@@ -24,7 +27,7 @@ notably, DE2 main's own `ConfigurationPanel` had no `facet_by` control at all. O
 follow-up was actually implemented, a further set of gaps surfaced, each a direct consequence of
 `facet_by` being a **fully independent axis** rather than a `color_by` alias: what happens when
 the two diverge, what happens when only one of them has a real selection, and what a
-one-click "swap what's on each axis" affordance should mean given the two are *not* perfectly
+one-click "swap what's on each axis" affordance should mean given the two are _not_ perfectly
 symmetric (`color_by` has two sentinel values, `"facet"`/`"uniform"`, that `facet_by` doesn't).
 This ADR records how each of those unfolded.
 
@@ -67,7 +70,7 @@ disagree about when a swap is meaningful.
 It resolves to `true` in exactly three, mutually-exclusive cases:
 
 - **Standard** — both axes already hold one of the five real, shared values, both are
-  *complete* (have real backing, not just a mode picked from a dropdown mid-selection), and
+  _complete_ (have real backing, not just a mode picked from a dropdown mid-selection), and
   they don't already resolve to the identical source (`axesAlreadyMatch`) — a full two-way
   exchange of mode + filters/metadata/dimensions.
 - **Promote** — `facet_by` is unset and `color_by` holds a real, complete value: move it over to
@@ -75,7 +78,7 @@ It resolves to `true` in exactly three, mutually-exclusive cases:
 - **Demote** — `facet_by` holds a real, complete value, and `color_by` does **not** hold an
   equally complete, independent selection of its own. This covers three sub-cases uniformly:
   `color_by === "facet"` (explicitly deferred), an **absent** `color_by` (deliberately treated
-  identically to `"facet"` — `resolveColorMode` already conflates the two when *reading* the
+  identically to `"facet"` — `resolveColorMode` already conflates the two when _reading_ the
   plot, so the button's own completeness check must too, or the button would work for one and
   not the other of what is, semantically, the exact same state), or a real mode value that's
   still mid-selection (e.g. `"property"` picked from the dropdown but no annotation chosen
@@ -105,8 +108,7 @@ readout of the Legend, which already shows the same partition.
 
 `PlotFacets` offers the identical interaction Legend does (click to toggle, double-click to
 isolate, show/hide all), backed by a **second, independent** `useLegendState` instance pinned to
-`"facet"` via a new optional `targetOverride` parameter (`useLegendState(plotConfig,
-legendKeysWithNoData?, targetOverride?)`) — every existing call site is unaffected, since
+`"facet"` via a new optional `targetOverride` parameter (`useLegendState(plotConfig, legendKeysWithNoData?, targetOverride?)`) — every existing call site is unaffected, since
 omitting the third argument preserves today's exact behavior (deferring to
 `resolveColorMode(plotConfig).target`). Each row has **no color swatch** — a fixed neutral
 square (`NEUTRAL_FACET_FILL`, see below) instead, since there is no color mapping to represent;
@@ -121,7 +123,7 @@ unrelated) "every point in this facet happens to be filtered out" placeholder, w
 grays out and stays in the grid.
 
 When `color_by` and `facet_by` have **converged** (no Facets panel — Legend doubles as the facet
-key), toggling a Legend entry needs to behave identically, because it *is* toggling that facet.
+key), toggling a Legend entry needs to behave identically, because it _is_ toggling that facet.
 This required a translation step: `hiddenLegendValues` (the Legend's hidden set) lives in raw
 `LegendKey` space — a real category string, or one of the shared symbols
 (`LEGEND_OTHER`/`LEGEND_BOTH`/`LEGEND_RANGE_N`) used for the "Other"/"Both"/continuous-bin
@@ -185,7 +187,7 @@ behavior, which never splits on a continuous color either; only categorical/cust
   parameter — rather than each re-deriving "are these two axes the same" independently. A future
   third consumer of "is color deferring to facet" should use `colorMatchesFacet`, not invent a
   fourth check.
-- `"uniform"` remains the one `color_by` state the swap button can never reach *for* you — it is
+- `"uniform"` remains the one `color_by` state the swap button can never reach _for_ you — it is
   still the only way to say "`facet_by` is real, but I explicitly want no color," and that
   choice has to be made deliberately, not arrived at via swap.
 - A facet that is empty because every one of its points is independently filtered out (not

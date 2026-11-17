@@ -10,6 +10,11 @@
 
 ---
 
+> **Note (renamed):** `fetchPlotLinearRegression`, referred to below, is now
+> `computePlotLinearRegression` (and the `fetchLinearRegression` it wraps is now
+> `computeLinearRegression`). It fetches the plot's dimensions and then fits the lines
+> in the browser; the old names suggested a backend call. The text below keeps the original names.
+
 ## Context
 
 Something outside the browser needs "the data behind this `DataExplorerPlotConfig`".
