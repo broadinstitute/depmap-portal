@@ -6,8 +6,10 @@
 #      gcloud artifacts docker tags add \
 #      us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-run:[Your ga2-build-number-tag] \
 #      us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-run:[Your static version tag]
-#   2. Update DEFAULT_DOCKER_IMAGE in pipeline/exec.conseq to match the static version tag
-#   3. Update the static version tag in pipeline-run-docker/image-name to match the static version tag
+#   2. Update the static version tag in pipeline/image-name to match. That is the image conseq (and so
+#      dsub, sparkles, etc.) runs in.
+#   3. Optionally update DEFAULT_DOCKER_IMAGE in pipeline/preprocessing-pipeline/exec.conseq, which is
+#      only the default image that dsub tasks run their own commands in.
 #
 #################################################################################
 
@@ -65,8 +67,11 @@ RUN ln -s $(pyenv prefix 3.9)/bin/python /usr/local/bin/python3.9 && \
 RUN mkdir -p /root/.taiga && mkdir -p /root/.local/bin
 
 # install dsub in virtual environment and put symlink into /root/.local/bin
+# dsub runs its own setup/logging steps in Google's rolling cloud-sdk:slim image, which dropped
+# python3 in 592.0.0-slim (2026-11-03). 0.5.7 is the first dsub that falls back to the Cloud SDK's
+# bundled python, so don't go below it. Pinned exactly so a rebuild can't silently change dsub.
 RUN python3.13 -m venv /install/dsub && \
-    /install/dsub/bin/pip install "dsub>=0.5.5" && \
+    /install/dsub/bin/pip install "dsub==0.5.7" && \
     ln -s /install/dsub/bin/dsub /root/.local/bin && \
     ln -s /install/dsub/bin/dstat /root/.local/bin 
 

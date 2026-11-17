@@ -9,8 +9,9 @@ let DDEL_EXE_PATH="ddel"
 # dsub runs its setup/logging steps in the rolling cloud-sdk:slim image. Starting with
 # 592.0.0-slim (2026-11-03) that image no longer has python3 on PATH, and dsub < 0.5.7
 # calls python3 there, so every task dies with exit code 127 and uploads no logs.
-# Pin the last good image until depmap-pipeline-run is rebuilt with dsub >= 0.5.7,
-# then delete this and the prefix in COMMAND_TEMPLATE below.
+# Pin the last good image until pipeline/image-name points at a depmap-pipeline-run image with
+# dsub >= 0.5.7 (the Dockerfile now installs 0.5.7; v12 still has 0.5.5), then delete this and the
+# "env DSUB_CLOUD_SDK_IMAGE=..." prefix in COMMAND_TEMPLATE below.
 let DSUB_CLOUD_SDK_IMAGE="gcr.io/google.com/cloudsdktool/cloud-sdk:591.0.0-slim"
 
 # match either format (comes from different versions of dsub)
