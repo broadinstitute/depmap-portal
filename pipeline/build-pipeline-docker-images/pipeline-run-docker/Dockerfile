@@ -30,7 +30,7 @@ ENV LC_ALL=C.UTF-8
 # Install base packages and pyenv build dependencies
 RUN apt-get update -y && apt-get upgrade -y && apt-get install -y \
     tzdata \
-    wget curl \
+    curl \
     unzip \
     build-essential \
     libssl-dev \
