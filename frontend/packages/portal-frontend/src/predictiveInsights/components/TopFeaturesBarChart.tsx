@@ -3,12 +3,17 @@ import React, { useEffect, useRef } from "react";
 import { usePlotlyLoader } from "@depmap/data-explorer-2";
 import type { Config, Layout } from "plotly.js";
 
+export interface TopFeatureSegment {
+  modelName: string;
+  value: number;
+  color: string;
+  datasetNames: string[];
+}
+
 export interface TopFeatureBarDatum {
   label: string;
-  importance: number;
-  modelName: string;
-  datasetName: string;
-  color: string;
+  total: number;
+  segments: TopFeatureSegment[];
 }
 
 interface Props {
@@ -25,23 +30,44 @@ function Chart({ features, Plotly }: Props & { Plotly: any }) {
 
     // Plotly draws horizontal bars bottom-to-top, so reverse to get the most
     // important feature at the top of the chart.
+    // Plotly draws horizontal bars bottom-to-top, so reverse to get the most
+    // important feature at the top of the chart.
     const ordered = [...features].reverse();
 
-    const trace = {
-      type: "bar" as const,
-      orientation: "h" as const,
-      x: ordered.map((f) => f.importance),
-      y: ordered.map((f) => f.label),
-      marker: { color: ordered.map((f) => f.color) },
-      customdata: ordered.map((f) => [f.modelName, f.datasetName]),
-      hovertemplate:
-        "%{y}<br>Importance: %{x:.3f}<br>Model: %{customdata[0]}<br>Dataset: %{customdata[1]}<extra></extra>",
-    };
+    // One trace per model so the bars are stacked and share a legend.
+    const modelNames: string[] = [];
+    const colors: Record<string, string> = {};
+    features.forEach((f) =>
+      f.segments.forEach((s) => {
+        if (!modelNames.includes(s.modelName)) {
+          modelNames.push(s.modelName);
+          colors[s.modelName] = s.color;
+        }
+      })
+    );
+
+    const traces = modelNames.map((modelName) => {
+      const segs = ordered.map((f) =>
+        f.segments.find((s) => s.modelName === modelName)
+      );
+
+      return {
+        type: "bar" as const,
+        orientation: "h" as const,
+        name: modelName,
+        x: segs.map((s) => (s ? s.value : 0)),
+        y: ordered.map((f) => f.label),
+        marker: { color: colors[modelName] },
+        customdata: segs.map((s) => (s ? s.datasetNames.join(", ") : "")),
+        hovertemplate: `%{y}<br>Model: ${modelName}<br>Normalized importance: %{x:.4f}<br>Dataset: %{customdata}<extra></extra>`,
+      };
+    });
 
     const layout: Partial<Layout> = {
       height: 400,
+      barmode: "stack",
       margin: { r: 20, t: 20, b: 40 },
-      xaxis: { title: "Relative importance" },
+      xaxis: { title: "Normalized feature importance" },
       yaxis: { automargin: true, tickfont: { size: 10 } },
     };
 
@@ -50,7 +76,7 @@ function Chart({ features, Plotly }: Props & { Plotly: any }) {
       displaylogo: false,
     };
 
-    Plotly.react(ref.current, [trace], layout, config);
+    Plotly.react(ref.current, traces, layout, config);
   }, [features, Plotly]);
 
   return <div ref={ref} />;
