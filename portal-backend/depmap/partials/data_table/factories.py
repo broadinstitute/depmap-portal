@@ -33,6 +33,17 @@ def _data_table_factory(type):
     return _make_factory(("data_table", type))
 
 
+def _round_to_sig_figs(value, sig_figs=3):
+    """
+    Round a float to the given number of significant figures. Whole-number values
+    (e.g. IDs or positions stored in Float columns only because they're nullable,
+    like phasing set or CIViC ID) and NaNs are left untouched.
+    """
+    if pd.isnull(value) or float(value).is_integer():
+        return value
+    return float(f"{value:.{sig_figs}g}")
+
+
 class MutationTableSpec:
     # shared columns between per cell line and per gene tables
     common_columns = [
@@ -197,13 +208,20 @@ class MutationTableSpec:
         return df["gene_id"].values.tolist()
 
     def format_mutations_table(query):
-        def get_data():
-            df = pd.read_sql(query.statement, db.session.connection())
-            return df
-
         def get_column_types():
             cols = {col.name: col.type for col in query.statement.columns}
             return cols
+
+        def get_data():
+            df = pd.read_sql(query.statement, db.session.connection())
+            float_cols = [
+                name
+                for name, col_type in get_column_types().items()
+                if isinstance(col_type, types.Float) and name in df.columns
+            ]
+            for col in float_cols:
+                df[col] = df[col].apply(_round_to_sig_figs)
+            return df
 
         return DataTableData(get_column_types, get_data)
 
