@@ -6,7 +6,7 @@ import {
 import {
   buildExtendedMetadata,
   fetchCorrelation,
-  fetchLinearRegression,
+  computeLinearRegression,
   fetchPlotDimensions,
 } from "../standardPlot";
 
@@ -713,7 +713,7 @@ describe("fetchCorrelation", () => {
   });
 });
 
-describe("fetchLinearRegression", () => {
+describe("computeLinearRegression", () => {
   // Regression: the group labels this returns are looked up in the legend's
   // colorMap / hiddenLegendValues downstream (regressionLines in
   // useScatterPlotData.ts), and legend keys are always strings — the legend
@@ -782,7 +782,7 @@ describe("fetchLinearRegression", () => {
       },
     });
 
-    const linreg = await fetchLinearRegression("depmap_model", {
+    const linreg = await computeLinearRegression("depmap_model", {
       x: dimensionFor("FABP5"),
       y: dimensionFor("SOX2"),
       color: dimensionFor("BDNF"),

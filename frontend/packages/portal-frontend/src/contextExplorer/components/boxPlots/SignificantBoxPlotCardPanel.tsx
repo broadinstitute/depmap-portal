@@ -9,6 +9,7 @@ import {
 } from "src/contextExplorer/utils";
 import BoxPlot from "src/contextExplorer/components/boxPlots/BoxPlot";
 import { BoxPlotHeaderTitle } from "./BoxPlotHeaderTitle";
+import { Tooltip } from "@depmap/common-components";
 
 interface SignificantBoxPlotsPanelProps {
   activeKey: string | null;
@@ -21,6 +22,7 @@ interface SignificantBoxPlotsPanelProps {
   urlPrefix?: string;
   tab?: string;
   selectedCode?: string;
+  codeToNodeNameMapping?: Record<string, string>;
 }
 
 interface SignificantPlotPanelHeadingProps {
@@ -33,6 +35,7 @@ interface SignificantPlotPanelHeadingProps {
   urlPrefix?: string;
   tab?: string;
   selectedCode?: string | undefined;
+  nodeName?: string | undefined;
 }
 
 const SignificantPlotPanelHeading = ({
@@ -45,6 +48,7 @@ const SignificantPlotPanelHeading = ({
   urlPrefix = undefined,
   tab = undefined,
   selectedCode = undefined,
+  nodeName = undefined,
 }: SignificantPlotPanelHeadingProps) => {
   return (
     <Panel.Heading>
@@ -84,11 +88,17 @@ const SignificantPlotPanelHeading = ({
             />
           ) : (
             activeKey === level0Code && (
-              <BoxPlotHeaderTitle
-                subtypeCode={level0Code}
-                selectedCode={selectedCode}
-                url={getNewContextUrl(level0Code, urlPrefix, tab)}
-              />
+              <Tooltip
+                id={`BoxPlotHeaderTitle-${level0Code}-tooltip`}
+                content={nodeName}
+                placement="top"
+              >
+                <BoxPlotHeaderTitle
+                  subtypeCode={level0Code}
+                  selectedCode={selectedCode}
+                  url={getNewContextUrl(level0Code, urlPrefix, tab)}
+                />
+              </Tooltip>
             )
           )}
         </div>
@@ -108,6 +118,7 @@ export function SignificantBoxPlotCardPanel({
   urlPrefix = undefined,
   tab = undefined,
   selectedCode = undefined,
+  codeToNodeNameMapping = undefined,
 }: SignificantBoxPlotsPanelProps) {
   return (
     <>
@@ -136,6 +147,7 @@ export function SignificantBoxPlotCardPanel({
             xAxisTitle={xAxisTitle}
             bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
             topMargin={BOX_PLOT_TOP_MARGIN}
+            codeToNodeNameMapping={codeToNodeNameMapping}
             dottedLinePosition={
               entityType === "gene" ? -1 : drugDottedLine || -1.74
             }

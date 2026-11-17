@@ -6,7 +6,7 @@ jest.mock(
   "@depmap/data-explorer-2/src/services/dataExplorerAPI/fetchPlotData",
   () => ({
     fetchPlotData: jest.fn(),
-    fetchPlotLinearRegression: jest.fn(),
+    computePlotLinearRegression: jest.fn(),
   })
 );
 jest.mock("../fetchContextFromCas", () => ({
@@ -41,7 +41,7 @@ const normalized = async (plot_config: unknown) => {
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(() => {});
   service.fetchPlotData.mockResolvedValue({ index_ids: [] });
-  service.fetchPlotLinearRegression.mockResolvedValue(null);
+  service.computePlotLinearRegression.mockResolvedValue(null);
 });
 
 afterEach(() => {
