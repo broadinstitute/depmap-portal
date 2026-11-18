@@ -54,12 +54,14 @@ WORKDIR /install/breadbox
 RUN test -f /install/breadbox/breadbox/static/plot-data/plot-data.js || \
     (echo "breadbox/static/plot-data/plot-data.js is missing: run 'yarn build:embed' in frontend/ before building the image" >&2; exit 1)
 
-# Install dependencies:
-RUN pip install poetry==1.8.5
-# Ensure that when packages are installed with Poetry a virtual environment is NOT created first. 
-# You’re already in a virtual environment by using a docker image
+# Install Poetry and application dependencies in separate environments.
+RUN python -m venv /opt/poetry && \
+    /opt/poetry/bin/pip install poetry==1.8.5 && \
+    python -m venv /opt/breadbox
+ENV VIRTUAL_ENV=/opt/breadbox
+ENV PATH="/opt/poetry/bin:/opt/breadbox/bin:$PATH"
 RUN poetry config virtualenvs.create false
 RUN poetry install
 
 # Expose Poetry-installed console scripts (e.g. pypatch-and-run) via /usr/local/bin
-RUN ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}/bin/* /usr/local/bin/
+RUN ln -s $VIRTUAL_ENV/bin/* /usr/local/bin/
