@@ -11,7 +11,13 @@ class GCSCache:
     def __init__(self, bucket, key_prefix, cachedir):
         self.bucket = bucket
         self.key_prefix = key_prefix
-        self.gcs = storage.Client()
+        # The DB rebuild reads the preprocessing bucket with the portal's own service account key.
+        credentials_path = os.environ.get("GCS_CREDENTIALS_PATH")
+        if not credentials_path:
+            raise RuntimeError(
+                "GCS_CREDENTIALS_PATH must point to the portal's service account key"
+            )
+        self.gcs = storage.Client.from_service_account_json(credentials_path)
         self.cachedir = cachedir
         self.full_prefix = "gs://{}/{}/".format(bucket, key_prefix)
 
