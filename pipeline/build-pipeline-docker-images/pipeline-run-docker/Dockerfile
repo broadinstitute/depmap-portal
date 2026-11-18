@@ -108,7 +108,7 @@ RUN python3.10 -m venv /install/poetry && \
 # this one will have all the dependencies we require installed
 WORKDIR /work/pipeline-run-docker
 COPY pyproject.toml poetry.lock ./
-RUN python3.9 -m venv /install/default-python && . /install/default-python/bin/activate && /install/poetry/bin/poetry install
+RUN python3.13 -m venv /install/default-python && . /install/default-python/bin/activate && /install/poetry/bin/poetry install
 
 ENV VIRTUAL_ENV='/install/default-python'
 ENV PATH="${VIRTUAL_ENV}/bin:/root/.local/bin:${PATH}"
