@@ -176,6 +176,74 @@ def add_selectivity_to_hgnc(
     return hgnc_gene_table
 
 
+def _to_nullable_int(series: pd.Series, name: str) -> pd.Series:
+    """IDs may be stored as floats (so they can hold NaNs); convert to nullable Int64,
+    asserting that all non-null values are whole numbers."""
+    numeric = pd.Series(pd.to_numeric(series, errors="raise"))
+    assert (numeric.dropna() % 1 == 0).all(), f"{name} contains non-integer values"
+    return numeric.astype("Int64")
+
+
+def add_depmap_omics_ensemble_gene_id_to_hgnc(
+    hgnc_gene_table: pd.DataFrame, depmap_omics_ensembl_map: pd.DataFrame
+) -> pd.DataFrame:
+    """Asserts that there is a single unique mapping between EnsemblGeneID <-> EntrezID.
+    With that confirmed, returns a new table that is hgnc_gene_table plus a
+    depmap_omics_ensembl_gene_id column, by joining hgnc_gene_table.entrez_id with
+    depmap_omics_ensembl_map.EntrezID."""
+    mapping = depmap_omics_ensembl_map[["EnsemblGeneID", "EntrezID"]].copy()
+
+    missing = mapping[mapping.isnull().any(axis=1)]
+    assert (
+        len(missing) == 0
+    ), f"Found {len(missing)} rows in the Omics Ensembl map with missing values: {missing.to_dict('records')[:10]}"
+
+    duplicated_rows = mapping[mapping.duplicated(keep=False)]
+    assert (
+        len(duplicated_rows) == 0
+    ), f"Found duplicate rows in the Omics Ensembl map: {duplicated_rows.to_dict('records')[:10]}"
+
+    mapping["EntrezID"] = _to_nullable_int(mapping["EntrezID"], "EntrezID").astype(
+        "int64"
+    )
+
+    dup_entrez = mapping[mapping["EntrezID"].duplicated(keep=False)]
+    assert (
+        len(dup_entrez) == 0
+    ), f"EntrezIDs mapping to multiple EnsemblGeneIDs: {dup_entrez.to_dict('records')[:10]}"
+    dup_ensembl = mapping[mapping["EnsemblGeneID"].duplicated(keep=False)]
+    assert (
+        len(dup_ensembl) == 0
+    ), f"EnsemblGeneIDs mapping to multiple EntrezIDs: {dup_ensembl.to_dict('records')[:10]}"
+
+    mapping = mapping.rename(
+        columns={
+            "EntrezID": "entrez_id",
+            "EnsemblGeneID": "depmap_omics_ensembl_gene_id",
+        }
+    ).astype({"entrez_id": "Int64"})
+
+    hgnc_gene_table = hgnc_gene_table.copy()
+    hgnc_gene_table["entrez_id"] = _to_nullable_int(
+        hgnc_gene_table["entrez_id"], "entrez_id"
+    )
+    n_rows = len(hgnc_gene_table)
+    # left join preserves HGNC row order; many_to_one guards against row duplication
+    hgnc_gene_table = hgnc_gene_table.merge(
+        mapping, on="entrez_id", how="left", validate="many_to_one"
+    )
+    assert len(hgnc_gene_table) == n_rows
+
+    n_assigned = hgnc_gene_table["depmap_omics_ensembl_gene_id"].notnull().sum()
+    print(
+        f"Rows with depmap_omics_ensembl_gene_id: {n_assigned} of {len(hgnc_gene_table)}"
+    )
+    assert (
+        n_assigned > len(hgnc_gene_table) / 2
+    ), f"Expected more than half of genes to be assigned a depmap_omics_ensembl_gene_id, but only {n_assigned} of {len(hgnc_gene_table)} were"
+    return hgnc_gene_table
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Add common essential and selectivity to HGNC gene table."
@@ -190,6 +258,10 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "crispr_gene_dependency_taiga_id", help="Taiga ID of CRISPR gene dependency"
+    )
+    parser.add_argument(
+        "depmap_omics_ensembl_map_taiga_id",
+        help="Taiga ID of entrez_id -> ensemble mapping provided by Omics team",
     )
     parser.add_argument("output", help="Path to write the output")
     args = parser.parse_args()
@@ -210,6 +282,9 @@ if __name__ == "__main__":
         args.crispr_gene_dependency_taiga_id,
     )
 
+    depmap_omics_ensembl_map = tc.get(args.depmap_omics_ensembl_map_taiga_id)
+    assert set(depmap_omics_ensembl_map.columns) == set(["EnsemblGeneID", "EntrezID"])
+
     # Add essentiality
     hgnc_gene_table = add_essentiality_to_hgnc(
         hgnc_gene_table, crispr_inferred_common_essentials, crispr_gene_effect
@@ -218,6 +293,11 @@ if __name__ == "__main__":
     # Add selectivity
     hgnc_gene_table = add_selectivity_to_hgnc(
         hgnc_gene_table, crispr_gene_dependency, crispr_gene_effect
+    )
+
+    # Add depmap_omics_ensemble_gene_id
+    hgnc_gene_table = add_depmap_omics_ensemble_gene_id_to_hgnc(
+        hgnc_gene_table, depmap_omics_ensembl_map
     )
 
     hgnc_gene_table.to_csv(args.output, index=False)
