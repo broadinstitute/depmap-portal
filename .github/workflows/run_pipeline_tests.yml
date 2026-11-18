@@ -5,14 +5,14 @@ on:
   pull_request:
     paths:
       - "pipeline/**"
-      - ".github/workflows/test_pipeline.yml"
+      - ".github/workflows/run_pipeline_tests.yml"
   workflow_dispatch:
   push:
     branches:
       - "master"
     paths:
       - "pipeline/**"
-      - ".github/workflows/test_pipeline.yml"
+      - ".github/workflows/run_pipeline_tests.yml"
 
 permissions:
   contents: read

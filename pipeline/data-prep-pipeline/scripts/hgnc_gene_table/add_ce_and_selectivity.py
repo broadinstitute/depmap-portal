@@ -185,13 +185,13 @@ def _to_nullable_int(series: pd.Series, name: str) -> pd.Series:
 
 
 def add_depmap_omics_ensemble_gene_id_to_hgnc(
-    hgnc_gene_table: pd.DataFrame, demap_omics_ensembl_map: pd.DataFrame
+    hgnc_gene_table: pd.DataFrame, depmap_omics_ensembl_map: pd.DataFrame
 ) -> pd.DataFrame:
     """Asserts that there is a single unique mapping between EnsemblGeneID <-> EntrezID.
     With that confirmed, returns a new table that is hgnc_gene_table plus a
     depmap_omics_ensembl_gene_id column, by joining hgnc_gene_table.entrez_id with
-    demap_omics_ensembl_map.EntrezID."""
-    mapping = demap_omics_ensembl_map[["EnsemblGeneID", "EntrezID"]].copy()
+    depmap_omics_ensembl_map.EntrezID."""
+    mapping = depmap_omics_ensembl_map[["EnsemblGeneID", "EntrezID"]].copy()
 
     missing = mapping[mapping.isnull().any(axis=1)]
     assert (
@@ -260,7 +260,7 @@ if __name__ == "__main__":
         "crispr_gene_dependency_taiga_id", help="Taiga ID of CRISPR gene dependency"
     )
     parser.add_argument(
-        "demap_omics_ensembl_map_taiga_id",
+        "depmap_omics_ensembl_map_taiga_id",
         help="Taiga ID of entrez_id -> ensemble mapping provided by Omics team",
     )
     parser.add_argument("output", help="Path to write the output")
@@ -282,8 +282,8 @@ if __name__ == "__main__":
         args.crispr_gene_dependency_taiga_id,
     )
 
-    demap_omics_ensembl_map = tc.get(args.demap_omics_ensembl_map_taiga_id)
-    assert set(demap_omics_ensembl_map.columns) == set(["EnsemblGeneID", "EntrezID"])
+    depmap_omics_ensembl_map = tc.get(args.depmap_omics_ensembl_map_taiga_id)
+    assert set(depmap_omics_ensembl_map.columns) == set(["EnsemblGeneID", "EntrezID"])
 
     # Add essentiality
     hgnc_gene_table = add_essentiality_to_hgnc(
@@ -297,7 +297,7 @@ if __name__ == "__main__":
 
     # Add depmap_omics_ensemble_gene_id
     hgnc_gene_table = add_depmap_omics_ensemble_gene_id_to_hgnc(
-        hgnc_gene_table, demap_omics_ensembl_map
+        hgnc_gene_table, depmap_omics_ensembl_map
     )
 
     hgnc_gene_table.to_csv(args.output, index=False)
