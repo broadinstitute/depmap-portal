@@ -5,6 +5,15 @@ export interface SelectOption {
   label: string;
 }
 
+const getOptionBackgroundColor = (
+  isSelected: boolean,
+  isFocused: boolean
+): string => {
+  if (isSelected) return "#a8529d";
+  if (isFocused) return "#faf5f9";
+  return "#ffffff";
+};
+
 export const getFilterSelectStyles = (
   hasValue: boolean
 ): StylesConfig<SelectOption, false> => ({
@@ -55,11 +64,10 @@ export const getFilterSelectStyles = (
     ...base,
     fontSize: "13.5px",
     fontWeight: state.isSelected ? 600 : 400,
-    backgroundColor: state.isSelected
-      ? "#a8529d"
-      : state.isFocused
-      ? "#faf5f9"
-      : "#ffffff",
+    backgroundColor: getOptionBackgroundColor(
+      state.isSelected,
+      state.isFocused
+    ),
     color: state.isSelected ? "#ffffff" : "#2d3748",
     cursor: "pointer",
   }),
