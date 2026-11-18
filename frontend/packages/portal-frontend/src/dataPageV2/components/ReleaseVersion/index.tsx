@@ -10,7 +10,6 @@ interface ReleaseProps {
   releaseName: string;
   versions: ReleaseVersion[];
   onViewVersion: (version: ReleaseVersion) => void;
-  keySuffix?: number;
 }
 
 const Release: React.FC<ReleaseProps> = ({

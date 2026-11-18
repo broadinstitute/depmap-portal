@@ -31,9 +31,9 @@ const ReleasesContent: React.FC = () => {
     [setSelectedVersion]
   );
 
-  const handleBackToReleases = useCallback(() => {
-    setSelectedVersion(null);
-  }, [setSelectedVersion]);
+  // const handleBackToReleases = useCallback(() => {
+  //   setSelectedVersion(null);
+  // }, [setSelectedVersion]);
 
   // Scroll to top when entering VersionFileView; restore saved scroll when returning
   useEffect(() => {
