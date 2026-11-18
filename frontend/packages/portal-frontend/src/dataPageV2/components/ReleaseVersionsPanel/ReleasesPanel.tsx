@@ -4,7 +4,7 @@ import {
   ReleaseVersionsProvider,
   useReleaseVersionsContext,
 } from "src/dataPageV2/contexts/ReleaseVersionsContext";
-import VersionFileView from "./VersionFileView";
+// import VersionFileView from "./VersionFileView";
 import styles from "src/dataPageV2/styles.scss";
 // import Release from "./Release";
 import ReleaseVersionsFilterBar from "./ReleaseVersionsFilterBar";
@@ -89,12 +89,12 @@ const ReleasesContent: React.FC = () => {
 
   return (
     <div className={styles.ReleasesPanel}>
-      {selectedVersion && (
+      {/* {selectedVersion && (
         <VersionFileView
           version={selectedVersion}
           onBack={handleBackToReleases}
         />
-      )}
+      )} */}
 
       {/* Keep the release list mounted so card dropdown selections and DOM height stay intact */}
       <div style={{ display: selectedVersion ? "none" : "block" }}>
