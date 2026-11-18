@@ -1,0 +1,37 @@
+---
+name: Test pipeline
+
+on:
+  pull_request:
+    paths:
+      - "pipeline/**"
+      - ".github/workflows/test_pipeline.yml"
+  workflow_dispatch:
+  push:
+    branches:
+      - "master"
+    paths:
+      - "pipeline/**"
+      - ".github/workflows/test_pipeline.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pipeline
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.9"
+      - name: Install poetry
+        run: pip install poetry==2.4.1
+      - name: Install dependencies
+        run: poetry install
+      - name: Run tests
+        run: poetry run pytest
