@@ -4,7 +4,7 @@ import * as ReactDOM from "react-dom";
 import ErrorBoundary from "src/common/components/ErrorBoundary";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
-// import DataPageV2 from "src/dataPageV2/components/DataPageV2";
+import DataPageV2 from "src/dataPageV2/components/DataPageV2";
 
 const container = document.getElementById("react-data-pageV2");
 if (!container) {
@@ -17,14 +17,13 @@ if (!dataElement || !dataElement.textContent) {
     `Expected a DOM element like <script type="application/json">{ ... }</script>'`
   );
 }
-// const data = JSON.parse(dataElement.textContent);
+const data = JSON.parse(dataElement.textContent);
 
-// const { releaseNotesUrl, forumUrl } = data;
+const { releaseNotesUrl, forumUrl } = data;
 const App = () => {
   return (
     <ErrorBoundary>
-      <>New Data Page Goes Here</>
-      {/* <DataPageV2 releaseNotesUrl={releaseNotesUrl} forumUrl={forumUrl} /> */}
+      <DataPageV2 releaseNotesUrl={releaseNotesUrl} forumUrl={forumUrl} />
     </ErrorBoundary>
   );
 };

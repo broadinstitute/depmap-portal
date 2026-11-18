@@ -7,23 +7,15 @@ interface Option {
   label: string;
 }
 
-type DateRangePreset = "ALL" | "6M" | "12M" | "24M";
+export type DateRangePreset = "" | "6M" | "12M" | "24M";
 
-const ALL_DATATYPES_VALUE = "ALL";
-
-type UseReleaseVersionsParams = Pick<
-  GetReleaseVersionsParams,
-  "include_files" | "start_date" | "end_date" | "datatype"
->;
-
-const DATE_RANGE_OPTIONS: Option[] = [
-  { value: "ALL", label: "All" },
+export const DATE_RANGE_OPTIONS: Option[] = [
   { value: "6M", label: "Last 6 months" },
   { value: "12M", label: "Last 12 months" },
   { value: "24M", label: "Last 24 months" },
 ];
 
-const MONTHS_BY_PRESET: Record<Exclude<DateRangePreset, "ALL">, number> = {
+const MONTHS_BY_PRESET: Record<Exclude<DateRangePreset, "">, number> = {
   "6M": 6,
   "12M": 12,
   "24M": 24,
@@ -40,7 +32,7 @@ function getDateRangeParams(
   defaultStartDate?: string,
   defaultEndDate?: string
 ): Pick<GetReleaseVersionsParams, "start_date" | "end_date"> {
-  if (dateRange === "ALL") {
+  if (dateRange === "") {
     return {
       ...(defaultStartDate ? { start_date: defaultStartDate } : {}),
       ...(defaultEndDate ? { end_date: defaultEndDate } : {}),
@@ -82,23 +74,18 @@ const fetchFileDatatypes = async (bapi: BreadboxApi): Promise<string[]> => {
   return Array.from(types).sort();
 };
 
-const useReleaseVersions = (initialParams: UseReleaseVersionsParams = {}) => {
-  const {
-    include_files,
-    start_date,
-    end_date,
-    datatype: initialDatatype = ALL_DATATYPES_VALUE,
-  } = initialParams;
+const useReleaseVersions = (initialParams: GetReleaseVersionsParams = {}) => {
+  const { include_files, start_date, end_date } = initialParams;
 
-  const bapi = useMemo(() => cached(breadboxAPI), []);
+  const bapi = cached(breadboxAPI);
 
   const [releases, setReleases] = useState<ReleaseVersion[]>([]);
   const [availableDatatypes, setAvailableDatatypes] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const [datatype, setDatatype] = useState<string>(initialDatatype);
-  const [dateRange, setDateRange] = useState<DateRangePreset>("ALL");
+  const [datatype, setDatatype] = useState<string>("");
+  const [dateRange, setDateRange] = useState<DateRangePreset>("");
 
   // Fetch all available datatypes once on mount
   useEffect(() => {
@@ -118,8 +105,7 @@ const useReleaseVersions = (initialParams: UseReleaseVersionsParams = {}) => {
         setIsLoading(true);
         setError(null);
 
-        const hasSpecificDatatype =
-          Boolean(datatype) && datatype !== ALL_DATATYPES_VALUE;
+        const hasSpecificDatatype = Boolean(datatype) && datatype !== "";
 
         const params: GetReleaseVersionsParams = {
           ...(include_files !== undefined ? { include_files } : {}),
@@ -140,14 +126,11 @@ const useReleaseVersions = (initialParams: UseReleaseVersionsParams = {}) => {
   }, [bapi, include_files, start_date, end_date, datatype, dateRange]);
 
   const datatypeOptions = useMemo<Option[]>(() => {
-    return [
-      { value: ALL_DATATYPES_VALUE, label: "All" },
-      ...availableDatatypes.map((type) => ({ value: type, label: type })),
-    ];
+    return availableDatatypes.map((type) => ({ value: type, label: type }));
   }, [availableDatatypes]);
 
   return {
-    releases,
+    allReleaseVersions: releases,
     datatypeOptions,
     dateRangeOptions: DATE_RANGE_OPTIONS,
     isLoading,
