@@ -1,5 +1,5 @@
 ---
-name: Test pipeline
+name: Run pipeline tests
 
 on:
   pull_request:
