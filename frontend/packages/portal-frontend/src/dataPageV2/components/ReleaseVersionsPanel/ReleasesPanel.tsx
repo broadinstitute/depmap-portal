@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 // import { ReleaseVersion } from "@depmap/types";
 import {
   ReleaseVersionsProvider,
@@ -15,7 +15,6 @@ const ReleasesContent: React.FC = () => {
     isLoading,
     error,
     selectedVersion,
-    setSelectedVersion,
   } = useReleaseVersionsContext();
 
   const savedScrollYRef = useRef<number>(0);
