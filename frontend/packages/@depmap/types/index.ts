@@ -29,6 +29,17 @@ export type {
 } from "./src/DimensionType";
 
 export type {
+  ReferenceEdge,
+  ReferenceGraphTable,
+  ReferenceGraphNode,
+  DimensionTypeReferenceGraph,
+  SliceQueryChainNode,
+  ReachableTable,
+  ReachableRoute,
+  ReachableTables,
+} from "./src/ReferenceGraph";
+
+export type {
   Dataset,
   AddCustDatasetArgs,
   DatasetParams,
@@ -77,6 +88,12 @@ export type {
   LineageCountInfo,
   DataAvailSummary,
 } from "./src/data_page";
+
+export type {
+  ReleaseVersion,
+  ReleaseFile,
+  GetReleaseVersionsParams,
+} from "./src/ReleaseVersion";
 
 export type {
   GenePredictiveModelResults,

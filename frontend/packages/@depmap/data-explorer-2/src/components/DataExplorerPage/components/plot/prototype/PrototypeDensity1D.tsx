@@ -40,6 +40,7 @@ import {
   releaseWebglContexts,
   resolveAnnotationTail,
   truncateFacetLabel,
+  isDragmode,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
 import installFacetSelectionDragLayer, {
@@ -87,6 +88,11 @@ interface Props {
   // Mirrors PrototypeScatterPlot / SmallMultiplesScatter's identically named
   // prop.
   showBuiltinLegend?: boolean;
+  // Makes the built-in legend interactive: a click on an entry calls this
+  // with its key (`isDoubleClick` for Plotly's double-click). The caller owns
+  // the hidden state and feeds it back as `hiddenLegendValues`; hidden
+  // entries stay in the legend, dimmed, so they can be clicked back on.
+  onClickLegendItem?: (key: LegendKey, isDoubleClick: boolean) => void;
   // Whether facet_by and color_by resolve to the SAME underlying source
   // (see resolveColorMode / useDensity1DPlotData's own colorMatchesFacet
   // comment for the full rationale, including why this is NOT simply
@@ -113,6 +119,11 @@ interface Props {
   onClickPoint?: (pointIndex: number, ctrlKey: boolean) => void;
   onMultiselect?: (pointIndices: number[]) => void;
   onClickResetSelection?: () => void;
+  // Opt-in (the embedded view). Keeps Plotly's own box and lasso buttons in the
+  // modebar and follows the mode they pick: dragmode is React state here (see
+  // `dragmode` below), so without this a modebar click would be undone by the
+  // next re-render. Data Explorer leaves it off and uses its own toolbar.
+  modebarSelectionTools?: boolean;
   pointVisibility?: boolean[];
   useSemiOpaqueViolins?: boolean;
   onLoad?: (plot: ExtendedPlotType) => void;
@@ -154,6 +165,10 @@ interface Props {
   // back at its default position.
   initialAxes?: Partial<Layout>;
   initialAnnotationTails?: Record<string, AnnotationTail>;
+  // A caller-owned store for the tails, used in place of the instance's own.
+  // Lets them outlive this component (e.g. when it is unmounted while off
+  // screen and later remounted). Takes precedence over initialAnnotationTails.
+  annotationTailsRef?: { current: Record<string, AnnotationTail> };
 }
 
 const calcPlotHeight = (plot: HTMLDivElement) => {
@@ -164,15 +179,23 @@ const calcPlotHeight = (plot: HTMLDivElement) => {
   return window.innerHeight - plot.offsetTop - 22;
 };
 
-// HACK: Plotly doesn't allow you to put a violin on top of a scatter plot, so
-// we'll improvise.
+// HACK: Plotly doesn't have an official way to put a violin on top of a
+// scatter plot, so we'll reach into the DOM and re-order some elements.
 const movePointsBehindViolinPlot = (plot: HTMLDivElement) => {
+  // Move the points container behind the violin container.
   const gl = plot.querySelector(".gl-container") as HTMLElement;
   gl.parentElement!.prepend(gl);
 
+  // Make the violin container's background transparent
+  // (instead of white) so it doesn't occlude te points.
   const svg = plot.querySelector(".main-svg") as HTMLElement;
   svg.style.background = "transparent";
 
+  // Set a white background on the top-level container instead.
+  // eslint-disable-next-line no-param-reassign
+  plot.style.background = "#FFF";
+
+  // Push the grid lines to the back so they don't sit on top of the points.
   svg.querySelectorAll(".gridlayer path").forEach((path) => {
     // eslint-disable-next-line no-param-reassign
     (path as HTMLElement).style.stroke = "#000";
@@ -180,8 +203,8 @@ const movePointsBehindViolinPlot = (plot: HTMLDivElement) => {
     (path as HTMLElement).style.strokeOpacity = "0.08";
   });
 
-  // Also nudge the hover label slightly to the right. It can sometimes get in
-  // the way when trying to click on a point.
+  // Also nudge the hover label slightly to the right. Otherwise,
+  // it can sometimes get in the way when trying to click on a point.
   const hoverlayer = plot.querySelector(".hoverlayer") as HTMLElement;
   hoverlayer.style.transform = "translateX(8px)";
 };
@@ -247,6 +270,7 @@ function PrototypeDensity1D({
   facetDisplayNames,
   legendTitle,
   showBuiltinLegend = false,
+  onClickLegendItem = undefined,
   colorMatchesFacet = false,
   height,
   hoverTextKey,
@@ -257,6 +281,7 @@ function PrototypeDensity1D({
   onClickPoint = () => {},
   onMultiselect = () => {},
   onClickResetSelection = () => {},
+  modebarSelectionTools = false,
   onLoad = () => {},
   hiddenLegendValues = new Set(),
   hiddenFacetValues = new Set(),
@@ -273,6 +298,7 @@ function PrototypeDensity1D({
   selectionCount,
   initialAxes = undefined,
   initialAnnotationTails = undefined,
+  annotationTailsRef = undefined,
   Plotly,
 }: any) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -285,9 +311,10 @@ function PrototypeDensity1D({
     }
   );
 
-  const annotationTails = useRef<Record<string, AnnotationTail>>(
+  const ownAnnotationTails = useRef<Record<string, AnnotationTail>>(
     initialAnnotationTails ? { ...initialAnnotationTails } : {}
   );
+  const annotationTails = annotationTailsRef ?? ownAnnotationTails;
 
   const [dragmode, setDragmode] = useState<Layout["dragmode"]>("zoom");
 
@@ -714,21 +741,22 @@ function PrototypeDensity1D({
     // names and colors. Used for downloaded images (where our own legend panel
     // can't be rendered) and, when showBuiltinLegend is set, for the live plot
     // too — the two must agree, hence one definition.
-    const legendTraces = colorKeys
-      .filter((key) => !hiddenLegendValues.has(key))
-      .map((legendKey) => {
-        const fillcolor = colorMap.get(legendKey);
+    // The live legend keeps hidden keys (dimmed via `legendonly`) so a click
+    // can bring them back; exports build their own, filtered, set below.
+    const toLegendTrace = (legendKey: LegendKey) => ({
+      type: "violin",
+      showlegend: true,
+      x: [null],
+      line: { color: "#666" },
+      hoverinfo: "skip",
+      name: legendDisplayNames[legendKey],
+      fillcolor: colorMap.get(legendKey),
+    });
 
-        return {
-          type: "violin",
-          showlegend: true,
-          x: [null],
-          line: { color: "#666" },
-          hoverinfo: "skip",
-          name: legendDisplayNames[legendKey],
-          fillcolor,
-        };
-      });
+    const liveLegendTraces = colorKeys.map((key) => ({
+      ...toLegendTrace(key),
+      ...(hiddenLegendValues.has(key) ? { visible: "legendonly" } : {}),
+    }));
 
     const plotlyData = [
       ...violinTraces,
@@ -745,8 +773,10 @@ function PrototypeDensity1D({
     // Appended after the all-null filter above (which would drop them, their
     // x being [null]) and after the reverse, so the indices that
     // isClickableTrace / isContinuousCurve compare against are untouched.
+    const firstLegendTrace = plotlyData.length;
+
     if (showBuiltinLegend) {
-      legendTraces.forEach((t) =>
+      liveLegendTraces.forEach((t) =>
         plotlyData.push(t as typeof plotlyData[number])
       );
     }
@@ -920,7 +950,9 @@ function PrototypeDensity1D({
       responsive: true,
       edits: { annotationTail: true },
       displaylogo: false,
-      modeBarButtonsToRemove: ["select2d", "lasso2d"],
+      modeBarButtonsToRemove: modebarSelectionTools
+        ? []
+        : ["select2d", "lasso2d"],
     };
 
     Plotly.react(plot, plotlyData, layout, config);
@@ -1020,15 +1052,24 @@ function PrototypeDensity1D({
 
     // After initializing the plot with `autorange` set to true, store what
     // Plotly calculated for the axes zoom level and turn off autorange.
-    // The legend is drawn from dummy traces (see legendTraces) that hold no
-    // real points, so Plotly's default click behavior toggles the dummy and
-    // nothing else: the entry greys out while the plot stays put. Returning
-    // false suppresses that, leaving the legend a static key rather than a
-    // control that appears to do something. Registered unconditionally — with
+    // The legend is drawn from dummy traces (see liveLegendTraces) that hold
+    // no real points, so Plotly's default click behavior toggles the dummy and
+    // nothing else. Returning false always suppresses that; a click is routed
+    // to `onClickLegendItem` instead when the caller supplied one, otherwise
+    // the legend is a static key. Registered unconditionally — with
     // no legend shown (Data Explorer's case) these never fire.
-    // TODO: make these actually filter, as Data Explorer's own legend does.
-    on("plotly_legendclick", () => false);
-    on("plotly_legenddoubleclick", () => false);
+    const routeLegendClick = (isDoubleClick: boolean) => (e: any) => {
+      const key = colorKeys[e.curveNumber - firstLegendTrace];
+
+      if (onClickLegendItem && showBuiltinLegend && key !== undefined) {
+        onClickLegendItem(key, isDoubleClick);
+      }
+
+      return false;
+    };
+
+    on("plotly_legendclick", routeLegendClick(false));
+    on("plotly_legenddoubleclick", routeLegendClick(true));
 
     on("plotly_afterplot", () => {
       if (!axes.current.xaxis || !axes.current.yaxis) {
@@ -1041,7 +1082,12 @@ function PrototypeDensity1D({
       movePointsBehindViolinPlot(plot);
     });
 
-    on("plotly_relayout", () => {
+    on("plotly_relayout", (e) => {
+      // The modebar changed the drag mode itself; make our state follow it.
+      if (modebarSelectionTools && isDragmode(e?.dragmode)) {
+        plot.setDragmode(e.dragmode);
+      }
+
       // A zoom/resize invalidates the pixel-space committed marquees, so drop
       // the additive (shift-select) state along with the stored axes.
       const cfg = (plot as any).__facetSel as FacetSelectionConfig | undefined;
@@ -1262,7 +1308,7 @@ function PrototypeDensity1D({
       const legendTitleOverride = options?.legendTitle;
       const legendItemLabelsOverride = options?.legendItemLabels;
 
-      // Rebuilt rather than reusing the outer `legendTraces` — that one is
+      // Rebuilt rather than reusing the live legend traces — that one is
       // fixed at whatever legendTitle/legendDisplayNames were at the last
       // regular render, with no way to thread an export-only override
       // through it. Same filter/order as that one, so which items show up
@@ -1507,6 +1553,7 @@ function PrototypeDensity1D({
       stopWatchingContextRestore();
     };
   }, [
+    annotationTails,
     data,
     xKey,
     colorMap,
@@ -1518,6 +1565,7 @@ function PrototypeDensity1D({
     facetDisplayNames,
     legendTitle,
     showBuiltinLegend,
+    onClickLegendItem,
     colorMatchesFacet,
     hoverTextKey,
     annotationTextKey,
@@ -1531,6 +1579,7 @@ function PrototypeDensity1D({
     pointVisibility,
     useSemiOpaqueViolins,
     dragmode,
+    modebarSelectionTools,
     hiddenLegendValues,
     hiddenFacetValues,
     pointSize,

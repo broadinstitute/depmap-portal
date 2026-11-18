@@ -48,6 +48,7 @@ import {
   resolveAnnotationTail,
   RegressionLine,
   widenExtentsToAxisRange,
+  isDragmode,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
 import installFacetSelectionDragLayer, {
@@ -88,6 +89,11 @@ interface Props {
   onClickPoint?: (pointIndex: number, ctrlKey: boolean) => void;
   onMultiselect?: (pointIndices: number[]) => void;
   onClickResetSelection?: () => void;
+  // Opt-in (the embedded view). Keeps Plotly's own box and lasso buttons in the
+  // modebar and follows the mode they pick: dragmode is React state here (see
+  // `dragmode` below), so without this a modebar click would be undone by the
+  // next re-render. Data Explorer leaves it off and uses its own toolbar.
+  modebarSelectionTools?: boolean;
   pointVisibility?: boolean[];
   showIdentityLine?: boolean;
   regressionLines?: RegressionLine[] | null;
@@ -103,6 +109,13 @@ interface Props {
   // says — so this must default to false for every other caller.
   xAxisIsRank?: boolean;
   showBuiltinLegend?: boolean;
+  // Makes the built-in legend interactive. `builtinLegend` is the full entry
+  // list (hidden ones included, flagged) drawn in place of
+  // `legendForDownload`, and a click on an entry calls `onClickLegendItem`
+  // with its key — the caller owns the hidden state and feeds it back through
+  // `pointVisibility`. `isDoubleClick` is true for Plotly's double-click.
+  builtinLegend?: LegendInfo;
+  onClickLegendItem?: (key: LegendKey, isDoubleClick: boolean) => void;
   // optional styling
   pointSize?: number;
   pointOpacity?: number;
@@ -145,9 +158,14 @@ interface Props {
   // Produce these with `captureTransientState` against the live plot.
   initialAxes?: Partial<Layout>;
   initialAnnotationTails?: Record<string, AnnotationTail>;
+  // A caller-owned store for the tails, used in place of the instance's own.
+  // Lets them outlive this component (e.g. when it is unmounted while off
+  // screen and later remounted). Takes precedence over initialAnnotationTails.
+  annotationTailsRef?: { current: Record<string, AnnotationTail> };
 }
 
 type PlotlyType = typeof Plotly;
+
 type PropsWithPlotly = Props & { Plotly: PlotlyType };
 
 const calcPlotHeight = (plot: HTMLDivElement) => {
@@ -220,12 +238,15 @@ function PrototypeScatterPlot({
   onClickPoint = () => {},
   onMultiselect = () => {},
   onClickResetSelection = () => {},
+  modebarSelectionTools = false,
   onLoad = () => {},
   customHoverinfo = undefined,
   hideXAxis = false,
   hideXAxisGrid = false,
   xAxisIsRank = false,
   showBuiltinLegend = false,
+  builtinLegend = undefined,
+  onClickLegendItem = undefined,
   pointSize = 7,
   pointOpacity = 1.0,
   outlineWidth = 0.5,
@@ -241,6 +262,7 @@ function PrototypeScatterPlot({
   hasFacetOptionsEnabled = false,
   initialAxes = undefined,
   initialAnnotationTails = undefined,
+  annotationTailsRef = undefined,
   Plotly,
 }: PropsWithPlotly) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -278,9 +300,10 @@ function PrototypeScatterPlot({
     );
   }, [showIdentityLine, regressionLines, extents]);
 
-  const annotationTails = useRef<Record<string, AnnotationTail>>(
+  const ownAnnotationTails = useRef<Record<string, AnnotationTail>>(
     initialAnnotationTails ? { ...initialAnnotationTails } : {}
   );
+  const annotationTails = annotationTailsRef ?? ownAnnotationTails;
 
   const [dragmode, setDragmode] = useState<Layout["dragmode"]>("zoom");
 
@@ -655,8 +678,11 @@ function PrototypeScatterPlot({
       .filter(Boolean)
       .reverse() as Partial<PlotData>[];
 
+    const builtinLegendItems = builtinLegend ?? legendForDownload!;
+    const firstLegendTrace = plotlyData.length;
+
     if (showBuiltinLegend) {
-      getLegendTraces(legendForDownload!, templateTrace).forEach((t) =>
+      getLegendTraces(builtinLegendItems, templateTrace).forEach((t) =>
         plotlyData.push(t as typeof plotlyData[number])
       );
     }
@@ -828,7 +854,9 @@ function PrototypeScatterPlot({
       edits: { annotationTail: true },
 
       displaylogo: false,
-      modeBarButtonsToRemove: ["select2d", "lasso2d"],
+      modeBarButtonsToRemove: modebarSelectionTools
+        ? []
+        : ["select2d", "lasso2d"],
     };
 
     Plotly.react(plot, plotlyData, layout, config);
@@ -917,12 +945,24 @@ function PrototypeScatterPlot({
     // The legend is drawn from dummy traces (getLegendTraces) that hold no
     // real points, so Plotly's default click behavior toggles the dummy and
     // nothing else: the entry greys out while the plot stays put. Returning
-    // false suppresses that, leaving the legend a static key rather than a
-    // control that appears to do something. Registered unconditionally — with
-    // no legend shown (Data Explorer's case) these never fire.
-    // TODO: make these actually filter, as Data Explorer's own legend does.
-    on("plotly_legendclick", () => false);
-    on("plotly_legenddoubleclick", () => false);
+    // false always suppresses that. When the caller supplied
+    // `onClickLegendItem`, the click is instead routed to it and the legend
+    // is redrawn from the resulting state (hidden entries come back as
+    // `legendonly`); otherwise the legend is a static key. Registered
+    // unconditionally — with no legend shown (Data Explorer's case) these
+    // never fire.
+    const routeLegendClick = (isDoubleClick: boolean) => (e: any) => {
+      const item = builtinLegendItems.items[e.curveNumber - firstLegendTrace];
+
+      if (onClickLegendItem && showBuiltinLegend && item?.key !== undefined) {
+        onClickLegendItem(item.key, isDoubleClick);
+      }
+
+      return false;
+    };
+
+    on("plotly_legendclick", routeLegendClick(false));
+    on("plotly_legenddoubleclick", routeLegendClick(true));
 
     // After initializing the plot with `autorange` set to true, store what
     // Plotly calculated for the axes zoom level and turn off autorange.
@@ -945,7 +985,12 @@ function PrototypeScatterPlot({
       moveSelectedPointsOnTopOfLines(plot);
     });
 
-    on("plotly_relayout", () => {
+    on("plotly_relayout", (e) => {
+      // The modebar changed the drag mode itself; make our state follow it.
+      if (modebarSelectionTools && isDragmode(e?.dragmode)) {
+        plot.setDragmode(e.dragmode);
+      }
+
       // A zoom/resize invalidates the pixel-space committed marquees, so drop
       // the additive (shift-select) state along with the stored axes.
       const cfg = (plot as any).__facetSel as FacetSelectionConfig | undefined;
@@ -1299,6 +1344,7 @@ function PrototypeScatterPlot({
       stopWatchingContextRestore();
     };
   }, [
+    annotationTails,
     data,
     xKey,
     yKey,
@@ -1332,6 +1378,8 @@ function PrototypeScatterPlot({
     hideXAxisGrid,
     xAxisIsRank,
     showBuiltinLegend,
+    builtinLegend,
+    onClickLegendItem,
     pointSize,
     pointOpacity,
     outlineWidth,
@@ -1340,6 +1388,7 @@ function PrototypeScatterPlot({
     xAxisFontSize,
     yAxisFontSize,
     enforceSingleFacetSelection,
+    modebarSelectionTools,
     selectionRegions,
     selectionAxis,
     shapes,

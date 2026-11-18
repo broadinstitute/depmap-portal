@@ -10,7 +10,7 @@ import {
 // root exports React components, which have no place in a Node bundle.
 import {
   fetchPlotData,
-  fetchPlotLinearRegression,
+  computePlotLinearRegression,
 } from "@depmap/data-explorer-2/src/services/dataExplorerAPI/fetchPlotData";
 import { isCompleteDimension } from "@depmap/data-explorer-2/src/utils/dimensionHelpers";
 import { normalizePlotConfig } from "@depmap/data-explorer-2/src/utils/normalizePlotConfig";
@@ -289,7 +289,7 @@ export async function runPlotDataRequest(
 // the script still does, though: only failures we can name are tolerated.
 async function fetchRegressionIfRequested(plotConfig: DataExplorerPlotConfig) {
   try {
-    return await fetchPlotLinearRegression(plotConfig);
+    return await computePlotLinearRegression(plotConfig);
   } catch (e) {
     const outcome = classifyError(e);
 

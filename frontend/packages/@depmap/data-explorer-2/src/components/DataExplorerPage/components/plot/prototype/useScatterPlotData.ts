@@ -22,13 +22,32 @@ import {
   LEGEND_BOTH,
   LEGEND_NEITHER,
   LEGEND_OTHER,
+  LEGEND_REMAINDER,
+  LegendInfo,
   LegendKey,
+  makeLegendKeyResolver,
+  getShownCategories,
   nullifyUnplottableValues,
   RegressionLine,
   resolveColorMode,
   useLegendState,
 } from "./plotUtils";
 import { linregress } from "@depmap/statistics";
+
+// Lines are drawn in array order, so whatever comes first ends up underneath.
+// The buckets that aren't a real category (N/A, "Neither", "Other categories")
+// go first so they can never sit on top of a proper category's line.
+function sortNonCategoriesToBack(
+  entries: { key: LegendKey; line: RegressionLine }[]
+): RegressionLine[] {
+  const isBackground = (key: LegendKey) =>
+    key === LEGEND_OTHER || key === LEGEND_NEITHER || key === LEGEND_REMAINDER;
+
+  return [
+    ...entries.filter(({ key }) => isBackground(key)),
+    ...entries.filter(({ key }) => !isBackground(key)),
+  ].map(({ line }) => line);
+}
 
 type Palette = Parameters<typeof getColorMap>[2];
 
@@ -69,6 +88,11 @@ export interface ScatterPlotData {
     items: { name: string; hexColor: string }[];
     isTrivial: boolean;
   };
+  // The live counterpart of `legendForDownload`, for a caller that draws
+  // Plotly's own legend (the embeddable plot). It keeps hidden entries — as
+  // `hidden: true`, so they render dimmed and can be clicked back on — and
+  // tags each with its LegendKey so a click can be routed to `legendState`.
+  builtinLegend: LegendInfo;
   pointVisibility: boolean[] | null;
   regressionLines: RegressionLine[] | null;
   // Per-facet fits for the faceted renderer, keyed by facet label. null when
@@ -204,7 +228,7 @@ export default function useScatterPlotData(
   ]);
 
   // The plot only needs legend info if the user is downloading an image of it.
-  const legendForDownload = useMemo(() => {
+  const { legendForDownload, builtinLegend } = useMemo(() => {
     let title = "";
 
     // dataset_label is legitimately absent for "primary" metadata datasets
@@ -228,30 +252,35 @@ export default function useScatterPlotData(
       }
     }
 
-    const items: { name: string; hexColor: string }[] = [];
-
-    [...colorMap.keys()].forEach((key) => {
-      if (!hiddenLegendValues.has(key)) {
+    const allItems: NonNullable<LegendInfo["items"]> = [...colorMap.keys()].map(
+      (key) => {
         const name = categoryToDisplayName(
           key as LegendKey,
           data as DataExplorerPlotResponse,
           continuousBins,
           colorMode.target
         );
-        const formattedName =
-          typeof name === "string" ? name : `${name[0]} – ${name[1]}`;
 
-        items.push({
-          name: formattedName,
+        return {
+          key,
+          name: typeof name === "string" ? name : `${name[0]} – ${name[1]}`,
           hexColor: colorMap.get(key)!,
-        });
+          hidden: hiddenLegendValues.has(key),
+        };
       }
-    });
+    );
+
+    const isTrivial = colorMap.size === 1 && colorMap.has(LEGEND_ALL);
 
     return {
-      title,
-      items,
-      isTrivial: colorMap.size === 1 && colorMap.has(LEGEND_ALL),
+      builtinLegend: { title, items: allItems, isTrivial },
+      legendForDownload: {
+        title,
+        items: allItems
+          .filter((item) => !item.hidden)
+          .map(({ name, hexColor }) => ({ name, hexColor })),
+        isTrivial,
+      },
     };
   }, [colorMap, data, continuousBins, hiddenLegendValues, colorMode]);
 
@@ -306,17 +335,17 @@ export default function useScatterPlotData(
       return null;
     }
 
-    // Expanded single-panel: fetchLinearRegression is skipped when an axis
+    // Expanded single-panel: computeLinearRegression is skipped when an axis
     // carries the "expansion" sentinel, so there's no linreg_by_group. When
     // ungrouped (facet_by unset), fall back to color_by's own facets — the
-    // same categorical/custom-filter partition fetchLinearRegression itself
+    // same categorical/custom-filter partition computeLinearRegression itself
     // would use had it been reachable here — fitting one regression line
     // per category, each colored to match (reusing computeFacets'
     // facetColorKeys the same way regressionLinesByFacet does, so a "Both"/
     // "Other" fallback line gets palette.compareBoth/palette.other rather
     // than a coincidental colorMap miss). Continuous color (or color_by
     // having nothing real to facet by either) still pools into one line,
-    // matching fetchLinearRegression's own behavior — it never splits by a
+    // matching computeLinearRegression's own behavior — it never splits by a
     // continuous color either.
     if (!linreg_by_group) {
       if (
@@ -347,7 +376,7 @@ export default function useScatterPlotData(
         // see computeFacetedLinReg's comment for the reasoning.
         const facets = [...new Set(facetKeys)];
 
-        return facets.map((facet) => {
+        const keyedFacets = facets.map((facet) => {
           const inFacet = facetMaskFor(facetKeys, facet, x, y, visible);
           const fx: number[] = [];
           const fy: number[] = [];
@@ -362,16 +391,21 @@ export default function useScatterPlotData(
           const colorKey = facetColorKeys?.[facet] ?? facet;
 
           return {
-            hidden:
-              fx.length < 3 ||
-              !Number.isFinite(slope) ||
-              !plotConfig.show_regression_line ||
-              hiddenLegendValues.has(colorKey),
-            color: colorMap.get(colorKey) || palette.other,
-            m: slope,
-            b: intercept,
+            key: colorKey as LegendKey,
+            line: {
+              hidden:
+                fx.length < 3 ||
+                !Number.isFinite(slope) ||
+                !plotConfig.show_regression_line ||
+                hiddenLegendValues.has(colorKey),
+              color: colorMap.get(colorKey) || palette.other,
+              m: slope,
+              b: intercept,
+            },
           };
         });
+
+        return sortNonCategoriesToBack(keyedFacets);
       }
 
       const fx: number[] = [];
@@ -400,21 +434,53 @@ export default function useScatterPlotData(
       data?.filters?.color1 || data?.filters?.color2
     );
 
-    return linreg_by_group.map((linreg) => {
+    // computeLinearRegression fits one line per raw category, but the legend may have
+    // collapsed the long tail into a single "Other categories" bucket
+    // (LEGEND_REMAINDER). Those raw labels are not legend keys, so without
+    // translating them they match neither colorMap (falling back to grey) nor
+    // hiddenLegendValues (so no toggle could ever hide them).
+    const catValues = colorMode.mode
+      ? findCategoricalSlice(data, colorMode.mode, "color")?.values
+      : undefined;
+    const toLegendKey = catValues
+      ? makeLegendKeyResolver(
+          getShownCategories(
+            catValues as string[],
+            (data?.dimensions as unknown) as Record<
+              string,
+              { values: unknown[] }
+            >,
+            (data?.filters as unknown) as Record<string, { values: boolean[] }>,
+            undefined,
+            colorChosen
+          )
+        )
+      : null;
+
+    const keyed: { key: LegendKey; line: RegressionLine }[] = [];
+
+    linreg_by_group.forEach((linreg) => {
       // HACK: `linreg.group_label` is always a string or null but, in order to
       // highlight some special cases, we temporarily set `label` a LegendKey
       // symbol below.
       let label: string | null | LegendKey = linreg.group_label;
 
-      // FIXME: The backend should return a property to indicate this is the
+      // FIXME: computeLinearRegression should return a property to indicate this is the
       // case rather than parsing the label.
       if (typeof label === "string" && label.startsWith("Both (")) {
         label = LEGEND_BOTH;
+      } else if (typeof label === "string" && toLegendKey) {
+        label = toLegendKey(label);
+
+        // Collapsed categories share one pooled line, fit below.
+        if (label === LEGEND_REMAINDER) {
+          return;
+        }
       }
 
       if (label === null) {
-        // A null group_label from the backend's classic (non-expansion)
-        // fetchLinearRegression is ambiguous on its own — it means either
+        // A null group_label from the classic (non-expansion)
+        // computeLinearRegression is ambiguous on its own — it means either
         // "in neither selected context" (raw_slice/aggregated_slice, a real
         // classification) or "missing data" (property/custom, a null
         // value), depending on which color_by mode was active when that
@@ -453,13 +519,58 @@ export default function useScatterPlotData(
         hidden = true;
       }
 
-      return {
-        hidden,
-        color: colorMap.get(label) || palette.other,
-        m: Number(linreg.slope),
-        b: Number(linreg.intercept),
-      };
+      keyed.push({
+        key: label,
+        line: {
+          hidden,
+          color: colorMap.get(label) || palette.other,
+          m: Number(linreg.slope),
+          b: Number(linreg.intercept),
+        },
+      });
     });
+
+    // computeLinearRegression fits each raw category separately, but the legend shows the
+    // collapsed ones as a single "Other categories" row, so give them a single
+    // line too: one fit over all of their points together.
+    if (toLegendKey && catValues && formattedData?.x && formattedData?.y) {
+      const { x, y } = formattedData;
+      const visible = pointVisibility ?? x.map(() => true);
+      const fx: number[] = [];
+      const fy: number[] = [];
+
+      for (let i = 0; i < x.length; i += 1) {
+        if (
+          visible[i] &&
+          toLegendKey(catValues[i]) === LEGEND_REMAINDER &&
+          Number.isFinite(x[i]) &&
+          Number.isFinite(y[i])
+        ) {
+          fx.push(x[i] as number);
+          fy.push(y[i] as number);
+        }
+      }
+
+      if (fx.length > 0) {
+        const { slope, intercept } = linregress(fx, fy);
+
+        keyed.push({
+          key: LEGEND_REMAINDER,
+          line: {
+            hidden:
+              fx.length < 3 ||
+              !Number.isFinite(slope) ||
+              !plotConfig.show_regression_line ||
+              hiddenLegendValues.has(LEGEND_REMAINDER),
+            color: colorMap.get(LEGEND_REMAINDER) || palette.other,
+            m: slope,
+            b: intercept,
+          },
+        });
+      }
+    }
+
+    return sortNonCategoriesToBack(keyed);
   }, [
     colorMap,
     data,
@@ -509,7 +620,7 @@ export default function useScatterPlotData(
 
   // Faceted regression: one fit per facet_by facet, computed here from the
   // main response — which carries facet_by's per-point values via
-  // computeFacets (including the expansion case fetchLinearRegression's
+  // computeFacets (including the expansion case computeLinearRegression's
   // side-fetch can't see, and now the continuous-bin case too). Single-panel
   // keeps using linreg_by_group above. Fit over formattedData.x/y with the
   // same facet mask the renderer draws, so each line is fit over exactly its
@@ -667,6 +778,7 @@ export default function useScatterPlotData(
     facetKeysWithNoData,
     colorMap,
     legendForDownload,
+    builtinLegend,
     pointVisibility,
     regressionLines,
     regressionLinesByFacet,

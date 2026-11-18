@@ -80,7 +80,7 @@ export default function usePlotData(plotConfig: DataExplorerPlotConfig | null) {
     (async () => {
       if (plotConfig) {
         try {
-          const fetchedData = await dataExplorerAPI.fetchPlotLinearRegression(
+          const fetchedData = await dataExplorerAPI.computePlotLinearRegression(
             plotConfig
           );
 

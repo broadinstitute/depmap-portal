@@ -94,6 +94,7 @@ from depmap.private.views import blueprint as private_blueprint
 from depmap.theme import include_theme_snippet
 from depmap.context_explorer.views import blueprint as context_explorer_blueprint
 from depmap.data_page.views import blueprint as data_page_blueprint
+from depmap.data_page_v2.views import blueprint as data_page_v2_blueprint
 from depmap.gene_tea.views import blueprint as gene_tea_blueprint
 from depmap.resources_v3.views import blueprint as resources_v3_blueprint
 from flask_hunter_profile.flask_blueprint import (
@@ -360,6 +361,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(dataset_manager_blueprint)
     app.register_blueprint(context_explorer_blueprint)
     app.register_blueprint(data_page_blueprint)
+    app.register_blueprint(data_page_v2_blueprint)
     app.register_blueprint(flask_hunter_profile_blueprint)
     app.register_blueprint(anchor_screen_dashboard_blueprint)
     app.register_blueprint(resistance_screen_dashboard_blueprint)

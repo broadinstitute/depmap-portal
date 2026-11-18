@@ -2,6 +2,7 @@ import { Accordion } from "@depmap/common-components";
 import React from "react";
 import styles from "src/dataPage/styles/DataPage.scss";
 import { allDataTabHref } from "./utils";
+import { safeUrl } from "../utils";
 
 interface LearnAboutDepMapSectionProps {
   releaseNotesUrl: string | null;
@@ -51,7 +52,7 @@ const LearnAboutDepMapSection = ({
               {releaseNotesUrl ? (
                 <a
                   className={styles.dataPageLink}
-                  href={releaseNotesUrl}
+                  href={safeUrl(releaseNotesUrl)}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -73,7 +74,7 @@ const LearnAboutDepMapSection = ({
               {forumUrl ? (
                 <a
                   className={styles.dataPageLink}
-                  href={forumUrl}
+                  href={safeUrl(forumUrl)}
                   target="_blank"
                   rel="noreferrer"
                 >

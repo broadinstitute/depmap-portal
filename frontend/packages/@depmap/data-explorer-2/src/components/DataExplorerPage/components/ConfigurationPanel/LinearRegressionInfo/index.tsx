@@ -49,7 +49,7 @@ function LinearRegressionTable({
           // Faceted (facet_by set): the regression follows the facets, so the
           // table's rows are the per-facet fits — derived from the materialized
           // response, the same faceting the drawn lines use. Single-panel keeps
-          // the color-faceted fit from fetchLinearRegression.
+          // the color-faceted fit from computeLinearRegression.
           let linreg_by_group: LinRegInfo[];
           if (plot.facet_by) {
             // Faceted: source the points the same way the plot does. An
@@ -68,13 +68,13 @@ function LinearRegressionTable({
                   );
             linreg_by_group = computeFacetedLinReg(facetData, plot.facet_by);
           } else if ("expand_by" in plot) {
-            // Expanded + ungrouped: fetchLinearRegression rejects the
+            // Expanded + ungrouped: computeLinearRegression rejects the
             // "expansion" sentinel (its color-faceted fit assumes one value
             // per entity, but an expansion axis is N×M). Mirror the drawn
             // line's own fallback (regressionLines in useScatterPlotData.ts):
             // facet by color_by's own triad when it resolves to something
             // real (categorical/custom-filter — never continuous, matching
-            // fetchLinearRegression's own behavior), otherwise a single
+            // computeLinearRegression's own behavior), otherwise a single
             // pooled fit — the table analog of the single pooled regression
             // line the plot draws in that case.
             const facetData = await dataExplorerAPI.fetchExpandedPlot(
@@ -92,7 +92,7 @@ function LinearRegressionTable({
             linreg_by_group =
               colorRows.length > 0 ? colorRows : computePooledLinReg(facetData);
           } else {
-            linreg_by_group = await dataExplorerAPI.fetchLinearRegression(
+            linreg_by_group = await dataExplorerAPI.computeLinearRegression(
               plot.index_type,
               plot.dimensions,
               plot.filters,

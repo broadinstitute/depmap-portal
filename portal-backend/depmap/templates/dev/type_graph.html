@@ -1,0 +1,16 @@
+{% extends "full_page.html" %}
+
+{% block page_title %}
+  Dimension type graph
+{% endblock %}
+
+{% block content %}
+    <div class='full-screen-div'>
+        {% include "nav_footer/nav.html" %}
+        <div id="type_graph"></div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script src="{{ webpack_url('typeGraph.js') }}"></script>
+{% endblock %}

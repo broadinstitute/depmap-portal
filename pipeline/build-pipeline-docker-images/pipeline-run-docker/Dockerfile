@@ -6,8 +6,10 @@
 #      gcloud artifacts docker tags add \
 #      us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-run:[Your ga2-build-number-tag] \
 #      us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-run:[Your static version tag]
-#   2. Update DEFAULT_DOCKER_IMAGE in pipeline/exec.conseq to match the static version tag
-#   3. Update the static version tag in pipeline-run-docker/image-name to match the static version tag
+#   2. Update the static version tag in pipeline/image-name to match. That is the image conseq (and so
+#      dsub, sparkles, etc.) runs in.
+#   3. Optionally update DEFAULT_DOCKER_IMAGE in pipeline/preprocessing-pipeline/exec.conseq, which is
+#      only the default image that dsub tasks run their own commands in.
 #
 #################################################################################
 
@@ -28,7 +30,7 @@ ENV LC_ALL=C.UTF-8
 # Install base packages and pyenv build dependencies
 RUN apt-get update -y && apt-get upgrade -y && apt-get install -y \
     tzdata \
-    wget curl \
+    curl \
     unzip \
     build-essential \
     libssl-dev \
@@ -65,14 +67,17 @@ RUN ln -s $(pyenv prefix 3.9)/bin/python /usr/local/bin/python3.9 && \
 RUN mkdir -p /root/.taiga && mkdir -p /root/.local/bin
 
 # install dsub in virtual environment and put symlink into /root/.local/bin
+# dsub runs its own setup/logging steps in Google's rolling cloud-sdk:slim image, which dropped
+# python3 in 592.0.0-slim (2026-11-03). 0.5.7 is the first dsub that falls back to the Cloud SDK's
+# bundled python, so don't go below it. Pinned exactly so a rebuild can't silently change dsub.
 RUN python3.13 -m venv /install/dsub && \
-    /install/dsub/bin/pip install "dsub>=0.5.5" && \
+    /install/dsub/bin/pip install "dsub==0.5.7" && \
     ln -s /install/dsub/bin/dsub /root/.local/bin && \
     ln -s /install/dsub/bin/dstat /root/.local/bin 
 
 # install sparkles v5 (requires python==3.10)
 RUN python3.10 -m venv /install/sparkles && \
-    /install/sparkles/bin/pip install pip sparklespray==6.0.4 --extra-index-url https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple/ && \
+    /install/sparkles/bin/pip install pip https://github.com/broadinstitute/sparklespray/releases/download/v5.18.1/sparklespray-5.18.1.tar.gz && \
     ln -s /install/sparkles/bin/sparkles /root/.local/bin
 
 # install gcloud SDK
@@ -87,21 +92,21 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.c
 # install conseq in virtual environment
 COPY conseq-settings /root/.conseq
 RUN python3.13 -m venv /install/conseq && \
-      /install/conseq/bin/pip install https://github.com/broadinstitute/conseq/archive/refs/tags/v2.2.1.tar.gz && \
+      /install/conseq/bin/pip install https://github.com/broadinstitute/conseq/archive/refs/tags/v2.4.0.tar.gz && \
     ln -s /install/conseq/bin/conseq /root/.local/bin
 
 # copy the conseq helper into known location
 RUN cp /install/conseq/lib/python3.13/site-packages/conseq/helper.py /helper.py
 
 # install Poetry
-RUN python3.9 -m venv /install/poetry && \
+RUN python3.10 -m venv /install/poetry && \
     /install/poetry/bin/pip install -U pip setuptools && \
-    /install/poetry/bin/pip install poetry && \
+    /install/poetry/bin/pip install poetry==2.4.1 && \
     ln -s /install/poetry/bin/poetry /root/.local/bin
 
 # set up the virtual env we want to use as the default python interpreter (by adding to the front of the path)
 # this one will have all the dependencies we require installed
-WORKDIR /work/pipline-run-docker
+WORKDIR /work/pipeline-run-docker
 COPY pyproject.toml poetry.lock ./
 RUN python3.9 -m venv /install/default-python && . /install/default-python/bin/activate && /install/poetry/bin/poetry install
 

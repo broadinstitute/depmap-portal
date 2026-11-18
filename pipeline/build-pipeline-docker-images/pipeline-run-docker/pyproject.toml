@@ -8,21 +8,25 @@ package-mode = false
 
 
 [tool.poetry.dependencies]
-python = ">3.9,<3.10"
-pandas = "1.5.3"
+python = ">3.13,<3.14"
+pandas = "^2.2.3"
 click = "^8.1.7"
-numpy = "^1.25.1"
+numpy = "^2.1.0"
 taigapy = {version = "4.1.1", source = "public-python"}
 pyyaml = "^6.0.2"
 statsmodels = "^0.14.4"
 pandera = "^0.22.1"
 sklearn = "0.0"
-packed-cor-tables = {version = "^0.1.1", source = "public-python"}
+packed-cor-tables = {version = ">=0.3.0", source = "public-python"}
 tqdm = "^4.67.1"
-scipy = "1.12.0"
+scipy = "^1.14.1"
 gcsfs = "^2025.3.2"
 boto = "^2.49.0"
 google-cloud-storage = "^2.19.0"
+
+# Security floor for a transitive dep we don't import directly (via requests). Poetry 2 won't
+# `poetry update` a non-direct dependency, so declaring it here is how we bump it.
+certifi = ">=2026.10.23"
 
 
 [[tool.poetry.source]]

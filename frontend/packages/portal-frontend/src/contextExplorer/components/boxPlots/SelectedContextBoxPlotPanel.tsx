@@ -10,6 +10,7 @@ import {
 } from "src/contextExplorer/utils";
 import BoxPlot from "./BoxPlot";
 import { BoxPlotHeaderTitle } from "./BoxPlotHeaderTitle";
+import { Tooltip } from "@depmap/common-components";
 
 interface SelectedContextBoxPlotPanelProps {
   topContextNameInfo: ContextNameInfo;
@@ -24,6 +25,7 @@ interface SelectedContextBoxPlotPanelProps {
   drugDottedLine?: number;
   urlPrefix?: string;
   tab?: string;
+  codeToNodeNameMapping?: Record<string, string>;
 }
 
 interface PanelBodyProps {
@@ -36,6 +38,7 @@ interface PanelBodyProps {
   selectedCode?: string;
   urlPrefix?: string;
   tab?: string;
+  codeToNodeNameMapping?: Record<string, string>;
 }
 
 const PanelBody = ({
@@ -48,10 +51,10 @@ const PanelBody = ({
   selectedCode = undefined,
   urlPrefix = undefined,
   tab = undefined,
+  codeToNodeNameMapping = undefined,
 }: PanelBodyProps) => {
   return (
     <Panel.Body collapsible>
-      {" "}
       <div>
         <BoxPlot
           boxData={selectedContextBoxData}
@@ -71,6 +74,7 @@ const PanelBody = ({
           xAxisTitle={xAxisTitle}
           urlPrefix={urlPrefix}
           tab={tab}
+          codeToNodeNameMapping={codeToNodeNameMapping}
         />
       </div>
     </Panel.Body>
@@ -88,6 +92,7 @@ interface PanelTitleNoChildPlotsProps {
   urlPrefix?: string;
   tab?: string;
   activeKey: string | null;
+  codeToNodeNameMapping?: Record<string, string>;
 }
 
 const PanelHeading = ({
@@ -101,6 +106,7 @@ const PanelHeading = ({
   selectedCode = undefined,
   urlPrefix = undefined,
   tab = undefined,
+  codeToNodeNameMapping = undefined,
 }: PanelTitleNoChildPlotsProps) => {
   return (
     <Panel.Heading>
@@ -111,47 +117,52 @@ const PanelHeading = ({
               style={{
                 paddingRight: "12px",
                 paddingBottom: "2px",
-                paddingTop: activeKey === "SELECTED" ? "0px" : "12px",
+                paddingTop: "0px",
                 fontSize: "16px",
                 color: "#4479B2",
               }}
-              className={"glyphicon glyphicon-chevron-up"}
+              className="glyphicon glyphicon-chevron-up"
             />
           )}
 
           {selectedLevelZeroBoxData && activeKey !== "SELECTED" ? (
-            <>
-              <BoxPlot
-                boxData={[selectedLevelZeroBoxData]}
-                onLoad={handleSetMainPlotElement}
-                xAxisRange={xAxisRange}
-                selectedCode={selectedCode}
-                plotHeight={
-                  BOX_THICKNESS + BOX_PLOT_TOP_MARGIN + BOX_PLOT_BOTTOM_MARGIN
-                }
-                xAxisTitle={""}
-                bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
-                topMargin={BOX_PLOT_TOP_MARGIN}
-                dottedLinePosition={
-                  entityType === "gene" ? -1 : drugDottedLine || -1.74
-                }
-                urlPrefix={urlPrefix}
-                tab={tab}
-                isLevel0
-              />
-            </>
+            <BoxPlot
+              boxData={[selectedLevelZeroBoxData]}
+              onLoad={handleSetMainPlotElement}
+              xAxisRange={xAxisRange}
+              selectedCode={selectedCode}
+              plotHeight={
+                BOX_THICKNESS + BOX_PLOT_TOP_MARGIN + BOX_PLOT_BOTTOM_MARGIN
+              }
+              xAxisTitle=""
+              bottomMargin={BOX_PLOT_BOTTOM_MARGIN}
+              topMargin={BOX_PLOT_TOP_MARGIN}
+              dottedLinePosition={
+                entityType === "gene" ? -1 : drugDottedLine || -1.74
+              }
+              urlPrefix={urlPrefix}
+              tab={tab}
+              codeToNodeNameMapping={codeToNodeNameMapping}
+              isLevel0
+            />
           ) : (
             selectedLevelZeroBoxData &&
             activeKey === "SELECTED" && (
-              <BoxPlotHeaderTitle
-                subtypeCode={topContextNameInfo!.subtype_code}
-                selectedCode={selectedCode}
-                url={getNewContextUrl(
-                  topContextNameInfo!.subtype_code,
-                  urlPrefix,
-                  tab
-                )}
-              />
+              <Tooltip
+                id={`Selected-BoxPlotHeaderTitle-${topContextNameInfo.subtype_code}-tooltip`}
+                content={topContextNameInfo.name}
+                placement="top"
+              >
+                <BoxPlotHeaderTitle
+                  subtypeCode={topContextNameInfo.subtype_code}
+                  selectedCode={selectedCode}
+                  url={getNewContextUrl(
+                    topContextNameInfo.subtype_code,
+                    urlPrefix,
+                    tab
+                  )}
+                />
+              </Tooltip>
             )
           )}
         </div>
@@ -173,6 +184,7 @@ export const SelectedContextBoxPlotPanel = ({
   urlPrefix = undefined,
   tab = undefined,
   drugDottedLine = undefined,
+  codeToNodeNameMapping = undefined,
 }: SelectedContextBoxPlotPanelProps) => {
   return (
     <Panel eventKey="SELECTED">
@@ -180,7 +192,6 @@ export const SelectedContextBoxPlotPanel = ({
         selectedContextBoxData.length === 0) &&
       selectedLevelZeroBoxData ? (
         <Panel.Body>
-          {" "}
           <div>
             <BoxPlot
               boxData={[selectedLevelZeroBoxData]}
@@ -197,6 +208,7 @@ export const SelectedContextBoxPlotPanel = ({
               xAxisTitle={xAxisTitle}
               urlPrefix={urlPrefix}
               tab={tab}
+              codeToNodeNameMapping={codeToNodeNameMapping}
             />
           </div>
         </Panel.Body>
@@ -213,6 +225,7 @@ export const SelectedContextBoxPlotPanel = ({
             selectedCode={selectedCode}
             urlPrefix={urlPrefix}
             tab={tab}
+            codeToNodeNameMapping={codeToNodeNameMapping}
           />
           {selectedContextBoxData && selectedContextBoxData.length > 0 && (
             <PanelBody
@@ -225,6 +238,7 @@ export const SelectedContextBoxPlotPanel = ({
               xAxisTitle={xAxisTitle}
               urlPrefix={urlPrefix}
               tab={tab}
+              codeToNodeNameMapping={codeToNodeNameMapping}
             />
           )}
         </>

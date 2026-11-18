@@ -329,6 +329,10 @@ export default function useSelection(
 
   return {
     selection,
+    // True when a point is an (index, expansion) pair rather than an entity.
+    // Consumers that need a selection of entities (see the embedded view) turn
+    // selection off in that case rather than re-deriving the condition.
+    pairGrained,
     selectedPoints,
     pointsToAnnotate,
     handleClickPoint,

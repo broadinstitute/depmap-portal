@@ -31,6 +31,8 @@ import {
   deriveNavStateFromValue,
   displayLabelFromNavState,
   SliceQuerySet,
+  checkValueResolves,
+  flattenSliceQuery,
 } from "./sliceQueryUtils";
 import MenuPortal from "./MenuPortal";
 import useMenuPlacement from "./useMenuPlacement";
@@ -636,8 +638,25 @@ export default function ChainColumnPicker({
 
   // ── Display ──
 
+  // A saved or externally generated value can point at data that is gone or
+  // not visible. It is still shown, as the raw path, so the user can see what
+  // it was and clear it, rather than looking like an ordinary selection.
+  const unresolvedReason = useMemo(() => {
+    if (!value || isLoading) return null;
+
+    const resolution = checkValueResolves(value, index_type, tablesByDim);
+
+    return resolution.resolved ? null : resolution.reason;
+  }, [value, isLoading, index_type, tablesByDim]);
+
   const displayLabel = useMemo(() => {
     if (!value) return null;
+
+    if (unresolvedReason) {
+      return flattenSliceQuery(value)
+        .map((step) => step.identifier)
+        .join(" › ");
+    }
 
     try {
       const nav = deriveNavStateFromValue(
@@ -655,7 +674,7 @@ export default function ChainColumnPicker({
     } catch {
       return value.identifier;
     }
-  }, [value, index_type, tablesByDim, dimTypeMap]);
+  }, [value, unresolvedReason, index_type, tablesByDim, dimTypeMap]);
 
   const indexTypeDisplayName =
     dimTypeMap[index_type]?.display_name ?? index_type;
@@ -965,7 +984,15 @@ export default function ChainColumnPicker({
             </>
           ) : value && displayLabel ? (
             <>
-              <span className={styles.comboboxValue}>
+              <span
+                className={styles.comboboxValue}
+                data-unresolved={unresolvedReason ? "true" : undefined}
+                title={
+                  unresolvedReason
+                    ? `${unresolvedReason}. This annotation may have been removed or may not be visible to you.`
+                    : undefined
+                }
+              >
                 <span ref={displayLabelRef}>{displayLabel}</span>
               </span>
               <span

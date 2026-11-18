@@ -410,7 +410,7 @@ export function buildPlot(
     colorway: ALL_COLORS,
   } as any;
 
-  Plotly.plot(plotElement, plotlyData, layout, {
+  (Plotly as any).plot(plotElement, plotlyData, layout, {
     responsive: true,
     edits: { annotationTail: true },
   });

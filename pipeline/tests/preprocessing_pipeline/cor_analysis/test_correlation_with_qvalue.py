@@ -162,8 +162,8 @@ def test_q_value_calc():
     pd.testing.assert_frame_equal(cor_df_1, cor_df_2, check_exact=False)
 
     # sanity check q-value: the smallest p-value should be scaled as if it was Bonferroni corrected
-    best_cor_df = cor_df_1[cor_df_1["dim_1"] == 1 & cor_df_1["dim_0"]]
-    best_cor_adj = float(best_cor_df["qvalue"] / best_cor_df["pvalue"])
+    best_cor_df = cor_df_1[(cor_df_1["dim_1"] == 1) & (cor_df_1["dim_0"] == 1)]
+    best_cor_adj = float(best_cor_df["qvalue"].iloc[0] / best_cor_df["pvalue"].iloc[0])
     assert best_cor_adj == pytest.approx(n_columns, abs=1e-5)
 
     # everything else should have a value less than that

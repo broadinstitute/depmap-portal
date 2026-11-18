@@ -69,6 +69,10 @@ class Settings(BaseSettings):
     gcs_credentials_path: Optional[str] = os.environ.get("GCS_CREDENTIALS_PATH")
     gcs_temp_path: Optional[str] = os.environ.get("GCS_TEMP_PATH")
 
+    # Dev-only: where exports are written when GCS isn't configured (requires
+    # BREADBOX_ENV=dev). Defaults to <compute_results_location>/parquet-export.
+    local_export_dir: Optional[str] = os.environ.get("LOCAL_EXPORT_DIR")
+
     def get_todays_result_dir(self):
         """
         Fetch the result directory (used for temp files) to use for any tasks. (Result directory includes the date so

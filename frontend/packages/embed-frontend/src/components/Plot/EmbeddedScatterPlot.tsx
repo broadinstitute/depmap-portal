@@ -13,13 +13,16 @@ import {
   DataExplorerPlotResponse,
   LinRegInfo,
 } from "@depmap/types";
+import type { PlotSelection } from "./PlotSelection";
 import ScatterLoader from "../../loaders/ScatterLoader";
+import useBuiltinLegendClick from "./useBuiltinLegendClick";
 
 interface Props {
   data: DataExplorerPlotResponse | null;
   height: number;
   linreg_by_group: LinRegInfo[] | null;
   plotConfig: DataExplorerPlotConfig;
+  selection?: PlotSelection;
 }
 
 function canShowIdentityLine(data: DataExplorerPlotResponse | null) {
@@ -48,6 +51,7 @@ function EmbeddedScatterPlot({
   height,
   linreg_by_group,
   plotConfig,
+  selection = undefined,
 }: Props) {
   const { plotStyles } = useDataExplorerSettings();
   const {
@@ -66,6 +70,8 @@ function EmbeddedScatterPlot({
     contLegendKeys,
     colorMap,
     legendForDownload,
+    builtinLegend,
+    legendState,
     pointVisibility,
     regressionLines,
     showIdentityLine,
@@ -78,6 +84,8 @@ function EmbeddedScatterPlot({
     palette,
     canShowIdentityLine(data)
   );
+
+  const onClickLegendItem = useBuiltinLegendClick(legendState, colorMap);
 
   // facet_categories is the user's own pick from the category picker, and it
   // overrides computeFacets' ranking entirely — omit it and an embedded link
@@ -125,6 +133,8 @@ function EmbeddedScatterPlot({
             xLabel={formattedData?.xLabel || ""}
             yLabel={formattedData?.yLabel || ""}
             legendForDownload={legendForDownload}
+            builtinLegend={builtinLegend}
+            onClickLegendItem={onClickLegendItem}
             facetKeys={facetKeys || []}
             facetOrder={facetOrder}
             // Data Explorer seeds its "Facets" panel with these same keys, so
@@ -149,6 +159,7 @@ function EmbeddedScatterPlot({
             xAxisFontSize={xAxisFontSize}
             yAxisFontSize={yAxisFontSize}
             showBuiltinLegend={showBuiltinLegend}
+            {...selection}
           />
         ) : (
           // hasFacetOptionsEnabled intentionally left unset here: this
@@ -174,8 +185,9 @@ function EmbeddedScatterPlot({
             yLabel={formattedData?.yLabel || ""}
             showIdentityLine={showIdentityLine}
             regressionLines={regressionLines}
-            onClickResetSelection={() => {}}
             legendForDownload={legendForDownload}
+            builtinLegend={builtinLegend}
+            onClickLegendItem={onClickLegendItem}
             pointSize={pointSize}
             pointOpacity={pointOpacity}
             outlineWidth={outlineWidth}
@@ -184,6 +196,8 @@ function EmbeddedScatterPlot({
             xAxisFontSize={xAxisFontSize}
             yAxisFontSize={yAxisFontSize}
             showBuiltinLegend={showBuiltinLegend}
+            onClickResetSelection={() => {}}
+            {...selection}
           />
         ))}
     </PlotlyLoaderProvider>

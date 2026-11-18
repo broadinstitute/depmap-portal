@@ -458,7 +458,7 @@ export function computeFacets(
 
 // Per-facet linear-regression stats (the LinRegInfo[] shape the regression
 // table consumes), faceted by facet_by, computed from a materialized response.
-// The table's faceted counterpart to fetchLinearRegression's color-faceted fit
+// The table's faceted counterpart to computeLinearRegression's color-faceted fit
 // — same row shape, so reformatLinRegTable handles either. It lives here (not
 // in the services layer) because faceting needs computeFacets, which is
 // a component-layer concern; the table fetches `data` and calls this.
@@ -468,7 +468,7 @@ export function computeFacets(
 // slope/intercept given the same inputs. The lines fit over the hook's
 // nulled/legend-visible arrays while this fits over the raw response with
 // filter-visibility — the same lines-vs-table divergence the single-panel path
-// already has via fetchLinearRegression; faceting (the J2 requirement) matches.
+// already has via computeLinearRegression; faceting (the J2 requirement) matches.
 export function computeFacetedLinReg(
   data: DataExplorerPlotResponse,
   mode: ColorByValue,
@@ -534,7 +534,7 @@ export function computeFacetedLinReg(
 // Single pooled fit over every visible point — the ungrouped analog of
 // computeFacetedLinReg, used by the regression table when an expanded plot
 // has no facet_by. It mirrors the single pooled line the plot draws and,
-// like the faceted path, never calls fetchLinearRegression (which rejects
+// like the faceted path, never calls computeLinearRegression (which rejects
 // the "expansion" sentinel). group_label is null, which the table renders
 // the same way it renders the legacy ungrouped fit.
 export function computePooledLinReg(
@@ -3447,7 +3447,16 @@ export function calcPlotIndicatorLineShapes(
 
 export interface LegendInfo {
   title: string;
-  items: { name: string; hexColor: string }[];
+  items: {
+    name: string;
+    hexColor: string;
+    // Only set on a legend that is drawn live (see useScatterPlotData's
+    // `builtinLegend`): the key a click on this entry should toggle, and
+    // whether it is currently toggled off (drawn dimmed, still clickable).
+    // Exports leave both unset and simply omit hidden entries.
+    key?: LegendKey;
+    hidden?: boolean;
+  }[];
   // True when the legend's only possible entry is LEGEND_ALL (nothing is
   // colored by), so it says nothing a viewer could use. The export modal
   // forces such a legend hidden and doesn't offer to show it.
@@ -3489,10 +3498,12 @@ export const getLegendTraces = (
   legendForDownload: LegendInfo,
   templateTrace: object & { marker: object }
 ) =>
-  legendForDownload.items.map(({ name, hexColor }) => {
+  legendForDownload.items.map(({ name, hexColor, hidden }) => {
     return {
       ...templateTrace,
       showlegend: true,
+      // Dims the entry without removing it, so it can be clicked back on.
+      ...(hidden ? { visible: "legendonly" } : {}),
       // HACK: Use a plot type of "indicator" rather than "scatter". This
       // prevents a rare bug where these dummy traces interfere with the
       // real ones and some points don't get rendered.
@@ -4109,9 +4120,16 @@ export function orderContinuousPointsByBin(
   const counts = categoricalDataToValueCounts(contLegendKeys, visible);
 
   // Largest bins first → smaller bins land later in the trace (drawn on top).
-  // Keys absent from colorMap (e.g. LEGEND_OTHER for nulls) get index -1 and
-  // therefore sort to the very bottom, alongside the separate "other" trace.
-  const sortedBins = [...colorMap.keys()]
+  // The catch-all keys (N/A, "Neither", "Other categories") are pinned ahead of
+  // every real bin regardless of their counts. They are legend entries in
+  // colorMap like any other, so ranking them by count would let a small N/A
+  // group land on top of real data. Keys absent from colorMap get index -1 and
+  // sort below even those.
+  const isCatchAll = (key: LegendKey) =>
+    key === LEGEND_OTHER || key === LEGEND_NEITHER || key === LEGEND_REMAINDER;
+
+  const byCountDescending = [...colorMap.keys()]
+    .filter((key) => !isCatchAll(key))
     .sort((a, b) => {
       const countA = counts.get(a) || 0;
       const countB = counts.get(b) || 0;
@@ -4121,6 +4139,11 @@ export function orderContinuousPointsByBin(
       return countA < countB ? -1 : 1;
     })
     .reverse();
+
+  const sortedBins = [
+    ...[...colorMap.keys()].filter(isCatchAll),
+    ...byCountDescending,
+  ];
 
   return contColorData
     .map((value, origIndex) => ({ value, origIndex }))
@@ -4327,3 +4350,13 @@ export function getSolidColorGroups(args: {
   // no-facet-at-all case (that one never reaches small multiples).
   return [{ color: NEUTRAL_FACET_FILL, includes: () => true }];
 }
+
+// True for the drag modes the plots' own `setDragmode` accepts. Used to follow a
+// change made from Plotly's modebar (see `modebarSelectionTools`).
+export const isDragmode = (
+  value: unknown
+): value is "zoom" | "pan" | "select" | "lasso" =>
+  value === "zoom" ||
+  value === "pan" ||
+  value === "select" ||
+  value === "lasso";

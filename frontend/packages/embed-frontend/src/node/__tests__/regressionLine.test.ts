@@ -7,7 +7,7 @@ jest.mock(
   "@depmap/data-explorer-2/src/services/dataExplorerAPI/fetchPlotData",
   () => ({
     fetchPlotData: jest.fn(),
-    fetchPlotLinearRegression: jest.fn(),
+    computePlotLinearRegression: jest.fn(),
   })
 );
 
@@ -49,7 +49,7 @@ afterEach(() => {
 });
 
 it("adds the regression fit to data when one was computed", async () => {
-  service.fetchPlotLinearRegression.mockResolvedValue(FIT);
+  service.computePlotLinearRegression.mockResolvedValue(FIT);
 
   expect(await runPlotDataRequest(request)).toEqual({
     ok: true,
@@ -58,7 +58,7 @@ it("adds the regression fit to data when one was computed", async () => {
 });
 
 it("leaves data exactly as the service returned it when no fit applies", async () => {
-  service.fetchPlotLinearRegression.mockResolvedValue(null);
+  service.computePlotLinearRegression.mockResolvedValue(null);
 
   const outcome = await runPlotDataRequest(request);
 
@@ -69,7 +69,7 @@ it("leaves data exactly as the service returned it when no fit applies", async (
 });
 
 it("still returns the plot when the fit can't be computed", async () => {
-  service.fetchPlotLinearRegression.mockRejectedValue(
+  service.computePlotLinearRegression.mockRejectedValue(
     Object.assign(new Error("Request failed with status 500"), {
       isRequestFailure: true,
       status: 500,
@@ -83,7 +83,7 @@ it("still returns the plot when the fit can't be computed", async () => {
 });
 
 it("does not hide a bug in the script behind a missing fit", async () => {
-  service.fetchPlotLinearRegression.mockRejectedValue(new TypeError("bug"));
+  service.computePlotLinearRegression.mockRejectedValue(new TypeError("bug"));
 
   await expect(runPlotDataRequest(request)).rejects.toThrow("bug");
 });

@@ -146,3 +146,8 @@ def transcript_viewer():
 @blueprint.route("/dose_viability_prototype")
 def dose_viability_prototype():
     return render_template("dev/dose_viability_prototype.html")
+
+
+@blueprint.route("/type_graph")
+def type_graph():
+    return render_template("dev/type_graph.html")
