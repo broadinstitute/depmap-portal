@@ -199,7 +199,10 @@ def _compute_cor_table(in_hdf5_0_df, in_hdf5_1_df, thresholds: Thresholds):
     assert len(in_hdf5_0_df) > thresholds.minsamples
     assert len(in_hdf5_1_df) == len(in_hdf5_0_df)
     correlations_df = create_correlations_df(in_hdf5_0_df, in_hdf5_1_df, thresholds)
-    correlations_df["log10qvalue"] = np.log10(correlations_df["qvalue"])
+    # A qvalue of exactly 0 (p-value underflow for near-perfect correlations) is expected
+    # and intentionally becomes -inf, so don't warn about the divide by zero.
+    with np.errstate(divide="ignore"):
+        correlations_df["log10qvalue"] = np.log10(correlations_df["qvalue"])
     correlations_df = correlations_df[["dim_0", "dim_1", "cor", "log10qvalue"]]
     return in_hdf5_0_df, in_hdf5_1_df, correlations_df
 
