@@ -59,7 +59,7 @@ RUN python -m venv /opt/poetry && \
     /opt/poetry/bin/pip install poetry==1.8.5 && \
     python -m venv /opt/breadbox
 ENV VIRTUAL_ENV=/opt/breadbox
-ENV PATH="/opt/poetry/bin:/opt/breadbox/bin:$PATH"
+ENV PATH="/opt/breadbox/bin:/opt/poetry/bin:$PATH"
 RUN poetry config virtualenvs.create false
 RUN poetry install
 
