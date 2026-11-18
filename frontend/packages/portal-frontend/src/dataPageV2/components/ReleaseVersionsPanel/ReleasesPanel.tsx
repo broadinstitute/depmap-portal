@@ -30,9 +30,9 @@ const ReleasesContent: React.FC = () => {
   //   [setSelectedVersion]
   // );
 
-  const handleBackToReleases = useCallback(() => {
-    setSelectedVersion(null);
-  }, [setSelectedVersion]);
+  // const handleBackToReleases = useCallback(() => {
+  //   setSelectedVersion(null);
+  // }, [setSelectedVersion]);
 
   // Scroll to top when entering VersionFileView; restore saved scroll when returning
   useEffect(() => {
@@ -74,7 +74,7 @@ const ReleasesContent: React.FC = () => {
 
     return (
       <div className={styles.ReleaseList}>
-        {releaseEntries.map(([name, versions]) => (
+        {releaseEntries.map(([name /* , versions */]) => (
           /*           <Release
             key={name}
             releaseName={name}

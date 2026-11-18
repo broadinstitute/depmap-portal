@@ -62,7 +62,7 @@ const MainTabs = ({ releaseNotesUrl, forumUrl }: MainTabsProps) => {
                 rel="noreferrer"
               >
                 Download Files page{" "}
-                {/*Link to new tab. Should we keep the tab id and therefore href the same to avoid breaking old links?*/}
+                {/* Link to new tab. Should we keep the tab id and therefore href the same to avoid breaking old links?*/}
               </a>
               .
             </div>
@@ -70,7 +70,7 @@ const MainTabs = ({ releaseNotesUrl, forumUrl }: MainTabsProps) => {
           {/* TODO!!! The new UI is supposed to avoid downloading 
           everything all at once. Revisit how CustomDownloads gets the 
           allDownloads data. Likely allDownlaods contains more than it needs */}
-          {/*<CustomDownloads allDownloads={allDownloads} />*/}
+          {/* <CustomDownloads allDownloads={allDownloads} />*/}
         </TabPanel>
       </TabPanels>
     </TabsWithHistory>
