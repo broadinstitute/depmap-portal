@@ -4,6 +4,7 @@ rule update_hgnc_gene_table:
         crispr_inferred_common_essentials={"type": "crispr-inferred-common-essentials"},
         crispr_gene_effect={"type": "raw-dep-matrix", "label": "Chronos_Combined"},
         crispr_gene_dependency={"type": "raw-dep-prob-matrix", "label": "Chronos_Combined"},
+        depmap_omics_ensembl_mapping={"type": "depmap-omics-ensembl-mapping"},
         script=fileref('scripts/hgnc_gene_table/add_ce_and_selectivity.py'),
     outputs:{
         "type": "gene",
@@ -11,4 +12,12 @@ rule update_hgnc_gene_table:
         "orig_dataset_id": "{{inputs.hgnc_gene_table.dataset_id}}"
     }
     
-    run "python3 {{inputs.script.filename}} {{inputs.hgnc_gene_table.dataset_id}} {{inputs.crispr_inferred_common_essentials.dataset_id}} {{inputs.crispr_gene_effect.dataset_id}} {{inputs.crispr_gene_dependency.dataset_id}} hgnc_gene_table.csv"
+    run """
+      python3 {{inputs.script.filename}} \
+        {{inputs.hgnc_gene_table.dataset_id}} \
+        {{inputs.crispr_inferred_common_essentials.dataset_id}} \
+        {{inputs.crispr_gene_effect.dataset_id}} \
+        {{inputs.crispr_gene_dependency.dataset_id}} \
+        {{inputs.depmap_omics_ensembl_mapping.dataset_id}} \
+        hgnc_gene_table.csv
+      """
