@@ -13,6 +13,7 @@ import * as temp from "./resources/temp";
 import * as types from "./resources/types";
 import * as uploads from "./resources/uploads";
 import * as user from "./resources/user";
+import * as release_versions from "./resources/release_versions";
 
 export const breadboxAPI = {
   ...cms,
@@ -30,6 +31,7 @@ export const breadboxAPI = {
   ...types,
   ...uploads,
   ...user,
+  ...release_versions,
 };
 
 type Api = typeof breadboxAPI;

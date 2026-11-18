@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import useSelection from "@depmap/data-explorer-2/src/components/DataExplorerPage/hooks/useSelection";
 import {
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
   LinRegInfo,
 } from "@depmap/types";
+import type { AnnotationTail } from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/plotUtils";
 import { PlotView } from "../components/Plot";
 import {
   buttonLabel,
@@ -94,6 +95,10 @@ function ReadyPlot({
   const selectionOff = offered && !isHeatmap && pairGrained;
   const selectionOn = offered && (isHeatmap || !pairGrained);
 
+  // Tail positions the user dragged. Held here because the plot is unmounted
+  // while scrolled out of view and would otherwise forget them.
+  const annotationTailsRef = useRef<Record<string, AnnotationTail>>({});
+
   const [sendFailed, setSendFailed] = useState(false);
   // The heatmap's selection: the ids of the pair of entities in a clicked cell.
   const [heatmapIds, setHeatmapIds] = useState<Set<string> | null>(null);
@@ -129,6 +134,7 @@ function ReadyPlot({
             onMultiselect: handleMultiselect,
             onClickResetSelection: clearSelection,
             modebarSelectionTools: true,
+            annotationTailsRef,
           }
         : undefined,
     [
@@ -139,6 +145,7 @@ function ReadyPlot({
       handleClickPoint,
       handleMultiselect,
       clearSelection,
+      annotationTailsRef,
     ]
   );
 

@@ -90,6 +90,12 @@ export type {
 } from "./src/data_page";
 
 export type {
+  ReleaseVersion,
+  ReleaseFile,
+  GetReleaseVersionsParams,
+} from "./src/ReleaseVersion";
+
+export type {
   GenePredictiveModelResults,
   CompoundDosePredictiveModelResults,
   PredictiveModelResults,
