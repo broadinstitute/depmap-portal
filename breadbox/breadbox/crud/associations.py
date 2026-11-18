@@ -46,6 +46,7 @@ def add_association_table(
     axis: str,
     filestore_location: str,
     filename: str,
+    config_name: str = "default",
 ):
     def get_matrix_dataset(dataset_id):
         dataset = dataset_crud.get_dataset(db, db.user, dataset_id)
@@ -97,6 +98,7 @@ def add_association_table(
         dataset_2_id=dataset_2_id,
         axis=axis,
         filename=filename,
+        config_name=config_name,
     )
     db.add(precomputed_assoc)
     db.flush()
@@ -107,13 +109,17 @@ def get_association_tables(
     db: SessionWithUser,
     dataset_id: Optional[str],
     association_datasets: Optional[List[str]] = None,
+    config_name: str = "default",
 ):
+    """config_name selects which tables to return. "*" means tables with any config_name."""
     from sqlalchemy.orm import aliased
 
     d1 = aliased(MatrixDataset)
     query = db.query(PrecomputedAssociation).join(d1, PrecomputedAssociation.dataset_1)
     if dataset_id is not None:
         query = query.filter(d1.id == dataset_id)
+    if config_name != "*":
+        query = query.filter(PrecomputedAssociation.config_name == config_name)
     if association_datasets is not None:
         d2 = aliased(MatrixDataset)
         query = query.join(d2, PrecomputedAssociation.dataset_2).filter(

@@ -2,7 +2,7 @@ import os.path
 from typing import Annotated, List, Optional
 import shutil
 
-from fastapi import Body, Depends
+from fastapi import Body, Depends, Query
 from itsdangerous import URLSafeSerializer
 
 from breadbox.api.dependencies import get_db_with_user, get_admin_user
@@ -87,9 +87,10 @@ def query_associations_for_slice(
         SliceQuery, Body(description="A Data Explorer 2 context expression")
     ],
     association_datasets: Optional[List[str]] = None,
+    config_name: str = "default",
 ):
     return associations_service.get_associations(
-        db, settings.filestore_location, slice_query, association_datasets
+        db, settings.filestore_location, slice_query, association_datasets, config_name
     )
 
 
@@ -98,7 +99,15 @@ def query_associations_for_slice(
     operation_id="get_associations",
     response_model=List[AssociationTable],
 )
-def get_associations(db: Annotated[SessionWithUser, Depends(get_db_with_user)]):
+def get_associations(
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+    config_name: Annotated[
+        str,
+        Query(
+            description='Only return tables computed with this config. Use "*" to return tables for all configs.'
+        ),
+    ] = "default",
+):
     return [
         AssociationTable(
             id=a.id,
@@ -107,8 +116,9 @@ def get_associations(db: Annotated[SessionWithUser, Depends(get_db_with_user)]):
             dataset_1_name=a.dataset_1.name,
             dataset_2_name=a.dataset_2.name,
             axis=a.axis,
+            config_name=a.config_name,
         )
-        for a in associations_crud.get_association_tables(db, None)
+        for a in associations_crud.get_association_tables(db, None, None, config_name)
     ]
 
 
@@ -168,6 +178,7 @@ def add_associations(
                 associations_in.axis,
                 settings.filestore_location,
                 dest_filename,
+                associations_in.config_name,
             )
     except:
         # if add_association_table fails, clean up the sqlite3 file
@@ -182,4 +193,5 @@ def add_associations(
         dataset_1_name=assoc_table.dataset_1.name,
         dataset_2_name=assoc_table.dataset_2.name,
         axis=cast(Literal["sample", "feature"], assoc_table.axis),
+        config_name=assoc_table.config_name,
     )
