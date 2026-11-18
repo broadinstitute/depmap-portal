@@ -1,0 +1,383 @@
+// TODO: Organize and separate and to separate scss files where possible
+
+.ReleasesPanel {
+  padding-bottom: 30px;
+  padding-top: 20px;
+  margin-bottom: 60px;
+  margin-left: 80px;
+  margin-right: 24px;
+}
+
+.FilterSection {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 5rem; // Space between the two dropdown groups
+  padding-bottom: 20px;
+}
+
+.FilterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem; // Space between label and react-select control
+  min-width: 300px;
+  .label {
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+    margin: 0;
+  }
+}
+
+.Release {
+  margin-bottom: 24px;
+
+  .releaseHeader {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    padding: 8px 0;
+    border-bottom: 1px solid #e0e0e0;
+
+    &:hover {
+      opacity: 0.85;
+    }
+
+    .releaseTitleGroup {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      h3 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+        color: #303030;
+      }
+
+      .ExpandIcon {
+        color: #4479b2;
+        font-size: 12px;
+        width: 14px;
+        display: inline-flex;
+        justify-content: center;
+      }
+
+      .VersionCount {
+        color: #707070;
+        font-size: 13px;
+        background-color: #f2f4f7;
+        padding: 2px 8px;
+        border-radius: 12px;
+      }
+    }
+  }
+
+  .dataPanelSection {
+    margin-top: 25px;
+
+    .filePanelHeader {
+      margin-top: 25px;
+      margin-left: 35px;
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 0px;
+
+      .headerColOne {
+        color: #707070;
+        font-size: 14px;
+        grid-column: 1/5;
+        grid-row: 1;
+      }
+
+      .headerColTwo {
+        color: #707070;
+        font-size: 14px;
+        grid-column: 5/8;
+        grid-row: 1;
+      }
+
+      .headerColThree {
+        color: #707070;
+        font-size: 14px;
+        grid-column: 8/9;
+        grid-row: 1;
+      }
+
+      .headerColFour {
+        color: #707070;
+        font-size: 14px;
+        grid-column: 9/11;
+        grid-row: 1;
+      }
+    }
+
+    .accordionTitle {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 0px;
+      grid-auto-rows: minmax(20px, auto);
+      align-items: center;
+
+      .one {
+        padding-top: 3px;
+        color: #4479b2;
+        font-size: 14px;
+        grid-column: 1/5;
+        grid-row: 1;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        margin-right: 15px;
+      }
+
+      .two {
+        padding-top: 2px;
+        color: #303030;
+        font-size: 14px;
+        grid-column: 5/8;
+        grid-row: 1;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        margin-right: 15px;
+      }
+
+      .three {
+        padding-top: 2px;
+        color: #303030;
+        font-size: 14px;
+        grid-column: 8/9;
+        grid-row: 1;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        margin-right: 15px;
+      }
+
+      .four {
+        color: #4479b2;
+        font-size: 14px;
+        grid-column: 9/11;
+        grid-row: 1;
+        white-space: nowrap;
+        margin-right: 5px;
+        min-width: fit-content;
+
+        .iconsContainer {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+      }
+    }
+  }
+
+  .accordionBodyContent {
+    padding: 0 15px 15px 35px;
+    font-size: 14px;
+    color: #303030;
+
+    .fileNameLabel {
+      font-size: 16px;
+      font-weight: 600;
+      color: #4479b2;
+    }
+
+    .releaseLabel {
+      font-size: 13px;
+      color: #707070;
+      margin-top: 2px;
+    }
+
+    .collapsiblePanelSubHeader {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #707070;
+      margin-bottom: 4px;
+    }
+
+    .collapsiblePanelBodySection {
+      line-height: 1.5;
+    }
+  }
+
+  .FileBadge {
+    color: #555555;
+    font-size: 12px;
+    background-color: #f2f4f7;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  .ViewFilesButton {
+    background-color: #4479b2;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+
+    &:hover {
+      background-color: #366291;
+    }
+  }
+}
+
+$depmap-purple: #a8529d;
+$depmap-purple-dark: #4a2545;
+$depmap-purple-text: #2b1628;
+$depmap-purple-muted: #6b4c67;
+$depmap-border: #d9b8d4;
+$depmap-badge-border: #dfc2db;
+
+.filterBanner {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #faf0f8 0%, #f3e2f0 100%);
+  border: 1.5px solid $depmap-border;
+  border-top: 4px solid $depmap-purple;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 6px 18px rgba(168, 82, 157, 0.12);
+  text-align: left;
+}
+
+.filterHeader {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(168, 82, 157, 0.18);
+}
+
+.filterTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.filterIconBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background-color: $depmap-purple;
+  color: #ffffff;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(168, 82, 157, 0.3);
+}
+
+.filterTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: $depmap-purple-text;
+    letter-spacing: -0.01em;
+  }
+}
+
+.activeFiltersPill {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  background-color: $depmap-purple;
+  padding: 2px 9px;
+  border-radius: 999px;
+}
+
+.filterSubtitle {
+  margin: 2px 0 0 0;
+  font-size: 12.5px;
+  color: $depmap-purple-muted;
+}
+
+.resultCountPill {
+  font-size: 13px;
+  font-weight: 500;
+  color: $depmap-purple-dark;
+  background-color: #ffffff;
+  border: 1px solid $depmap-badge-border;
+  padding: 5px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+
+  strong {
+    color: $depmap-purple;
+    font-weight: 700;
+  }
+}
+
+.filterControlsRow {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 20px;
+  width: 100%;
+}
+
+.filterControlGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: $depmap-purple-dark;
+  }
+}
+
+.datatypeControl {
+  flex: 1 1 280px;
+  max-width: 380px;
+}
+
+.dateRangeControl {
+  flex: 0 1 240px;
+  min-width: 220px;
+}
+
+.resetFiltersButton {
+  height: 42px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: $depmap-purple;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 5px rgba(168, 82, 157, 0.25);
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background-color: darken($depmap-purple, 7%);
+  }
+}

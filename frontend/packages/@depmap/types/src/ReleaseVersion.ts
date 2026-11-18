@@ -1,7 +1,7 @@
 export interface ReleaseFile {
   id: string;
   filename: string;
-  datatype?: string;
+  datatypes?: string[];
   size?: number;
   description?: string;
   download_url?: string;
@@ -10,7 +10,7 @@ export interface ReleaseFile {
 export interface ReleaseVersion {
   id?: string;
   release_name: string;
-  version: string;
+  version_name: string;
   release_date?: string;
   description?: string;
   files?: ReleaseFile[];

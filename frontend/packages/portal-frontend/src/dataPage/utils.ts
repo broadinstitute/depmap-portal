@@ -111,3 +111,17 @@ export const findReleaseVersions = (
     )
     .map((release: Release) => release.releaseGroup);
 };
+
+export function safeUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.toString();
+    }
+  } catch {
+    // invalid URL
+  }
+
+  return "#";
+}
