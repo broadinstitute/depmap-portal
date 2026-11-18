@@ -1,13 +1,14 @@
-import React, { useEffect, useRef } from "react";
-// import { ReleaseVersion } from "@depmap/types";
+import React, { useCallback, useEffect, useRef } from "react";
+import { ReleaseVersion } from "@depmap/types";
 import {
   ReleaseVersionsProvider,
   useReleaseVersionsContext,
 } from "src/dataPageV2/contexts/ReleaseVersionsContext";
 // import VersionFileView from "./VersionFileView";
-import styles from "src/dataPageV2/styles.scss";
-// import Release from "./Release";
+
 import ReleaseVersionsFilterBar from "./ReleaseVersionsFilterBar";
+import styles from "src/dataPageV2/styles.scss";
+import Release from "../ReleaseVersion";
 
 const ReleasesContent: React.FC = () => {
   const {
@@ -15,23 +16,24 @@ const ReleasesContent: React.FC = () => {
     isLoading,
     error,
     selectedVersion,
+    setSelectedVersion,
   } = useReleaseVersionsContext();
 
   const savedScrollYRef = useRef<number>(0);
   const wasViewingVersionRef = useRef<boolean>(false);
 
   // Capture scroll position right before drilling into a version's files
-  // const handleViewVersion = useCallback(
-  //   (version: ReleaseVersion) => {
-  //     savedScrollYRef.current = window.scrollY;
-  //     setSelectedVersion(version);
-  //   },
-  //   [setSelectedVersion]
-  // );
+  const handleViewVersion = useCallback(
+    (version: ReleaseVersion) => {
+      savedScrollYRef.current = window.scrollY;
+      setSelectedVersion(version);
+    },
+    [setSelectedVersion]
+  );
 
-  // const handleBackToReleases = useCallback(() => {
-  //   setSelectedVersion(null);
-  // }, [setSelectedVersion]);
+  const handleBackToReleases = useCallback(() => {
+    setSelectedVersion(null);
+  }, [setSelectedVersion]);
 
   // Scroll to top when entering VersionFileView; restore saved scroll when returning
   useEffect(() => {
@@ -73,14 +75,13 @@ const ReleasesContent: React.FC = () => {
 
     return (
       <div className={styles.ReleaseList}>
-        {releaseEntries.map(([name /* , versions */]) => (
-          /*           <Release
+        {releaseEntries.map(([name, versions]) => (
+          <Release
             key={name}
             releaseName={name}
             versions={versions}
-            onViewVersion={setSelectedVersion}
-          /> */
-          <>{name}</>
+            onViewVersion={handleViewVersion}
+          />
         ))}
       </div>
     );
@@ -88,17 +89,17 @@ const ReleasesContent: React.FC = () => {
 
   return (
     <div className={styles.ReleasesPanel}>
-      {/* {selectedVersion && (
-        <VersionFileView
-          version={selectedVersion}
-          onBack={handleBackToReleases}
-        />
-      )} */}
+      {selectedVersion &&
+        selectedVersion.files &&
+        // <VersionFileView
+        //   version={selectedVersion}
+        //   onBack={handleBackToReleases}
+        // />
+        selectedVersion.files.map((v) => <>{v.filename}</>)}
 
       {/* Keep the release list mounted so card dropdown selections and DOM height stay intact */}
-      <div style={{ display: selectedVersion ? "none" : "block" }}>
+      <div className={selectedVersion ? styles.hidden : undefined}>
         <ReleaseVersionsFilterBar />
-
         {renderReleasesContent()}
       </div>
     </div>
