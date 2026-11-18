@@ -30,9 +30,10 @@ const App = () => (
       <p>
         This page shows how well machine-learning models can predict{" "}
         {responseDescription()} given other molecular features of the cell
-        lines. Random forest models have been bit with increasing number of
-        features and aggregate behavior is summarized by the plots at the top of
-        this page. Below, the specific results of each model are shown.
+        lines. A series of random forest models have been trained with
+        increasing number of features and an aggregate summary is shown in the
+        plots at the top of this page. In the following section, one can see the
+        specific results of each individual model.
       </p>
       <PlotlyLoaderProvider PlotlyLoader={PlotlyLoader}>
         <PredictiveInsightsPage dimType={dimType} dimTypeGivenId={givenId} />

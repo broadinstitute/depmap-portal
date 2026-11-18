@@ -71,11 +71,21 @@ rule process_model_config:
     """
 
 # Generate dep-matrix-ftr-unfiltered artifacts for only those dep-matrix artifacts which we want to predict
+type dep-matrix-ftr-unfiltered:
+    description: "A dependency matrix in feather format which we will predict"
+    fields: dataset_id, label, confounders_label, has_related, run_interpretable_models, filename
+
+type ensemble-feature-set:
+    description: "The assembled feature matrix (X) and its metadata, used as input to model fitting"
+    fields: filename, feature_metadata_filename, valid_samples_filename, feature_info_filename, label
+
 rule download_dep_matrix_v2:
     inputs:
         dep={'type': 'dep-matrix', "label": label},
         probs={"type": "raw-dep-prob-matrix", "label" : label},
         hdf5_utils=fileref("../scripts/hdf5_utils.py", copy_to="hdf5_utils.py")
+    output_types: (dep-matrix-ftr-unfiltered?)
+
     run "python3" with """
         from hdf5_utils import read_hdf5
         import re
@@ -438,6 +448,8 @@ rule assemble_feature_matrix:
 #        with open("conseq-cache-key.json", "wt") as fd:
 #            fd.write(json.dumps(key))
 #    """
+    output_types: (ensemble-feature-set)
+
     run "python3" with """
         import pandas as pd
         import yaml

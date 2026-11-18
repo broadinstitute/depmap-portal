@@ -8,12 +8,17 @@ rule publish_daintree_feature_metadata:
     inputs: in={"type": "daintree-feature-metadata"}
     publish: "{{config.publish_dest}}/daintree-feature-metadata.json"
 
+type breadbox-daintree-output:
+    description: "Result of writing daintree results to taiga"
+    fields: actuals_name, actuals_taiga_id, config_name, ensemble_taiga_id, predictions_matrix_taiga_id
+
 # for each daintree output, upload the required files and produce an artifact with the taiga ids for each file.
-rule publish_daintree_results_to_taiga:
+rule upload_daintree_results_to_taiga_:
     inputs:
         actuals={"type":"target_matrix", "label":target_label},
         daintree_output={"type": "daintree_output", "screen_name": target_label},
         script=fileref("scripts/upload_fit_results_to_taiga.py")
+    output_types: (breadbox-daintree-output)
     run "bash" with """
         python3 {{inputs.script.filename}} \
             --actuals {{inputs.daintree_output.screen_name}} \
@@ -28,3 +33,7 @@ rule publish_daintree_results_to_taiga:
 rule publish_breadbox_daintree_outputs:
     inputs: outputs=all {"type": "breadbox-daintree-output"}
     publish: "{{config.publish_dest}}/breadbox-daintree-outputs.json"
+
+rule publish_daintree_config_norm_table:
+    inputs: norms={"type": "daintree_config_norm_table"}
+    publish: "{{config.publish_dest}}/breadbox-daintree-norms.json"

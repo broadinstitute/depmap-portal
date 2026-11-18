@@ -1,10 +1,16 @@
 
+type cor_input_pair:
+    description: "A pair of datasets (a and b) to compute correlations between"
+    fields: job_name
+
 rule create_cor_analysis_pairs:
     inputs:
         a_set=all {'type': 'cor-analysis-a'},
         b_set=all {'type': 'cor-analysis-b'},
         script=fileref("create_cor_analysis_pairs.py")
     
+    output_types: (cor_input_pair*)
+
     run "bash" with """
         cat > inputs.json <<EOF
         {{inputs|quoted}}

@@ -4,6 +4,7 @@ import * as data_types from "./resources/data_types";
 import * as dataset_v2 from "./resources/dataset_v2";
 import * as datasets from "./resources/datasets";
 import * as downloads from "./resources/downloads";
+import * as flat_tables from "./resources/flat_tables";
 import * as groups from "./resources/groups";
 import * as health_check from "./resources/health_check";
 import * as metadata from "./resources/metadata";
@@ -22,6 +23,7 @@ export const breadboxAPI = {
   ...dataset_v2,
   ...datasets,
   ...downloads,
+  ...flat_tables,
   ...groups,
   ...health_check,
   ...metadata,
