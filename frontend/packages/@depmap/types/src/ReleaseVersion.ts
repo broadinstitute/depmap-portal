@@ -11,7 +11,7 @@ export interface ReleaseVersion {
   id?: string;
   release_name: string;
   version_name: string;
-  release_date?: string;
+  version_date?: string;
   description?: string;
   files?: ReleaseFile[];
 }
@@ -22,4 +22,8 @@ export interface GetReleaseVersionsParams {
   start_date?: string;
   end_date?: string;
   release_name?: string;
+}
+
+export interface GetReleaseVersionParams {
+  include_files?: boolean;
 }
