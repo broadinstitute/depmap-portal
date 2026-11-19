@@ -198,6 +198,73 @@ def test_associations(
     assert_status_ok(response)
     response_content = response.json()
     assert len(response_content) == 1
+    # config_name wasn't provided on upload, so it should have defaulted
+    assert response_content[0]["config_name"] == "default"
+
+    # upload the same pair again under a different config_name
+    file_ids_2, md5_2 = upload_and_get_file_ids(client, filename=assoc_table_1)
+    response = client.post(
+        "/temp/associations",
+        json={
+            "dataset_1_id": dataset_1.id,
+            "dataset_2_id": dataset_2.id,
+            "axis": "feature",
+            "file_ids": file_ids_2,
+            "md5": md5_2,
+            "config_name": "strict",
+        },
+        headers={"X-Forwarded-User": settings.admin_users[0]},
+    )
+    assert_status_ok(response)
+    assert response.json()["config_name"] == "strict"
+    strict_assoc_id = response.json()["id"]
+
+    # by default only the "default" config is returned
+    response = client.get("/temp/associations", headers={"X-Forwarded-User": "anon"})
+    assert [a["config_name"] for a in response.json()] == ["default"]
+
+    response = client.get(
+        "/temp/associations?config_name=strict", headers={"X-Forwarded-User": "anon"}
+    )
+    assert [a["config_name"] for a in response.json()] == ["strict"]
+
+    response = client.get(
+        "/temp/associations?config_name=*", headers={"X-Forwarded-User": "anon"}
+    )
+    assert sorted(a["config_name"] for a in response.json()) == ["default", "strict"]
+
+    # query-slice should also only see the default config unless told otherwise
+    slice_body = {
+        "slice_query": {
+            "identifier_type": "feature_id",
+            "dataset_id": dataset_1.id,
+            "identifier": "feature0",
+        }
+    }
+    for config_name, expected_count in [(None, 1), ("strict", 1)]:
+        url = "/temp/associations/query-slice"
+        if config_name is not None:
+            url += f"?config_name={config_name}"
+        response = client.post(
+            url, json=slice_body, headers={"X-Forwarded-User": "anon"}
+        )
+        assert_status_ok(response)
+        assert len(response.json()["associated_datasets"]) == expected_count
+
+    # "*" is not supported for query-slice
+    response = client.post(
+        "/temp/associations/query-slice?config_name=*",
+        json=slice_body,
+        headers={"X-Forwarded-User": "anon"},
+    )
+    assert_status_not_ok(response)
+    assert response.status_code == 400
+
+    response = client.delete(
+        f"/temp/associations/{strict_assoc_id}",
+        headers={"X-Forwarded-User": settings.admin_users[0]},
+    )
+    assert_status_ok(response)
 
     # query feature 0 in dataset 1
     response = client.post(

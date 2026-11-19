@@ -49,7 +49,13 @@ def get_associations(
     filestore_location: str,
     slice_query: SliceQuery,
     association_datasets: Optional[List[str]] = None,
+    config_name: str = "default",
 ) -> Associations:
+    if config_name == "*":
+        raise UserError(
+            'config_name="*" is not supported when querying associations for a slice'
+        )
+
     dataset_id = slice_query.dataset_id
 
     with profiled_region("in get_associations: get dataset"):
@@ -59,7 +65,7 @@ def get_associations(
 
     with profiled_region("in get_associations: get_association_tables"):
         precomputed_assoc_tables = associations_crud.get_association_tables(
-            db, dataset.id, association_datasets
+            db, dataset.id, association_datasets, config_name
         )
     datasets = []
     associated_dimensions = []

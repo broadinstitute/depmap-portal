@@ -37,6 +37,7 @@ class AssociationsIn(BaseModel):
     axis: Literal["sample", "feature"]
     file_ids: List[str]
     md5: str
+    config_name: str = "default"
 
 
 class AssociationTable(BaseModel):
@@ -46,6 +47,7 @@ class AssociationTable(BaseModel):
     axis: Literal["sample", "feature"]
     dataset_1_id: str
     dataset_2_id: str
+    config_name: str
 
 
 class ComputeAssociationsParams(BaseModel):

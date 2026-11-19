@@ -736,21 +736,22 @@ class BBClient:
 
     # TEMP
 
-    def get_associations(self) -> List[AssociationTable]:
-        breadbox_response = get_associations_client.sync_detailed(client=self.client)
+    def get_associations(self, config_name: str = "default") -> List[AssociationTable]:
+        """config_name selects which tables to return. Use "*" to return tables for all configs."""
+        breadbox_response = get_associations_client.sync_detailed(client=self.client, config_name=config_name)
         return self._parse_client_response(breadbox_response)
 
-    def add_associations(self, dataset_1_id:str, dataset_2_id: str, axis :str, associations_table_filename : str) -> AssociationTable:
+    def add_associations(self, dataset_1_id:str, dataset_2_id: str, axis :str, associations_table_filename : str, config_name: str = "default") -> AssociationTable:
         with open(associations_table_filename, "rb") as fd:
             uploaded_file = self.upload_file(fd)
 
-        associations_in = AssociationsIn(axis = AssociationsInAxis(axis), dataset_1_id=dataset_1_id, dataset_2_id=dataset_2_id, file_ids=uploaded_file.file_ids, md5=uploaded_file.md5)
+        associations_in = AssociationsIn(axis = AssociationsInAxis(axis), dataset_1_id=dataset_1_id, dataset_2_id=dataset_2_id, file_ids=uploaded_file.file_ids, md5=uploaded_file.md5, config_name=config_name)
         breadbox_response = add_associations_client.sync_detailed(client=self.client, body=associations_in)
 
         return self._parse_client_response(breadbox_response)
 
-    def get_associations_for_slice(self, dataset_id: str, identifier: str, identifier_type: str) -> Associations:
-        breadbox_response = get_associations_for_slice_client.sync_detailed(client=self.client, body=BodyGetAssociationsForSlice(SliceQuery(dataset_id=dataset_id, identifier=identifier,
+    def get_associations_for_slice(self, dataset_id: str, identifier: str, identifier_type: str, config_name: str = "default") -> Associations:
+        breadbox_response = get_associations_for_slice_client.sync_detailed(client=self.client, config_name=config_name, body=BodyGetAssociationsForSlice(SliceQuery(dataset_id=dataset_id, identifier=identifier,
                                                                                     identifier_type=SliceQueryIdentifierType(identifier_type))))
         return self._parse_client_response(breadbox_response)
     

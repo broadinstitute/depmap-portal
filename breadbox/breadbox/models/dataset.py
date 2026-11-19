@@ -383,7 +383,11 @@ class PrecomputedAssociation(Base, UUIDMixin):
         Index("idx_assoc_dataset_1", "dataset_1_id"),
         Index("idx_assoc_dataset_2", "dataset_2_id"),
         UniqueConstraint(
-            "dataset_1_id", "dataset_2_id", "axis", name="assoc_params_uc"
+            "dataset_1_id",
+            "dataset_2_id",
+            "axis",
+            "config_name",
+            name="assoc_params_uc",
         ),
     )
 
@@ -401,3 +405,9 @@ class PrecomputedAssociation(Base, UUIDMixin):
     )  # "feature" or "sample" type
 
     filename: Mapped[str] = mapped_column(String, nullable=False)
+
+    # Name identifying which settings (filters, thresholds, etc.) were used
+    # when the correlations were computed.
+    config_name: Mapped[str] = mapped_column(
+        String, nullable=False, server_default="default"
+    )
