@@ -1,0 +1,11 @@
+$depmap-plum: #a8529d;
+
+.releaseCard {
+  border: 1px solid #e2e8f0;
+  border-top: 3px solid $depmap-plum;
+  border-radius: 8px;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06);
+  overflow: hidden;
+  padding: 0;
+}
