@@ -118,7 +118,9 @@ def get_associations(
             axis=a.axis,
             config_name=a.config_name,
         )
-        for a in associations_crud.get_association_tables(db, None, None, config_name)
+        for a in associations_crud.get_association_tables(
+            db, None, None, None if config_name == "*" else config_name
+        )
     ]
 
 

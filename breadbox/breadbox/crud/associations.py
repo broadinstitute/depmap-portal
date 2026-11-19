@@ -109,16 +109,16 @@ def get_association_tables(
     db: SessionWithUser,
     dataset_id: Optional[str],
     association_datasets: Optional[List[str]] = None,
-    config_name: str = "default",
+    config_name: Optional[str] = None,
 ):
-    """config_name selects which tables to return. "*" means tables with any config_name."""
+    """If config_name is None, tables with any config_name are returned."""
     from sqlalchemy.orm import aliased
 
     d1 = aliased(MatrixDataset)
     query = db.query(PrecomputedAssociation).join(d1, PrecomputedAssociation.dataset_1)
     if dataset_id is not None:
         query = query.filter(d1.id == dataset_id)
-    if config_name != "*":
+    if config_name is not None:
         query = query.filter(PrecomputedAssociation.config_name == config_name)
     if association_datasets is not None:
         d2 = aliased(MatrixDataset)
