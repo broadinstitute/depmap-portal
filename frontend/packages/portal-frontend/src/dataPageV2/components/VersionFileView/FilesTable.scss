@@ -129,3 +129,68 @@ $depmap-blue: #2b547e;
   color: #94a3b8;
   font-style: italic;
 }
+
+.descriptionText {
+  margin: 0;
+
+  p:first-child,
+  ul:first-child,
+  ol:first-child {
+    margin-top: 0;
+  }
+
+  p:last-child,
+  ul:last-child,
+  ol:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.descriptionClamped {
+  max-height: 3em;
+  overflow: hidden;
+  position: relative;
+}
+
+.descriptionWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.toggleDescriptionButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: $depmap-blue;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background-color: #e2e8f0;
+    border-color: #cbd5e1;
+  }
+
+  :global(.glyphicon) {
+    font-size: 9px;
+    transition: transform 0.15s ease;
+  }
+}
+
+.toggleChevronExpanded {
+  transform: rotate(180deg);
+}
+
+.toolbarRightGroup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
