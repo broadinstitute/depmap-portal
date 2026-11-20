@@ -32,69 +32,75 @@ const VersionFileView: React.FC<VersionFileViewProps> = ({
     resetFilters,
   } = useFilteredReleaseFiles(files);
 
+  const renderFilesSection = () => {
+    if (isLoading) {
+      return (
+        <div className={styles.loadingState}>Loading release files...</div>
+      );
+    }
+
+    if (errorMessage) {
+      return <div className={styles.errorState}>{errorMessage}</div>;
+    }
+
+    return (
+      <section aria-label="Files by Data Tag" className={styles.filesWorkspace}>
+        <div className={styles.filesWorkspaceHeader}>
+          <div className={styles.workspaceTitleRow}>
+            <div className={styles.workspaceTitleGroup}>
+              <h3 className={styles.workspaceTitle}>Files by Data Tag</h3>
+              <span className={styles.workspaceSubtitle}>
+                Select a data tag to filter files
+              </span>
+            </div>
+          </div>
+
+          <DataTags
+            totalFilesCount={files.length}
+            tabs={datatypeTabs}
+            selectedDatatype={selectedDatatype}
+            onSelectDatatype={setSelectedDatatype}
+          />
+        </div>
+
+        <FilesFilterToolbar
+          totalCount={files.length}
+          filteredCount={filteredFiles.length}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          hasActiveFilters={hasActiveFilters}
+          onResetFilters={resetFilters}
+        />
+
+        <div role="tabpanel" className={styles.fileGroupsContainer}>
+          {filteredFiles.length === 0 ? (
+            <FilesTable files={[]} />
+          ) : (
+            <>
+              <FileGroupSection
+                title="Primary Files"
+                subtitle="Core release datasets and primary matrices"
+                files={primaryFiles}
+                variant="primary"
+              />
+              <FileGroupSection
+                title="Supplemental Files"
+                subtitle="Supporting metadata, mappings, and auxiliary files"
+                files={secondaryFiles}
+                variant="supplemental"
+              />
+            </>
+          )}
+        </div>
+      </section>
+    );
+  };
+
   return (
     <div className={styles.container}>
       <VersionHeader version={version} onBack={onBack} />
       <hr className={styles.sectionDivider} />
-
-      {isLoading ? (
-        <div className={styles.loadingState}>Loading release files...</div>
-      ) : errorMessage ? (
-        <div className={styles.errorState}>{errorMessage}</div>
-      ) : (
-        <section
-          aria-label="Files by Data Tag"
-          className={styles.filesWorkspace}
-        >
-          <div className={styles.filesWorkspaceHeader}>
-            <div className={styles.workspaceTitleRow}>
-              <div className={styles.workspaceTitleGroup}>
-                <h3 className={styles.workspaceTitle}>Files by Data Tag</h3>
-                <span className={styles.workspaceSubtitle}>
-                  Select a data tag to filter files
-                </span>
-              </div>
-            </div>
-
-            <DataTags
-              totalFilesCount={files.length}
-              tabs={datatypeTabs}
-              selectedDatatype={selectedDatatype}
-              onSelectDatatype={setSelectedDatatype}
-            />
-          </div>
-
-          <FilesFilterToolbar
-            totalCount={files.length}
-            filteredCount={filteredFiles.length}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            hasActiveFilters={hasActiveFilters}
-            onResetFilters={resetFilters}
-          />
-
-          <div role="tabpanel" className={styles.fileGroupsContainer}>
-            {filteredFiles.length === 0 ? (
-              <FilesTable files={[]} />
-            ) : (
-              <>
-                <FileGroupSection
-                  title="Primary Files"
-                  subtitle="Core release datasets and primary matrices"
-                  files={primaryFiles}
-                  variant="primary"
-                />
-                <FileGroupSection
-                  title="Supplemental Files"
-                  subtitle="Supporting metadata, mappings, and auxiliary files"
-                  files={secondaryFiles}
-                  variant="supplemental"
-                />
-              </>
-            )}
-          </div>
-        </section>
-      )}
+      {renderFilesSection()}
     </div>
   );
 };

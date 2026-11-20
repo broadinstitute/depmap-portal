@@ -12,16 +12,17 @@ interface FilesTableProps {
  */
 const COLLAPSE_THRESHOLD = 110;
 
+// From here until line 123: Generated with the help of Gemini. The file descriptions are html blobs
+// instead of strings. the following functions calculate when the html is tall enough to warrant a "See More"
+// button using a maximum character count threshold. It also truncates the html nodes to generate the "collapsed"
+// version of HTML that the user sees when "See more" is an option.
 interface TruncatedHtmlResult {
   html: string;
   isTruncated: boolean;
 }
 
-// From here until line 106: Generated with the help of Gemini. The file descriptions are html blobs
-// instead of strings. the following functions calculate when the html is tall enough to warrant a "See More"
-// button using a maximum character count threshold. It also truncates the html nodes to generate the "collapsed"
-// version of HTML that the user sees when "See more" is an option.
-interface CharBudget {
+interface TruncationResult {
+  node: Node | null;
   remaining: number;
 }
 
@@ -34,47 +35,60 @@ const truncateTextAtWordBoundary = (text: string, maxChars: number): string => {
   return `${cleanCut.trimEnd()}...`;
 };
 
-const truncateTextNode = (node: Node, budget: CharBudget): Text => {
+const truncateTextNode = (
+  node: Node,
+  remainingChars: number
+): { node: Text; remaining: number } => {
   const text = node.textContent ?? "";
 
-  if (text.length <= budget.remaining) {
-    budget.remaining -= text.length;
-    return document.createTextNode(text);
+  if (text.length <= remainingChars) {
+    return {
+      node: document.createTextNode(text),
+      remaining: remainingChars - text.length,
+    };
   }
 
-  const truncatedText = truncateTextAtWordBoundary(text, budget.remaining);
-  budget.remaining = 0;
-
-  return document.createTextNode(truncatedText);
+  return {
+    node: document.createTextNode(
+      truncateTextAtWordBoundary(text, remainingChars)
+    ),
+    remaining: 0,
+  };
 };
 
-const truncateHtmlNodes = (node: Node, budget: CharBudget): Node | null => {
-  if (budget.remaining <= 0) {
-    return null;
+const truncateHtmlNodes = (
+  node: Node,
+  remainingChars: number
+): TruncationResult => {
+  if (remainingChars <= 0) {
+    return { node: null, remaining: 0 };
   }
 
   if (node.nodeType === Node.TEXT_NODE) {
-    return truncateTextNode(node, budget);
+    return truncateTextNode(node, remainingChars);
   }
 
   if (node.nodeType === Node.ELEMENT_NODE) {
     const clonedElement = node.cloneNode(false);
+    let currentRemaining = remainingChars;
 
     for (const child of Array.from(node.childNodes)) {
-      if (budget.remaining <= 0) {
+      if (currentRemaining <= 0) {
         break;
       }
 
-      const truncatedChild = truncateHtmlNodes(child, budget);
-      if (truncatedChild) {
-        clonedElement.appendChild(truncatedChild);
+      const result = truncateHtmlNodes(child, currentRemaining);
+      currentRemaining = result.remaining;
+
+      if (result.node) {
+        clonedElement.appendChild(result.node);
       }
     }
 
-    return clonedElement;
+    return { node: clonedElement, remaining: currentRemaining };
   }
 
-  return null;
+  return { node: null, remaining: remainingChars };
 };
 
 const getTruncatedHtml = (
@@ -90,15 +104,18 @@ const getTruncatedHtml = (
   }
 
   const container = document.createElement("div");
-  const budget: CharBudget = { remaining: maxLength };
+  let remainingChars = maxLength;
 
   for (const child of Array.from(doc.body.childNodes)) {
-    if (budget.remaining <= 0) {
+    if (remainingChars <= 0) {
       break;
     }
-    const truncatedChild = truncateHtmlNodes(child, budget);
-    if (truncatedChild) {
-      container.appendChild(truncatedChild);
+
+    const result = truncateHtmlNodes(child, remainingChars);
+    remainingChars = result.remaining;
+
+    if (result.node) {
+      container.appendChild(result.node);
     }
   }
 
@@ -134,49 +151,11 @@ const FilesTable: React.FC<FilesTableProps> = ({ files }) => {
     );
   }
 
-  const collapsibleKeys = processedRows
-    .filter((row) => row.isTruncated)
-    .map((row) => row.rowKey);
-
-  const allExpanded =
-    collapsibleKeys.length > 0 &&
-    collapsibleKeys.every((key) => Boolean(expandedRows[key]));
-
-  const handleToggleAll = () => {
-    if (allExpanded) {
-      setExpandedRows({});
-      return;
-    }
-
-    const nextState: Record<string, boolean> = {};
-    collapsibleKeys.forEach((key) => {
-      nextState[key] = true;
-    });
-    setExpandedRows(nextState);
-  };
-
   const toggleRow = (rowKey: string) => {
     setExpandedRows((prev) => ({
       ...prev,
       [rowKey]: !prev[rowKey],
     }));
-  };
-
-  const handleDescriptionContainerClick = (
-    event: React.MouseEvent<HTMLDivElement>,
-    rowKey: string,
-    isTruncated: boolean
-  ) => {
-    if (!isTruncated) {
-      return;
-    }
-
-    const target = event.target as HTMLElement;
-    if (target.closest("a") || target.closest("button")) {
-      return;
-    }
-
-    toggleRow(rowKey);
   };
 
   return (
@@ -223,18 +202,7 @@ const FilesTable: React.FC<FilesTableProps> = ({ files }) => {
                 </td>
                 <td className={styles.descriptionCell}>
                   {file.description ? (
-                    <div
-                      className={`${styles.descriptionWrapper} ${
-                        isTruncated ? styles.descriptionCollapsible : ""
-                      }`}
-                      onClick={(event) =>
-                        handleDescriptionContainerClick(
-                          event,
-                          rowKey,
-                          isTruncated
-                        )
-                      }
-                    >
+                    <div className={styles.descriptionWrapper}>
                       <div
                         className={styles.descriptionText}
                         dangerouslySetInnerHTML={{
