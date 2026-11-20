@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import styles from "./FilesTable.scss";
 import { ReleaseFile } from "@depmap/types";
+import { VersionBadge } from "src/dataPage/components/VersionBadge";
 
 interface FilesTableProps {
   files: ReleaseFile[];
@@ -181,8 +182,15 @@ const FilesTable: React.FC<FilesTableProps> = ({ files }) => {
 
             return (
               <tr key={rowKey}>
-                <td className={styles.file_nameCell} title={file.file_name}>
-                  {file.file_name}
+                <td className={styles.fileNameCell} title={file.file_name}>
+                  <div className={styles.fileNameWrapper}>
+                    <span className={styles.fileNameText}>
+                      {file.file_name}
+                    </span>
+                    {file.version && (
+                      <VersionBadge versionNumber={file.version} />
+                    )}
+                  </div>
                 </td>
                 <td>
                   {file.datatypes && file.datatypes.length > 0 ? (
