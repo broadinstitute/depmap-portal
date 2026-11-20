@@ -1,0 +1,469 @@
+$navy-primary: #2b547e;
+$navy-dark: #1a2b42;
+$navy-text: #1e3a5f;
+$navy-tint-bg: #f4f7fb;
+$navy-tint-hover: rgba(43, 84, 126, 0.06);
+$navy-badge-bg: rgba(43, 84, 126, 0.1);
+$navy-border: #d5dfec;
+$navy-border-input: #b8c9de;
+$slate-text: #475569;
+$slate-muted: #64748b;
+$slate-subtle: #94a3b8;
+$surface-white: #ffffff;
+$surface-subtle: #f8fafc;
+$border-light: #e2e8f0;
+$border-row: #f1f5f9;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.sectionDivider {
+  margin: 28px 0;
+  border: none;
+  border-top: 1px solid $border-light;
+}
+
+.loadingState,
+.emptyState {
+  padding: 36px 24px;
+  text-align: center;
+  font-size: 14px;
+  color: $slate-muted;
+  background-color: $surface-white;
+  border: 1px solid $border-light;
+  border-radius: 10px;
+}
+
+.errorState {
+  padding: 16px 20px;
+  font-size: 14px;
+  color: #9b2c2c;
+  background-color: #fff5f5;
+  border: 1px solid #feb2b2;
+  border-radius: 10px;
+}
+
+// =========================================================
+// FILES WORKSPACE CARD
+// =========================================================
+.filesWorkspace {
+  background-color: $surface-white;
+  border: 1px solid $navy-border;
+  border-top: 4px solid $navy-primary;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(30, 58, 95, 0.08);
+  overflow: hidden;
+}
+
+// =========================================================
+// HORIZONTAL DATA TYPE TABS
+// =========================================================
+.datatypeTabsBar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 20px 0;
+  background-color: $navy-tint-bg;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.datatypeTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: -1px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #526071;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease, background-color 0.15s ease,
+    border-color 0.15s ease;
+
+  &:hover {
+    color: $navy-text;
+    background-color: $navy-tint-hover;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $navy-primary;
+    outline-offset: -2px;
+  }
+}
+
+.datatypeTabActive {
+  color: $navy-text;
+  background-color: $surface-white;
+  border-bottom-color: $navy-primary;
+
+  &:hover {
+    background-color: $surface-white;
+  }
+}
+
+.tabCountBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 7px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: $slate-text;
+  background-color: $border-light;
+  border-radius: 999px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  .datatypeTabActive & {
+    color: $surface-white;
+    background-color: $navy-primary;
+  }
+}
+
+// =========================================================
+// SEARCH & FILTER TOOLBAR
+// =========================================================
+.filterToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  background-color: $surface-white;
+  border-bottom: 1px solid $border-light;
+}
+
+.searchGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 280px;
+  max-width: 440px;
+}
+
+.filterLabel {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: $navy-text;
+}
+
+.searchInput {
+  height: 38px;
+  padding: 0 12px;
+  font-size: 14px;
+  color: #1e293b;
+  background-color: $surface-subtle;
+  border: 1.5px solid $navy-border-input;
+  border-radius: 8px;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, background-color 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &::placeholder {
+    color: $slate-subtle;
+  }
+
+  &:hover {
+    border-color: $navy-primary;
+    background-color: $surface-white;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $navy-primary;
+    background-color: $surface-white;
+    box-shadow: 0 0 0 3px rgba(43, 84, 126, 0.15);
+  }
+}
+
+.toolbarActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 2px;
+}
+
+.resultCountPill {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: $navy-text;
+  background-color: $navy-tint-bg;
+  border: 1px solid $navy-border;
+  padding: 5px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+
+  strong {
+    color: $navy-primary;
+    font-weight: 700;
+  }
+}
+
+.resetButton {
+  height: 36px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: $surface-white;
+  background-color: $navy-primary;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background-color: $navy-text;
+  }
+}
+
+// FilesTable.tsx
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.filesTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+
+  thead tr {
+    background-color: $surface-subtle;
+    border-bottom: 1px solid $border-light;
+    color: $slate-text;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  th {
+    padding: 12px 16px;
+    text-align: left;
+    white-space: nowrap;
+
+    &:first-child {
+      padding-left: 20px;
+    }
+
+    &:last-child {
+      padding-right: 20px;
+      text-align: right;
+    }
+  }
+
+  tbody tr {
+    border-bottom: 1px solid $border-row;
+    transition: background-color 0.12s ease;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background-color: $surface-subtle;
+    }
+  }
+
+  td {
+    padding: 14px 16px;
+    color: $slate-text;
+    vertical-align: middle;
+
+    &:first-child {
+      padding-left: 20px;
+    }
+
+    &:last-child {
+      padding-right: 20px;
+      text-align: right;
+      white-space: nowrap;
+    }
+  }
+}
+
+.fileNameCell {
+  font-weight: 600;
+  color: #1e293b;
+  word-break: break-word;
+}
+
+.datatypeBadgeList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.datatypeBadge {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: $navy-text;
+  background-color: $navy-badge-bg;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.sizeCell {
+  white-space: nowrap;
+}
+
+.descriptionCell {
+  line-height: 1.5;
+  max-width: 420px;
+}
+
+.mutedPlaceholder {
+  color: $slate-subtle;
+}
+
+.downloadLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: $surface-white;
+  background-color: $navy-primary;
+  border-radius: 6px;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(43, 84, 126, 0.25);
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    color: $surface-white;
+    background-color: $navy-text;
+    text-decoration: none;
+  }
+}
+
+.unavailableText {
+  font-size: 12.5px;
+  color: $slate-subtle;
+  font-style: italic;
+}
+
+// Header and data tags
+.filesWorkspaceHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px 20px 14px;
+  background-color: $navy-tint-bg;
+  border-bottom: 1px solid $navy-border;
+}
+
+.workspaceTitleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.workspaceTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: $navy-dark;
+}
+
+.workspaceTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: $navy-dark;
+}
+
+.workspaceSubtitle {
+  font-size: 14px;
+  color: $slate-muted;
+}
+
+.tagIcon {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.datatypeTabsBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+
+.datatypeTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: $navy-text;
+  background-color: $surface-white;
+  border: 1px solid $navy-border-input;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  transition: color 0.15s ease, background-color 0.15s ease,
+    border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    border-color: $navy-primary;
+    background-color: $navy-tint-hover;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $navy-primary;
+    outline-offset: 2px;
+  }
+}
+
+.datatypeTabActive {
+  color: $surface-white;
+  background-color: $navy-primary;
+  border-color: $navy-primary;
+  box-shadow: 0 2px 5px rgba(43, 84, 126, 0.25);
+
+  &:hover {
+    color: $surface-white;
+    background-color: $navy-text;
+    border-color: $navy-text;
+  }
+}
+
+.tabCountBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  color: $navy-text;
+  background-color: $navy-badge-bg;
+  border-radius: 999px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  .datatypeTabActive & {
+    color: $navy-text;
+    background-color: $surface-white;
+  }
+}

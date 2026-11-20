@@ -1,0 +1,136 @@
+$depmap-navy: #1e3a5f;
+$depmap-blue: #2b547e;
+$depmap-slate: #64748b;
+
+.topNavBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px 8px 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: $depmap-navy;
+  background-color: #ffffff;
+  border: 1.5px solid $depmap-blue;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(30, 58, 95, 0.1);
+  transition: all 0.16s ease;
+
+  &:hover {
+    color: #ffffff;
+    background-color: $depmap-blue;
+    box-shadow: 0 4px 10px rgba(43, 84, 126, 0.24);
+
+    .backArrow {
+      background-color: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      transform: translateX(-2px);
+    }
+  }
+}
+
+.backArrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background-color: rgba(43, 84, 126, 0.12);
+  color: $depmap-blue;
+  font-size: 14px;
+  font-weight: 700;
+  transition: transform 0.16s ease, background-color 0.16s ease,
+    color 0.16s ease;
+}
+
+.breadcrumb {
+  font-size: 12.5px;
+  color: $depmap-slate;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  strong {
+    color: $depmap-navy;
+    font-weight: 600;
+  }
+}
+
+.overviewCard {
+  border: 1px solid #d5dfec;
+  border-left: 4px solid $depmap-blue;
+  border-radius: 10px;
+  background-color: #f8fafd;
+  box-shadow: 0 1px 4px rgba(30, 58, 95, 0.05);
+  padding: 20px 24px;
+}
+
+.overviewHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+
+  &.withDescription {
+    margin-bottom: 12px;
+  }
+}
+
+.overviewTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  h2 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
+    color: #1a2b42;
+    letter-spacing: -0.01em;
+  }
+}
+
+.releaseLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: $depmap-slate;
+}
+
+.versionBadge {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: $depmap-blue;
+  background-color: #ffffff;
+  border: 1px solid #c5d4e6;
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+.publishedDate {
+  font-size: 13px;
+  font-weight: 500;
+  color: #526071;
+}
+
+.description {
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #3b4754;
+  max-width: 85ch;
+}

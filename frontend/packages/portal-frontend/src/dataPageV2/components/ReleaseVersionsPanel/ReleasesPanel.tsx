@@ -4,11 +4,11 @@ import {
   ReleaseVersionsProvider,
   useReleaseVersionsContext,
 } from "src/dataPageV2/contexts/ReleaseVersionsContext";
-// import VersionFileView from "./VersionFileView";
 
 import ReleaseVersionsFilterBar from "./ReleaseVersionsFilterBar";
 import styles from "src/dataPageV2/styles.scss";
 import Release from "../ReleaseVersion";
+import VersionFileView from "../VersionFileView";
 
 const ReleasesContent: React.FC = () => {
   const {
@@ -31,9 +31,9 @@ const ReleasesContent: React.FC = () => {
     [setSelectedVersion]
   );
 
-  // const handleBackToReleases = useCallback(() => {
-  //   setSelectedVersion(null);
-  // }, [setSelectedVersion]);
+  const handleBackToReleases = useCallback(() => {
+    setSelectedVersion(null);
+  }, [setSelectedVersion]);
 
   // Scroll to top when entering VersionFileView; restore saved scroll when returning
   useEffect(() => {
@@ -89,15 +89,12 @@ const ReleasesContent: React.FC = () => {
 
   return (
     <div className={styles.ReleasesPanel}>
-      {selectedVersion &&
-        selectedVersion.files &&
-        // <VersionFileView
-        //   version={selectedVersion}
-        //   onBack={handleBackToReleases}
-        // />
-        selectedVersion.files.map((v) => <>{v.filename}</>)}
-
-      {/* Keep the release list mounted so card dropdown selections and DOM height stay intact */}
+      {selectedVersion && selectedVersion.files && (
+        <VersionFileView
+          version={selectedVersion}
+          onBack={handleBackToReleases}
+        />
+      )}
       <div className={selectedVersion ? styles.hidden : undefined}>
         <ReleaseVersionsFilterBar />
         {renderReleasesContent()}

@@ -14,7 +14,7 @@ export function getReleaseVersion(
 ): Promise<ReleaseVersion> {
   const params: GetReleaseVersionParams = { include_files: includeFiles };
   return getJson<ReleaseVersion>(
-    `/release-versions/${encodeURIComponent(releaseVersionId)}/`,
+    `/release-versions/${encodeURIComponent(releaseVersionId)}`,
     { ...params }
   );
 }

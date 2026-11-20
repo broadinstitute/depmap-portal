@@ -1,10 +1,10 @@
 export interface ReleaseFile {
   id: string;
-  filename: string;
+  file_name: string;
   datatypes?: string[];
-  size?: number;
+  size?: string;
   description?: string;
-  download_url?: string;
+  bucket_url?: string;
 }
 
 export interface ReleaseVersion {
