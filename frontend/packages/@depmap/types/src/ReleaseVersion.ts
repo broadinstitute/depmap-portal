@@ -6,6 +6,7 @@ export interface ReleaseFile {
   size?: string;
   description?: string;
   bucket_url?: string;
+  version?: number;
 }
 
 export interface ReleaseVersion {

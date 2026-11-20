@@ -67,6 +67,12 @@ $depmap-blue: #2b547e;
   font-weight: 600;
   color: #1e293b;
   word-break: break-word;
+
+  .fileNameWrapper {
+    .fileNameText {
+      padding-right: 10px;
+    }
+  }
 }
 
 .datatypeBadges {
