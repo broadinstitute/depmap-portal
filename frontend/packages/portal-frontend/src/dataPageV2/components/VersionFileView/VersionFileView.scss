@@ -467,3 +467,74 @@ $border-row: #f1f5f9;
     background-color: $surface-white;
   }
 }
+
+// =========================================================
+// PRIMARY & SECONDARY FILE GROUPS
+// =========================================================
+.fileGroupsContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.fileGroupSection {
+  display: flex;
+  flex-direction: column;
+
+  & + & {
+    border-top: 2px solid $navy-border;
+  }
+}
+
+.fileGroupHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 20px;
+  background-color: $navy-tint-bg;
+  border-bottom: 1px solid $border-light;
+}
+
+.fileGroupTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fileGroupTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: $navy-dark;
+  letter-spacing: -0.01em;
+}
+
+.fileGroupSubtitle {
+  font-size: 12px;
+  color: $slate-muted;
+}
+
+.fileGroupCountBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: $surface-white;
+  background-color: $navy-primary;
+  border-radius: 999px;
+}
+
+.fileGroupCountBadgeSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: $navy-text;
+  background-color: $navy-badge-bg;
+  border-radius: 999px;
+}
