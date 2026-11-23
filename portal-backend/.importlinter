@@ -5,9 +5,7 @@ root_package = depmap
 name=The portal backend should use data_access instead of directly referencing interactive_utils
 type=forbidden
 source_modules=
-#    refactoring needed before the following can exclude interactive_utils due to 
-#    performance issue
-#    depmap.cell_line
+    depmap.cell_line
     depmap.data_explorer_2
     depmap.download
     depmap.tile
@@ -15,8 +13,7 @@ source_modules=
 forbidden_modules=
     depmap.interactive.interactive_utils
     depmap.interactive.standard 
-    # refactoring needed before the following can be forbidden as references
-    # depmap.interactive.nonstandard 
+    depmap.interactive.nonstandard 
 allow_indirect_imports=True
 
 [importlinter:contract:2]
@@ -24,5 +21,4 @@ name=The data_access module should be a higher layer than interactive_utils
 type=layers
 layers=
     depmap.data_access
-    # refactoring needed before this can be required to be a lower layer
-    # depmap.interactive.interactive_utils
+    depmap.interactive.interactive_utils

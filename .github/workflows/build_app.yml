@@ -36,6 +36,8 @@ jobs:
         run: "cd frontend && NODE_OPTIONS='--openssl-legacy-provider' CI=true yarn install"
       - name: Build webpack
         run: "cd frontend && NODE_OPTIONS='--openssl-legacy-provider --max_old_space_size=4096' yarn build:portal"
+      - name: Run TypeScript typecheck
+        run: yarn --cwd frontend typecheck
       - name: Run tests
         run: yarn --cwd frontend test
 

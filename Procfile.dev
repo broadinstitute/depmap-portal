@@ -1,0 +1,6 @@
+redis: redis-server
+breadbox: cd breadbox && ./bb run
+breadbox-worker: cd breadbox && ./bb run_worker
+portal: cd portal-backend && ./flask run
+portal-worker: cd portal-backend && ./flask run_dev_worker
+frontend: cd frontend && yarn dev:portal

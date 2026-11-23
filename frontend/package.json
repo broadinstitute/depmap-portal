@@ -20,6 +20,7 @@
     "build:embed": "yarn workspace embed-frontend build",
     "analyze:elara": "yarn workspace elara-frontend analyze",
     "analyze:portal": "yarn workspace portal-frontend analyze",
+    "typecheck": "tsc --build --noEmit",
     "clear-eslint-cache": "rm -f node_modules/.cache/eslint-webpack-plugin/.eslintcache"
   },
   "resolutions": {

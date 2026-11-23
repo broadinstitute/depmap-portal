@@ -27,7 +27,7 @@ from breadbox_facade import BreadboxException
 from depmap import data_access
 from depmap.compute.celery import app
 from depmap.cell_line.models import CellLine
-from depmap.interactive.nonstandard.models import CellLineNameType
+from depmap.enums import CellLineNameType
 from depmap.utilities import hdf5_utils
 from depmap.utilities.hashing_utils import hash_df
 from depmap.utilities.exception import UserError

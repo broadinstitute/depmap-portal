@@ -1,11 +1,15 @@
-from breadbox.db.session import SessionWithUser
+from breadbox.db.session import (
+    SessionWithUser,
+    SessionLocalWithUser,
+    get_engine,
+    clear_engine_cache,
+)
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from breadbox.crud.group import (
     add_group,
     add_group_entry,
 )
 from breadbox.config import Settings
-from breadbox.db.session import SessionLocalWithUser
 from breadbox.models.dataset import MatrixDataset, DatasetFeature
 from breadbox.schemas.group import GroupIn, GroupEntryIn, AccessType
 
@@ -78,3 +82,20 @@ def test_session_with_user(
         .all()
     )
     assert len(publically_visible_public_dataset_features) > 0
+
+
+def test_session_engine_reuse(settings: Settings):
+    clear_engine_cache()
+    db1 = SessionLocalWithUser("user1")
+    db2 = SessionLocalWithUser("user2")
+    try:
+        # Both sessions should share the exact same Engine instance
+        assert db1.bind is not None
+        assert db2.bind is not None
+        assert db1.bind is db2.bind
+        assert db1.bind is get_engine(settings.sqlalchemy_database_url)
+    finally:
+        db1.close()
+        db2.close()
+        clear_engine_cache()
+

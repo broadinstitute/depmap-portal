@@ -36,7 +36,16 @@ cd portal-backend && ./install_prereqs.sh
 
 ## Running Services Locally
 
-Services must be started in order (Breadbox first, then portal-backend):
+### One-Command Setup (Recommended)
+
+From the repository root:
+
+```bash
+make dev        # Starts redis, breadbox (:8000), bb worker, portal-backend (:5000), portal worker, and frontend (:5001)
+make dev-elara  # Starts redis, breadbox (:8000), bb worker, and elara frontend (:8001)
+```
+
+Alternatively, services can be started individually in separate terminal windows:
 
 ```bash
 # 1. Start Redis

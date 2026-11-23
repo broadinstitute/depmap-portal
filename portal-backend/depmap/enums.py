@@ -167,3 +167,18 @@ class DataTypeEnum(enum.Enum):
         "deprecated"  # NOTE: datasets with this data type are going to be deprecated
     )
     user_upload = "User upload"
+
+
+class CellLineNameType(enum.Enum):
+    depmap_id = "depmap_id"  # aka arxspan id
+    ccle_name = "ccle_name"
+    display_name = "display_name"  # aka stripped cell line name
+
+    @property
+    def db_col_name(self):
+        return {
+            "depmap_id": "depmap_id",
+            "ccle_name": "cell_line_name",
+            "display_name": "cell_line_display_name",
+        }[self.value]
+

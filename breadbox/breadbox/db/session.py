@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Optional, Callable
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
@@ -102,21 +103,34 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
         cursor.close()
 
 
-def SessionLocalWithUser(user: str) -> SessionWithUser:
-    settings = get_settings()
-
-    engine = create_engine(
-        settings.sqlalchemy_database_url,
+@lru_cache()
+def get_engine(database_url: str) -> Engine:
+    return create_engine(
+        database_url,
         connect_args={"check_same_thread": False},
         future=True,
     )
 
-    l = sessionmaker(
+
+@lru_cache()
+def get_session_maker(database_url: str):
+    engine = get_engine(database_url)
+    return sessionmaker(
         autoflush=False,
         bind=engine,
         class_=SessionWithUser,
         future=True,  # In SQLAlchemy 2.0, autocommit is deprecated
     )
-    session = l()
-    session.set_user(user, l)
+
+
+def clear_engine_cache() -> None:
+    get_session_maker.cache_clear()
+    get_engine.cache_clear()
+
+
+def SessionLocalWithUser(user: str) -> SessionWithUser:
+    settings = get_settings()
+    session_maker = get_session_maker(settings.sqlalchemy_database_url)
+    session = session_maker()
+    session.set_user(user, session_maker)
     return session

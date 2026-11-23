@@ -26,6 +26,22 @@ There are a few tools that may be helpful to install before getting started in t
 - [poetry](https://python-poetry.org/): `pipx install poetry`
 - [node.js](https://nodejs.org/en/): `brew install node` 
 
+### Starting the Local Development Environment
+
+You can start all services with a single command from the repository root:
+
+```bash
+make dev
+```
+
+Or for Elara (Breadbox + Elara frontend):
+
+```bash
+make dev-elara
+```
+
+This uses `Procfile.dev` with `overmind`, `honcho`, `foreman`, or a built-in process supervisor (`scripts/dev.sh`) to start Redis, Breadbox API, Breadbox Celery worker, Portal Flask backend, Portal Celery worker, and the React frontend dev server with proper output prefixes and clean shutdown. 
+
 ## Deployments
 
 A map of the deployments:
