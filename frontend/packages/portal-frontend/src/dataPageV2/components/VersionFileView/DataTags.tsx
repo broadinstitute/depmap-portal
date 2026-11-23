@@ -1,26 +1,26 @@
 import React from "react";
-import { ALL_DATATYPES_OPTION } from "./useVersionFiles";
-import { DatatypeTab } from "./useFilteredReleaseFiles";
+import { ALL_TAGS_OPTION } from "./useVersionFiles";
+import { TagTab } from "./useFilteredReleaseFiles";
 import styles from "./VersionFileView.scss";
 
 interface DataTagsProps {
   totalFilesCount: number;
-  tabs: DatatypeTab[];
-  selectedDatatype: string;
-  onSelectDatatype: (datatype: string) => void;
+  tabs: TagTab[];
+  selectedTag: string;
+  onSelectTag: (tag: string) => void;
 }
 
 const DataTags: React.FC<DataTagsProps> = ({
   totalFilesCount,
   tabs,
-  selectedDatatype,
-  onSelectDatatype,
+  selectedTag,
+  onSelectTag,
 }) => {
   if (tabs.length === 0) return null;
 
   const allTabs = [
     {
-      value: ALL_DATATYPES_OPTION,
+      value: ALL_TAGS_OPTION,
       label: "All Files",
       count: totalFilesCount,
       showIcon: false,
@@ -32,20 +32,20 @@ const DataTags: React.FC<DataTagsProps> = ({
     <div
       role="tablist"
       aria-label="Files by Data Tag"
-      className={styles.datatypeTabsBar}
+      className={styles.tagTabsBar}
     >
       {allTabs.map((tab) => {
-        const isActive = selectedDatatype === tab.value;
+        const isActive = selectedTag === tab.value;
         return (
           <button
             key={tab.value || "all"}
             type="button"
             role="tab"
             aria-selected={isActive}
-            className={`${styles.datatypeTab} ${
-              isActive ? styles.datatypeTabActive : ""
+            className={`${styles.tagTab} ${
+              isActive ? styles.tagTabActive : ""
             }`}
-            onClick={() => onSelectDatatype(tab.value)}
+            onClick={() => onSelectTag(tab.value)}
           >
             {tab.showIcon && (
               <span

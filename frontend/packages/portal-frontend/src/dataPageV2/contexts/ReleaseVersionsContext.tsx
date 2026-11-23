@@ -49,7 +49,7 @@ export const ReleaseVersionsProvider: React.FC<ReleaseVersionsProviderProps> = (
   const { pushVersionToUrl } = useReleaseVersionsUrlSync({
     enabled: syncWithUrl,
     releases,
-    datatype: filters.datatype,
+    datatype: filters.tag,
     setDatatype: filters.setDatatype,
     dateRange: filters.dateRange,
     setDateRange: filters.setDateRange,

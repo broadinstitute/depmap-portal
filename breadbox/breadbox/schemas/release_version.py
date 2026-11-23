@@ -16,7 +16,7 @@ class ReleaseFileSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     file_name: Annotated[str, Field(description="The name of the file when downloaded")]
-    datatypes: Annotated[
+    tags: Annotated[
         List[str],
         Field(
             default_factory=list, description="The type(s) of data, e.g., ['crispr']",
@@ -139,14 +139,14 @@ class ReleaseFileSearchResponse(BaseModel):
     id: str = Field(..., alias="file_id")
     file_name: str
     file_description: str
-    file_datatypes: List[str]
+    file_tags: List[str]
     release_version_name: str
     release_name: str
     release_version_description: str
     release_version_content_hash: str
 
-    @field_validator("file_datatypes", mode="before")
+    @field_validator("file_tags", mode="before")
     @classmethod
-    def _split_datatypes(cls, v):
-        # The FTS5 index stores datatypes as a single space-joined string.
+    def _split_tags(cls, v):
+        # The FTS5 index stores tags as a single space-joined string.
         return v.split() if isinstance(v, str) else v

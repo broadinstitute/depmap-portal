@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { breadboxAPI, cached } from "@depmap/api";
 import { ReleaseFile, ReleaseVersion } from "@depmap/types";
 
-export const ALL_DATATYPES_OPTION = "";
+export const ALL_TAGS_OPTION = "";
 
 function stripHtml(html: string): string {
   if (!html) return "";
@@ -12,14 +12,14 @@ function stripHtml(html: string): string {
 
 export function matchesFileFilters(
   file: ReleaseFile,
-  selectedDatatype: string,
+  selectedTag: string,
   normalizedQuery: string
 ): boolean {
-  const matchesDatatype =
-    selectedDatatype === ALL_DATATYPES_OPTION ||
-    Boolean(file.datatypes?.includes(selectedDatatype));
+  const matchesTag =
+    selectedTag === ALL_TAGS_OPTION ||
+    Boolean(file.tags?.includes(selectedTag));
 
-  if (!matchesDatatype) return false;
+  if (!matchesTag) return false;
   if (!normalizedQuery) return true;
 
   const matchesFilename = file.file_name

@@ -2,7 +2,7 @@ export interface ReleaseFile {
   id: string;
   file_name: string;
   is_main_file: boolean;
-  datatypes?: string[];
+  tags?: string[];
   size?: string;
   description?: string;
   bucket_url?: string;

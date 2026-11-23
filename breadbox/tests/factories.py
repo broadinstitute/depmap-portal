@@ -532,7 +532,7 @@ def release_file(
     db: SessionWithUser,
     release_version: ReleaseVersion,
     file_name: str = "test_file.csv",
-    datatypes: List[str] = ["crispr"],
+    tags: List[str] = ["crispr"],
     is_main_file: bool = True,
     **kwargs,
 ) -> ReleaseFile:
@@ -546,7 +546,7 @@ def release_file(
         md5_hash=kwargs.get("md5_hash", "0" * 32),
         pipeline_name=kwargs.get("pipeline_name", "Test Pipeline"),
     )
-    file.datatypes = list(set(datatypes))
+    file.tags = list(set(tags))
     db.add(file)
     db.flush()
     return file

@@ -50,22 +50,22 @@ function getDateRangeParams(
 }
 
 /**
- * Isolated helper for retrieving all distinct file-level datatype strings.
+ * Isolated helper for retrieving all distinct file-level tag strings.
  * Currently derives them from releases with files included; once a dedicated
- * file-datatypes endpoint exists, replace only the body of this function.
+ * file-tags endpoint exists, replace only the body of this function.
  */
-const fetchFileDatatypes = async (bapi: BreadboxApi): Promise<string[]> => {
+const fetchFileTags = async (bapi: BreadboxApi): Promise<string[]> => {
   const releasesWithFiles = await bapi.getReleaseVersions({
     include_files: true,
   });
 
-  // TEMP: This nested loop will not be needed once bapi.getReleaseVersionsDatatypes is available
+  // TEMP: This nested loop will not be needed once bapi.getReleaseVersionsTagss is available
   const types = new Set<string>();
   releasesWithFiles.forEach((version) => {
     version.files?.forEach((file) => {
-      file.datatypes?.forEach((datatype) => {
-        if (datatype) {
-          types.add(datatype);
+      file.tags?.forEach((tag) => {
+        if (tag) {
+          types.add(tag);
         }
       });
     });
@@ -80,21 +80,21 @@ const useReleaseVersions = (initialParams: GetReleaseVersionsParams = {}) => {
   const bapi = cached(breadboxAPI);
 
   const [releases, setReleases] = useState<ReleaseVersion[]>([]);
-  const [availableDatatypes, setAvailableDatatypes] = useState<string[]>([]);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const [datatype, setDatatype] = useState<string>("");
+  const [tag, setTag] = useState<string>("");
   const [dateRange, setDateRange] = useState<DateRangePreset>("");
 
-  // Fetch all available datatypes once on mount
+  // Fetch all available tags once on mount
   useEffect(() => {
     (async () => {
       try {
-        const datatypesData = await fetchFileDatatypes(bapi);
-        setAvailableDatatypes(datatypesData);
+        const tags = await fetchFileTags(bapi);
+        setAvailableTags(tags);
       } catch (err) {
-        console.error("Failed to load file datatypes:", err);
+        console.error("Failed to load file tags:", err);
       }
     })();
   }, [bapi]);
@@ -105,12 +105,12 @@ const useReleaseVersions = (initialParams: GetReleaseVersionsParams = {}) => {
         setIsLoading(true);
         setError(null);
 
-        const hasSpecificDatatype = Boolean(datatype) && datatype !== "";
+        const hasSpecificTag = Boolean(tag) && tag !== "";
 
         const params: GetReleaseVersionsParams = {
           ...(include_files !== undefined ? { include_files } : {}),
           ...getDateRangeParams(dateRange, start_date, end_date),
-          ...(hasSpecificDatatype ? { datatype } : {}),
+          ...(hasSpecificTag ? { tag } : {}),
         };
 
         const releasesData = await bapi.getReleaseVersions(params);
@@ -123,21 +123,21 @@ const useReleaseVersions = (initialParams: GetReleaseVersionsParams = {}) => {
         setIsLoading(false);
       }
     })();
-  }, [bapi, include_files, start_date, end_date, datatype, dateRange]);
+  }, [bapi, include_files, start_date, end_date, tag, dateRange]);
 
-  const datatypeOptions = useMemo<Option[]>(() => {
-    return availableDatatypes.map((type) => ({ value: type, label: type }));
-  }, [availableDatatypes]);
+  const tagOptions = useMemo<Option[]>(() => {
+    return availableTags.map((type) => ({ value: type, label: type }));
+  }, [availableTags]);
 
   return {
     allReleaseVersions: releases,
-    datatypeOptions,
+    tagOptions,
     dateRangeOptions: DATE_RANGE_OPTIONS,
     isLoading,
     error,
     filters: {
-      datatype,
-      setDatatype,
+      tag,
+      setTag,
       dateRange,
       setDateRange,
     },

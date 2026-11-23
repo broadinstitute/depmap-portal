@@ -58,8 +58,8 @@ const VersionFileView: React.FC<VersionFileViewProps> = ({
           <DataTags
             totalFilesCount={files.length}
             tabs={datatypeTabs}
-            selectedDatatype={selectedDatatype}
-            onSelectDatatype={setSelectedDatatype}
+            selectedTag={selectedDatatype}
+            onSelectTag={setSelectedDatatype}
           />
         </div>
 

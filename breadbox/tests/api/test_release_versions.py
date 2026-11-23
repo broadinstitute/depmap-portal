@@ -73,9 +73,7 @@ class TestGet:
         """Verify that the include_files query param actually toggles the file list."""
         release = factories.release_version(
             minimal_db,
-            files=[
-                {"file_name": "test.csv", "datatypes": ["crispr"], "is_main_file": True}
-            ],
+            files=[{"file_name": "test.csv", "tags": ["crispr"], "is_main_file": True}],
         )
         release_version_id = str(release.id)
         minimal_db.flush()
@@ -125,7 +123,7 @@ class TestPost:
             "description": "New release",
             "content_hash": "a" * 32,
             "files": [
-                {"file_name": "data.csv", "datatypes": ["crispr"], "is_main_file": True}
+                {"file_name": "data.csv", "tags": ["crispr"], "is_main_file": True}
             ],
             "release_pipelines": [{"pipeline_name": "Standard", "description": "Desc"}],
         }
