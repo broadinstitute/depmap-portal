@@ -2,6 +2,7 @@ import React from "react";
 import { ReleaseVersion } from "@depmap/types";
 import globalDataPageStyles from "src/dataPageV2/styles.scss";
 import styles from "./ReleaseBody.scss";
+import { Markdown } from "@depmap/common-components";
 
 interface ReleaseBodyProps {
   version: ReleaseVersion;
@@ -16,12 +17,11 @@ const ReleaseBody: React.FC<ReleaseBodyProps> = ({
 }) => (
   <div className={styles.body}>
     {version.description ? (
-      <div
+      <Markdown
         className={`${globalDataPageStyles.collapsiblePanelBodySection} ${styles.description}`}
-        dangerouslySetInnerHTML={{
-          __html: version.description,
-        }}
-      />
+      >
+        {version.description}
+      </Markdown>
     ) : (
       <div className={styles.emptyDescription}>
         No description available for this release version.
