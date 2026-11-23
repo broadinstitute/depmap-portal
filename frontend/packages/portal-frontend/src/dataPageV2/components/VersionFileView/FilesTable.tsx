@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import styles from "./FilesTable.scss";
 import { ReleaseFile } from "@depmap/types";
 import { VersionBadge } from "src/dataPage/components/VersionBadge";
+import { Markdown } from "@depmap/common-components";
 
 interface FilesTableProps {
   files: ReleaseFile[];
@@ -211,15 +212,11 @@ const FilesTable: React.FC<FilesTableProps> = ({ files }) => {
                 <td className={styles.descriptionCell}>
                   {file.description ? (
                     <div className={styles.descriptionWrapper}>
-                      <div
-                        className={styles.descriptionText}
-                        dangerouslySetInnerHTML={{
-                          __html:
-                            isExpanded || !isTruncated
-                              ? file.description
-                              : previewHtml,
-                        }}
-                      />
+                      <Markdown className={styles.descriptionText}>
+                        {isExpanded || !isTruncated
+                          ? file.description
+                          : previewHtml}
+                      </Markdown>
 
                       {isTruncated && (
                         <button
