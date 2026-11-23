@@ -4,13 +4,13 @@ import { DateRangePreset } from "./useReleaseVersions";
 
 const PARAM_RELEASE = "release";
 const PARAM_VERSION = "version";
-const PARAM_DATATYPE = "datatype";
+const PARAM_TAG = "tag";
 const PARAM_DATE_RANGE = "dateRange";
 
 interface UrlFilterState {
   release: string;
   version: string;
-  datatype: string;
+  tag: string;
   dateRange: DateRangePreset;
 }
 
@@ -34,7 +34,7 @@ function readUrlState(): UrlFilterState {
   return {
     release: params.get(PARAM_RELEASE) ?? "",
     version: params.get(PARAM_VERSION) ?? "",
-    datatype: params.get(PARAM_DATATYPE) ?? "",
+    tag: params.get(PARAM_TAG) ?? "",
     dateRange: (params.get(PARAM_DATE_RANGE) ?? "") as DateRangePreset,
   };
 }
@@ -50,10 +50,10 @@ function writeUrlState(state: UrlFilterState, mode: "push" | "replace") {
     url.searchParams.delete(PARAM_VERSION);
   }
 
-  if (state.datatype) {
-    url.searchParams.set(PARAM_DATATYPE, state.datatype);
+  if (state.tag) {
+    url.searchParams.set(PARAM_TAG, state.tag);
   } else {
-    url.searchParams.delete(PARAM_DATATYPE);
+    url.searchParams.delete(PARAM_TAG);
   }
 
   if (state.dateRange) {
@@ -76,8 +76,8 @@ function writeUrlState(state: UrlFilterState, mode: "push" | "replace") {
 interface UseReleaseVersionsUrlSyncOptions {
   enabled: boolean;
   releases: ReleaseVersion[];
-  datatype: string;
-  setDatatype: (datatype: string) => void;
+  tag: string;
+  setTag: (tag: string) => void;
   dateRange: DateRangePreset;
   setDateRange: (range: DateRangePreset) => void;
   selectedVersion: ReleaseVersion | null;
@@ -91,8 +91,8 @@ interface UseReleaseVersionsUrlSyncOptions {
 export function useReleaseVersionsUrlSync({
   enabled,
   releases,
-  datatype,
-  setDatatype,
+  tag,
+  setTag,
   dateRange,
   setDateRange,
   selectedVersion,
@@ -109,7 +109,7 @@ export function useReleaseVersionsUrlSync({
     if (!enabled) return;
 
     const initial = readUrlState();
-    if (initial.datatype) setDatatype(initial.datatype);
+    if (initial.tag) setTag(initial.tag);
     if (initial.dateRange) setDateRange(initial.dateRange);
     if (initial.release && initial.version) {
       pendingSelectionRef.current = {
@@ -144,12 +144,12 @@ export function useReleaseVersionsUrlSync({
       {
         release: selectedVersion?.release_name ?? "",
         version: selectedVersion ? getVersionIdentifier(selectedVersion) : "",
-        datatype,
+        tag,
         dateRange,
       },
       "replace"
     );
-  }, [enabled, datatype, dateRange, selectedVersion]);
+  }, [enabled, tag, dateRange, selectedVersion]);
 
   // 4. Respond to browser Back / Forward navigation
   useEffect(() => {
@@ -157,7 +157,7 @@ export function useReleaseVersionsUrlSync({
 
     const handlePopState = () => {
       const urlState = readUrlState();
-      setDatatype(urlState.datatype);
+      setTag(urlState.tag);
       setDateRange(urlState.dateRange);
 
       if (urlState.release && urlState.version) {
@@ -184,7 +184,7 @@ export function useReleaseVersionsUrlSync({
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [enabled, releases, setDatatype, setDateRange, setSelectedVersionState]);
+  }, [enabled, releases, setTag, setDateRange, setSelectedVersionState]);
 
   const pushVersionToUrl = useCallback(
     (version: ReleaseVersion | null) => {
@@ -193,13 +193,13 @@ export function useReleaseVersionsUrlSync({
         {
           release: version?.release_name ?? "",
           version: version ? getVersionIdentifier(version) : "",
-          datatype,
+          tag,
           dateRange,
         },
         "push"
       );
     },
-    [enabled, datatype, dateRange]
+    [enabled, tag, dateRange]
   );
 
   return { pushVersionToUrl };
