@@ -54,7 +54,7 @@ def get_release_version(
 def get_release_versions(
     db: SessionWithUser,
     release_name: Optional[str] = None,
-    datatype: Optional[str] = None,
+    tag: Optional[str] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     include_files: bool = False,
@@ -73,13 +73,13 @@ def get_release_versions(
     if release_name:
         query = query.filter(ReleaseVersion.release_name == release_name)
 
-    if datatype:
+    if tag:
         # We look for any ReleaseVersion that has at least one file
         # matching the requested datatype.
         file_exists = exists().where(
             ReleaseFile.release_version_id == ReleaseVersion.id,
             ReleaseFile.id == ReleaseFileTag.release_file_id,
-            ReleaseFileTag.datatype == datatype,
+            ReleaseFileTag.datatype == tag,
         )
         query = query.filter(file_exists)
 

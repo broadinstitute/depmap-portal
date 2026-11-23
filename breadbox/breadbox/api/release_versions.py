@@ -43,9 +43,7 @@ def get_release_versions(
     release_name: Optional[str] = Query(
         None, description="Filter by general release name (e.g. Depmap Public)"
     ),
-    datatype: Optional[str] = Query(
-        None, description="Filter by file datatype (e.g. 'crispr')"
-    ),
+    tag: Optional[str] = Query(None, description="Filter by file tag (e.g. 'crispr')"),
     start_date: Optional[date] = Query(
         None, description="Filter releases published on or after this date (YYYY-MM-DD)"
     ),
@@ -65,7 +63,7 @@ def get_release_versions(
     return release_version_crud.get_release_versions(
         db,
         release_name=release_name,
-        datatype=datatype,
+        tag=tag,
         start_date=start_date,
         end_date=end_date,
         include_files=include_files,

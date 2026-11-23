@@ -20,7 +20,7 @@ export interface ReleaseVersion {
 
 export interface GetReleaseVersionsParams {
   include_files?: boolean;
-  datatype?: string;
+  tag?: string;
   start_date?: string;
   end_date?: string;
   release_name?: string;
