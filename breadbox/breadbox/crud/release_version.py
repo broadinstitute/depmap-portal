@@ -79,7 +79,7 @@ def get_release_versions(
         file_exists = exists().where(
             ReleaseFile.release_version_id == ReleaseVersion.id,
             ReleaseFile.id == ReleaseFileTag.release_file_id,
-            ReleaseFileTag.datatype == tag,
+            ReleaseFileTag.tag == tag,
         )
         query = query.filter(file_exists)
 
