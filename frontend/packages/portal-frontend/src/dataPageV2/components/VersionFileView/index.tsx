@@ -22,9 +22,9 @@ const VersionFileView: React.FC<VersionFileViewProps> = ({
   const {
     searchQuery,
     setSearchQuery,
-    selectedDatatype,
-    setSelectedDatatype,
-    datatypeTabs,
+    selectedTag,
+    setSelectedTag,
+    tagTabs,
     filteredFiles,
     primaryFiles,
     secondaryFiles,
@@ -57,9 +57,9 @@ const VersionFileView: React.FC<VersionFileViewProps> = ({
 
           <DataTags
             totalFilesCount={files.length}
-            tabs={datatypeTabs}
-            selectedTag={selectedDatatype}
-            onSelectTag={setSelectedDatatype}
+            tabs={tagTabs}
+            selectedTag={selectedTag}
+            onSelectTag={setSelectedTag}
           />
         </div>
 
