@@ -75,13 +75,13 @@ $depmap-blue: #2b547e;
   }
 }
 
-.datatypeBadges {
+.tagBadges {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.datatypeBadge {
+.tagBadge {
   font-size: 11.5px;
   font-weight: 600;
   color: $depmap-navy;

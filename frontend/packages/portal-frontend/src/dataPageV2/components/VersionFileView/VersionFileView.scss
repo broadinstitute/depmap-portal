@@ -13,6 +13,7 @@ $surface-white: #ffffff;
 $surface-subtle: #f8fafc;
 $border-light: #e2e8f0;
 $border-row: #f1f5f9;
+$depmap-blue: #2b547e;
 
 .container {
   display: flex;
@@ -63,7 +64,7 @@ $border-row: #f1f5f9;
 // =========================================================
 // HORIZONTAL DATA TYPE TABS
 // =========================================================
-.datatypeTabsBar {
+.tagTabsBar {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -73,7 +74,7 @@ $border-row: #f1f5f9;
   scrollbar-width: thin;
 }
 
-.datatypeTab {
+.tagTab {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -102,7 +103,7 @@ $border-row: #f1f5f9;
   }
 }
 
-.datatypeTabActive {
+.tagTabActive {
   color: $navy-text;
   background-color: $surface-white;
   border-bottom-color: $navy-primary;
@@ -124,7 +125,7 @@ $border-row: #f1f5f9;
   border-radius: 999px;
   transition: background-color 0.15s ease, color 0.15s ease;
 
-  .datatypeTabActive & {
+  .tagTabActive & {
     color: $surface-white;
     background-color: $navy-primary;
   }
@@ -303,13 +304,13 @@ $border-row: #f1f5f9;
   word-break: break-word;
 }
 
-.datatypeBadgeList {
+.tagBadgeList {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.datatypeBadge {
+.tagBadge {
   font-size: 11.5px;
   font-weight: 600;
   color: $navy-text;
@@ -401,7 +402,7 @@ $border-row: #f1f5f9;
   opacity: 0.85;
 }
 
-.datatypeTabsBar {
+.tagTabsBar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -409,7 +410,7 @@ $border-row: #f1f5f9;
   padding-bottom: 8px;
 }
 
-.datatypeTab {
+.tagTab {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -437,7 +438,7 @@ $border-row: #f1f5f9;
   }
 }
 
-.datatypeTabActive {
+.tagTabActive {
   color: $surface-white;
   background-color: $navy-primary;
   border-color: $navy-primary;
@@ -462,7 +463,7 @@ $border-row: #f1f5f9;
   border-radius: 999px;
   transition: background-color 0.15s ease, color 0.15s ease;
 
-  .datatypeTabActive & {
+  .tagTabActive & {
     color: $navy-text;
     background-color: $surface-white;
   }
@@ -537,4 +538,34 @@ $border-row: #f1f5f9;
   color: $navy-text;
   background-color: $navy-badge-bg;
   border-radius: 999px;
+}
+.fileGroupToggleButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+
+  &:hover .fileGroupTitle {
+    color: $depmap-blue;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $depmap-blue;
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+}
+
+.fileGroupCaret {
+  font-size: 10px;
+  color: $depmap-blue;
+  transition: transform 0.15s ease;
+}
+
+.fileGroupCaretCollapsed {
+  transform: rotate(-90deg);
 }

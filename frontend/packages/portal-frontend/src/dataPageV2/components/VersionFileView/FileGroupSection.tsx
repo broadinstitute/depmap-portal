@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { ReleaseFile } from "@depmap/types";
 import FilesTable from "./FilesTable";
 import styles from "./VersionFileView.scss";
@@ -16,6 +16,8 @@ const FileGroupSection: React.FC<FileGroupSectionProps> = ({
   files,
   variant = "primary",
 }) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+
   if (files.length === 0) return null;
 
   const badgeClass =
@@ -25,14 +27,32 @@ const FileGroupSection: React.FC<FileGroupSectionProps> = ({
 
   return (
     <div className={styles.fileGroupSection}>
-      <div className={styles.fileGroupHeader}>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
+        className={`${styles.fileGroupHeader} ${styles.fileGroupHeaderClickable}`}
+        onClick={() => setIsExpanded((prev) => !prev)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setIsExpanded((prev) => !prev);
+          }
+        }}
+      >
         <div className={styles.fileGroupTitleRow}>
+          <span
+            className={`glyphicon glyphicon-triangle-bottom ${
+              styles.fileGroupCaret
+            } ${!isExpanded ? styles.fileGroupCaretCollapsed : ""}`}
+            aria-hidden="true"
+          />
           <h4 className={styles.fileGroupTitle}>{title}</h4>
           <span className={badgeClass}>{files.length}</span>
         </div>
         <span className={styles.fileGroupSubtitle}>{subtitle}</span>
       </div>
-      <FilesTable files={files} />
+      {isExpanded && <FilesTable files={files} />}
     </div>
   );
 };
