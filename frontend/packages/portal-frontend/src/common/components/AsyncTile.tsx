@@ -15,6 +15,13 @@ interface Props {
 const htmlCache: Record<string, string> = {};
 const callbackCache: Record<string, (containerId: string) => void> = {};
 
+/**
+ * Ensures literal `#` characters in dynamic path segments or query values
+ * (e.g. `COMPOUND-#1`) are percent-encoded as `%23` so `fetch()` does not
+ * strip them as a URL hash fragment.
+ */
+const sanitizeTileUrl = (rawUrl: string): string => rawUrl.replace(/#/g, "%23");
+
 function LoadingTile() {
   return (
     <div className={cx(styles.LoadingTile, "loading-tile")}>Loading...</div>
@@ -48,7 +55,7 @@ const AsyncTile = ({
 
       try {
         const urlPrefix = getUrlPrefix().replace(/^\/$/, "");
-        const res = await fetch(urlPrefix + url);
+        const res = await fetch(urlPrefix + sanitizeTileUrl(url));
 
         if (res.status >= 200 && res.status <= 299) {
           const contentType = res.headers.get("content-type");
