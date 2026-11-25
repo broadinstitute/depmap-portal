@@ -118,8 +118,8 @@ def _get_gene_page_template_parameters(gene_symbol):
     )
 
     omics = get_omics(gene)
-    show_omics_expression_tile = (
-        omics is not None and omics.get("copy_number") is not None
+    show_omics_expression_tile = omics is not None and (
+        omics.get("expression") or omics.get("copy_number") is not None
     )
     mutation = format_mutation_profile(entity_id)
     show_mutations_tile = False
