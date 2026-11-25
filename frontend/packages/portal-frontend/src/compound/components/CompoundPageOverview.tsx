@@ -67,7 +67,7 @@ const CompoundPageOverview = ({
     let resultTile: JSX.Element | null = (
       <AsyncTile
         key={key[0]}
-        url={`/tile/compound/${tile[0]}/${compoundName}`}
+        url={`/tile/compound/${tile[0]}/${encodeURIComponent(compoundName)}`}
       />
     );
 
