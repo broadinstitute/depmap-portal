@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { ReleaseFile } from "@depmap/types";
-import { ALL_DATATYPES_OPTION, matchesFileFilters } from "./useVersionFiles";
+import { ALL_TAGS_OPTION, matchesFileFilters } from "./useVersionFiles";
 
-export interface DatatypeTab {
+export interface TagTab {
   value: string;
   label: string;
   count: number;
@@ -10,16 +10,14 @@ export interface DatatypeTab {
 
 export function useFilteredReleaseFiles(files: ReleaseFile[]) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedDatatype, setSelectedDatatype] = useState<string>(
-    ALL_DATATYPES_OPTION
-  );
+  const [selectedTag, setSelectedTag] = useState<string>(ALL_TAGS_OPTION);
 
-  const datatypeTabs = useMemo<DatatypeTab[]>(() => {
+  const tagTabs = useMemo<TagTab[]>(() => {
     const counts = new Map<string, number>();
 
     files.forEach((file) => {
       const uniqueTypes = new Set(
-        (file.datatypes ?? []).filter((dt): dt is string => Boolean(dt))
+        (file.tags ?? []).filter((dt): dt is string => Boolean(dt))
       );
       uniqueTypes.forEach((dt) => counts.set(dt, (counts.get(dt) ?? 0) + 1));
     });
@@ -29,23 +27,23 @@ export function useFilteredReleaseFiles(files: ReleaseFile[]) {
       .map(([value, count]) => ({ value, label: value, count }));
   }, [files]);
 
-  // Reset active tab if the selected datatype doesn't exist in the current file set
+  // Reset active tab if the selected tag doesn't exist in the current file set
   useEffect(() => {
     const isValidSelection =
-      selectedDatatype === ALL_DATATYPES_OPTION ||
-      datatypeTabs.some((tab) => tab.value === selectedDatatype);
+      selectedTag === ALL_TAGS_OPTION ||
+      tagTabs.some((tab) => tab.value === selectedTag);
 
     if (!isValidSelection) {
-      setSelectedDatatype(ALL_DATATYPES_OPTION);
+      setSelectedTag(ALL_TAGS_OPTION);
     }
-  }, [datatypeTabs, selectedDatatype]);
+  }, [tagTabs, selectedTag]);
 
   const filteredFiles = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
     return files.filter((file) =>
-      matchesFileFilters(file, selectedDatatype, normalizedQuery)
+      matchesFileFilters(file, selectedTag, normalizedQuery)
     );
-  }, [files, selectedDatatype, searchQuery]);
+  }, [files, selectedTag, searchQuery]);
 
   const { primaryFiles, secondaryFiles } = useMemo(() => {
     const primary: ReleaseFile[] = [];
@@ -63,19 +61,19 @@ export function useFilteredReleaseFiles(files: ReleaseFile[]) {
   }, [filteredFiles]);
 
   const hasActiveFilters =
-    searchQuery.trim().length > 0 || selectedDatatype !== ALL_DATATYPES_OPTION;
+    searchQuery.trim().length > 0 || selectedTag !== ALL_TAGS_OPTION;
 
   const resetFilters = () => {
     setSearchQuery("");
-    setSelectedDatatype(ALL_DATATYPES_OPTION);
+    setSelectedTag(ALL_TAGS_OPTION);
   };
 
   return {
     searchQuery,
     setSearchQuery,
-    selectedDatatype,
-    setSelectedDatatype,
-    datatypeTabs,
+    selectedTag,
+    setSelectedTag,
+    tagTabs,
     filteredFiles,
     primaryFiles,
     secondaryFiles,

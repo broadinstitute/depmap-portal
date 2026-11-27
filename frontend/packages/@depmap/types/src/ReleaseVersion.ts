@@ -2,7 +2,7 @@ export interface ReleaseFile {
   id: string;
   file_name: string;
   is_main_file: boolean;
-  datatypes?: string[];
+  tags?: string[];
   size?: string;
   description?: string;
   bucket_url?: string;
@@ -20,7 +20,7 @@ export interface ReleaseVersion {
 
 export interface GetReleaseVersionsParams {
   include_files?: boolean;
-  datatype?: string;
+  tag?: string;
   start_date?: string;
   end_date?: string;
   release_name?: string;

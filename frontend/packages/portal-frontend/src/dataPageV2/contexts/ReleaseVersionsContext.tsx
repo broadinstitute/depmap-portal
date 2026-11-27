@@ -49,8 +49,8 @@ export const ReleaseVersionsProvider: React.FC<ReleaseVersionsProviderProps> = (
   const { pushVersionToUrl } = useReleaseVersionsUrlSync({
     enabled: syncWithUrl,
     releases,
-    datatype: filters.datatype,
-    setDatatype: filters.setDatatype,
+    tag: filters.tag,
+    setTag: filters.setTag,
     dateRange: filters.dateRange,
     setDateRange: filters.setDateRange,
     selectedVersion,

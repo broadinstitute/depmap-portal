@@ -8,13 +8,13 @@ interface Option {
 }
 
 /**
- * Lazily fetches and formats unique file-level `datatypes` values for the filter dropdown.
+ * Lazily fetches and formats unique file-level `tags` values for the filter dropdown.
  *
  * TODO in Breadbox: Replace `getReleaseVersions({ include_files: true })` once Breadbox
- * has a dedicated endpoint for distinct file datatypes. Until then, fetching is
+ * has a dedicated endpoint for distinct file tags. Until then, fetching is
  * deferred until the user opens the dropdown (`onMenuOpen`).
  */
-export const useDatatypeOptions = () => {
+export const useTagOptions = () => {
   const bapi = useMemo(() => cached(breadboxAPI), []);
   const [options, setOptions] = useState<Option[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,9 +32,9 @@ export const useDatatypeOptions = () => {
       const uniqueTypes = new Set<string>();
       versions.forEach((version) => {
         version.files?.forEach((file) => {
-          file.datatypes?.forEach((datatype) => {
-            if (datatype) {
-              uniqueTypes.add(datatype);
+          file.tags?.forEach((tag) => {
+            if (tag) {
+              uniqueTypes.add(tag);
             }
           });
         });
@@ -47,7 +47,7 @@ export const useDatatypeOptions = () => {
       );
       setHasLoaded(true);
     } catch (err) {
-      console.error("Failed to fetch datatype filter options:", err);
+      console.error("Failed to fetch tag filter options:", err);
     } finally {
       setIsLoading(false);
     }

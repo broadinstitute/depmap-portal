@@ -194,9 +194,9 @@ const FilesTable: React.FC<FilesTableProps> = ({ files }) => {
                   </div>
                 </td>
                 <td>
-                  {file.datatypes && file.datatypes.length > 0 ? (
+                  {file.tags && file.tags.length > 0 ? (
                     <div className={styles.datatypeBadges}>
-                      {file.datatypes.map((datatype: string) => (
+                      {file.tags.map((datatype: string) => (
                         <span key={datatype} className={styles.datatypeBadge}>
                           {datatype}
                         </span>

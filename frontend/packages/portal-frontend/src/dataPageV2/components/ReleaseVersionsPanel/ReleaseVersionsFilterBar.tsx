@@ -1,10 +1,10 @@
 import React, { useMemo } from "react";
 import Select from "react-select";
 import { DateRangePreset } from "src/dataPageV2/hooks/useReleaseVersions";
-import { useDatatypeOptions } from "src/dataPageV2/hooks/useDatatypeOptions";
 import { useReleaseVersionsContext } from "src/dataPageV2/contexts/ReleaseVersionsContext";
 import styles from "src/dataPageV2/styles.scss";
 import { getFilterSelectStyles, SelectOption } from "./selectStyles";
+import { useTagOptions } from "src/dataPageV2/hooks/useTagOptions";
 
 interface FilterBarHeaderProps {
   activeFilterCount: number;
@@ -51,20 +51,20 @@ const ReleaseVersionsFilterBar: React.FC = () => {
     dateRangeOptions,
   } = useReleaseVersionsContext();
   const {
-    options: datatypeOptions,
+    options: tagOptions,
     isLoading: isOptionsLoading,
-    loadOptions: handleLoadDatatypes,
-  } = useDatatypeOptions();
+    loadOptions: handleLoadTags,
+  } = useTagOptions();
 
-  const selectedDatatypeOption = useMemo(() => {
-    if (!filters.datatype) return null;
+  const selectedTagOption = useMemo(() => {
+    if (!filters.tag) return null;
     return (
-      datatypeOptions.find((option) => option.value === filters.datatype) ?? {
-        value: filters.datatype,
-        label: filters.datatype,
+      tagOptions.find((option) => option.value === filters.tag) ?? {
+        value: filters.tag,
+        label: filters.tag,
       }
     );
-  }, [datatypeOptions, filters.datatype]);
+  }, [tagOptions, filters.tag]);
 
   const selectedDateRangeOption = useMemo(
     () =>
@@ -73,21 +73,19 @@ const ReleaseVersionsFilterBar: React.FC = () => {
     [dateRangeOptions, filters.dateRange]
   );
 
-  const hasDatatypeFilter = Boolean(filters.datatype);
+  const hastagFilter = Boolean(filters.tag);
   const hasDateFilter = Boolean(filters.dateRange) && filters.dateRange !== "";
-  const activeFilterCount =
-    (hasDatatypeFilter ? 1 : 0) + (hasDateFilter ? 1 : 0);
+  const activeFilterCount = (hastagFilter ? 1 : 0) + (hasDateFilter ? 1 : 0);
 
-  const datatypeSelectStyles = useMemo(
-    () => getFilterSelectStyles(hasDatatypeFilter),
-    [hasDatatypeFilter]
-  );
+  const tagSelectStyles = useMemo(() => getFilterSelectStyles(hastagFilter), [
+    hastagFilter,
+  ]);
   const dateSelectStyles = useMemo(() => getFilterSelectStyles(hasDateFilter), [
     hasDateFilter,
   ]);
 
   const handleResetFilters = () => {
-    filters.setDatatype("");
+    filters.setTag("");
     filters.setDateRange("");
   };
 
@@ -99,24 +97,22 @@ const ReleaseVersionsFilterBar: React.FC = () => {
       />
 
       <div className={styles.filterControlsRow}>
-        <div
-          className={`${styles.filterControlGroup} ${styles.datatypeControl}`}
-        >
-          <label htmlFor="datatype-filter">Data Type</label>
+        <div className={`${styles.filterControlGroup} ${styles.tagControl}`}>
+          <label htmlFor="tag-filter">Data Type</label>
           <Select<SelectOption, false>
-            inputId="datatype-filter"
+            inputId="tag-filter"
             isClearable
             isSearchable
             menuPortalTarget={document.body}
-            onMenuOpen={handleLoadDatatypes}
+            onMenuOpen={handleLoadTags}
             placeholder={
               isOptionsLoading ? "Loading types..." : "Select data type..."
             }
             isLoading={isOptionsLoading}
-            options={datatypeOptions}
-            value={selectedDatatypeOption}
-            styles={datatypeSelectStyles}
-            onChange={(option) => filters.setDatatype(option?.value ?? "")}
+            options={tagOptions}
+            value={selectedTagOption}
+            styles={tagSelectStyles}
+            onChange={(option) => filters.setTag(option?.value ?? "")}
           />
         </div>
 

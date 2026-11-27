@@ -66,7 +66,6 @@ box_plot_utils.py: error: Argument of type "Column[str]" cannot be assigned to p
 box_plot_utils.py: error: Argument of type "Column[str]" cannot be assigned to parameter "row_name" of type "str" in function "valid_row"
 box_plot_utils.py: error: Argument of type "Column[str]" cannot be assigned to parameter "selected_code" of type "str" in function "get_path_to_node"
 box_plot_utils.py: error: Argument of type "Unknown | Column[str]" cannot be assigned to parameter "value" of type "str" in function "index"
-box_plot_utils.py: error: Argument of type "list[Column[str]]" cannot be assigned to parameter "subtype_codes" of type "List[str]" in function "get_model_ids_for_node_branch"
 breadbox_dao.py: error: Type "NDFrame | Unknown" is not assignable to return type "Series"
 categories.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "x" of type "ConvertibleToInt" in function "__new__"
 categories.py: error: Method "_get_na_label" overrides class "CategoryConfig" in an incompatible manner
@@ -426,7 +425,6 @@ models.py: error: Type "_RelationshipDeclared[Any]" is not assignable to declare
 models.py: error: Type "_RelationshipDeclared[Any]" is not assignable to declared type "Matrix"
 models.py: error: Type "_RelationshipDeclared[Any]" is not assignable to declared type "PredictiveFeature"
 models.py: error: Type "_RelationshipDeclared[Any]" is not assignable to declared type "PredictiveModel"
-models_new.py: error: Invalid conditional operand of type "Column[str]"
 models_new.py: error: Method "__eq__" overrides class "object" in an incompatible manner
 models_new.py: error: Type "Column[str]" is not assignable to return type "str | None"
 models_new.py: error: Type "DepmapModel | None" is not assignable to return type "DepmapModel"

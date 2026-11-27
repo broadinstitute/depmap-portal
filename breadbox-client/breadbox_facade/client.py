@@ -771,8 +771,8 @@ class BBClient:
     
     # RELEASE VERSIONS
     
-    def get_release_versions(self, release_name: Union[Optional[str], Unset] = UNSET, datatype: Union[Optional[str], Unset] = UNSET, start_date: Union[Optional[str], Unset] = UNSET, end_date: Union[Optional[date], Unset] = UNSET, include_files: bool = False ) -> List[ReleaseVersionResponse]:
-        """Get all release versions with options to filter by release_name, datatype, start_date, end_date, include_files."""
+    def get_release_versions(self, release_name: Union[Optional[str], Unset] = UNSET, tag: Union[Optional[str], Unset] = UNSET, start_date: Union[Optional[str], Unset] = UNSET, end_date: Union[Optional[date], Unset] = UNSET, include_files: bool = False ) -> List[ReleaseVersionResponse]:
+        """Get all release versions with options to filter by release_name, tag, start_date, end_date, include_files."""
         start_date_obj = None 
         end_date_obj = None
         if isinstance(start_date, str):
@@ -782,7 +782,7 @@ class BBClient:
             end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
             
         breadbox_response = get_release_versions_client.sync_detailed(client=self.client,release_name=release_name,
-        datatype=datatype,
+        tag=tag,
         start_date=start_date_obj,
         end_date=end_date_obj,
         include_files=include_files )

@@ -78,32 +78,28 @@ class ReleaseFile(Base, UUIDMixin):
         "ReleaseVersion", back_populates="files"
     )
 
-    # datatypes is conceptually a set (order doesn't matter, no duplicates)
-    datatype_rows: Mapped[List["ReleaseFileDatatype"]] = relationship(
-        "ReleaseFileDatatype",
-        back_populates="release_file",
-        cascade="all, delete-orphan",
+    # tags is conceptually a set (order doesn't matter, no duplicates)
+    tag_rows: Mapped[List["ReleaseFileTag"]] = relationship(
+        "ReleaseFileTag", back_populates="release_file", cascade="all, delete-orphan",
     )
-    datatypes = association_proxy(
-        "datatype_rows",
-        "datatype",
-        creator=lambda dt: ReleaseFileDatatype(datatype=dt),
+    tags = association_proxy(
+        "tag_rows", "tag", creator=lambda t: ReleaseFileTag(tag=t),
     )
 
 
-class ReleaseFileDatatype(Base):
-    __tablename__ = "release_file_datatype"
-    __table_args__ = (UniqueConstraint("release_file_id", "datatype"),)
+class ReleaseFileTag(Base):
+    __tablename__ = "release_file_tag"
+    __table_args__ = (UniqueConstraint("release_file_id", "tag"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     release_file_id: Mapped[str] = mapped_column(
         String, ForeignKey("release_file.id", ondelete="CASCADE"), nullable=False
     )
-    # Free text, not FK'd to the `data_type` lookup table used by Dataset.
-    datatype: Mapped[str] = mapped_column(String, nullable=False)
+    # Free text, not FK'd to the `datatype` lookup table used by Dataset.
+    tag: Mapped[str] = mapped_column(String, nullable=False)
 
     release_file: Mapped["ReleaseFile"] = relationship(
-        "ReleaseFile", back_populates="datatype_rows"
+        "ReleaseFile", back_populates="tag_rows"
     )
 
 
@@ -125,7 +121,7 @@ class ReleaseFileSearchIndex(Base):
     # File-specific metadata
     file_name: Mapped[str] = mapped_column(String)
     file_description: Mapped[str] = mapped_column(String)
-    file_datatypes: Mapped[str] = mapped_column(String)
+    file_tags: Mapped[str] = mapped_column(String)
     release_version_name: Mapped[str] = mapped_column(String)
     release_name: Mapped[str] = mapped_column(String)
     release_version_description: Mapped[str] = mapped_column(String)
